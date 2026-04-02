@@ -1,0 +1,37 @@
+export const GAME_CONFIG = {
+  worldSize: 900,
+  districtSize: 360,
+  hoverFloor: 8,
+  hoverCeiling: 180,
+  mission: {
+    baseFareMin: 90,
+    baseFareMax: 180,
+    timePenaltyPerSecond: 2.4,
+    collisionPenalty: 12,
+    pickupRadius: 12,
+    dropoffRadius: 14,
+  },
+  player: {
+    maxForwardSpeed: 90,
+    maxReverseSpeed: 24,
+    acceleration: 82,
+    braking: 110,
+    drag: 1.9,
+    turnSpeed: 2.6,
+    verticalSpeed: 48,
+    verticalAcceleration: 72,
+    strafeSpeed: 22,
+    strafeAcceleration: 42,
+    collisionRadius: 4.2,
+  },
+  camera: {
+    followDistance: 18,
+    height: 7,
+    lookAhead: 14,
+    damping: 5.2,
+  },
+  traffic: {
+    obstacleCount: 10,
+    ambientCount: 20,
+  },
+};

@@ -1,6 +1,6 @@
 export const GAME_CONFIG = {
-  worldSize: 900,
-  districtSize: 360,
+  worldSize: 1800,
+  districtSize: 560,
   hoverFloor: 8,
   hoverCeiling: 180,
   mission: {

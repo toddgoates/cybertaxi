@@ -49,7 +49,7 @@ export class UIManager {
           <div class="feed" data-field="feed"></div>
         </div>
       </div>
-      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | Space rise | Shift descend</div>
+      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | R rise | F descend</div>
     `;
     mount.appendChild(this.root);
 

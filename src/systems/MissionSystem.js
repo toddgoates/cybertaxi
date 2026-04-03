@@ -42,9 +42,14 @@ export class MissionSystem {
     return group;
   }
 
-  startNextFare() {
+  startNextFare(playerPosition = null) {
     const districts = [...this.worldData.districtAnchors];
-    const pickup = districts[Math.floor(Math.random() * districts.length)];
+    const currentDistrictName = playerPosition ? this.worldData.getDistrictName(playerPosition) : null;
+    const pickupCandidates = currentDistrictName
+      ? districts.filter((district) => district.name !== currentDistrictName)
+      : districts;
+    const pickupPool = pickupCandidates.length > 0 ? pickupCandidates : districts;
+    const pickup = pickupPool[Math.floor(Math.random() * pickupPool.length)];
     let dropoff = districts[Math.floor(Math.random() * districts.length)];
 
     while (dropoff.name === pickup.name) {
@@ -87,7 +92,7 @@ export class MissionSystem {
         this.totalCredits += payout;
         this.ui.pushFeed(`Dropoff complete. Earned ${payout} credits`, 'good');
         this.effects.onDropoff();
-        this.startNextFare();
+        this.startNextFare(player.mesh.position);
       }
     }
   }

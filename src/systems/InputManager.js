@@ -6,8 +6,8 @@ export class InputManager {
       brake: ['KeyS', 'ArrowDown'],
       left: ['KeyA', 'ArrowLeft'],
       right: ['KeyD', 'ArrowRight'],
-      ascend: ['Space'],
-      descend: ['ShiftLeft', 'ShiftRight'],
+      ascend: ['KeyR'],
+      descend: ['KeyF'],
       strafeLeft: ['KeyQ'],
       strafeRight: ['KeyE'],
     };

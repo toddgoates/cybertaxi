@@ -33,6 +33,38 @@ canvas {
   text-shadow: 0 0 16px rgba(72, 217, 255, 0.3);
 }
 
+.hud__actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.hud__button {
+  pointer-events: auto;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(99, 235, 255, 0.24);
+  background: linear-gradient(180deg, rgba(8, 12, 24, 0.88), rgba(8, 12, 24, 0.65));
+  color: #dff4ff;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: inset 0 0 18px rgba(72, 217, 255, 0.05), 0 0 18px rgba(18, 215, 255, 0.08);
+}
+
+.hud__status {
+  max-width: 180px;
+  text-align: right;
+  color: #9ebed1;
+  font-size: 12px;
+}
+
 .hud__corner {
   position: absolute;
   left: 16px;
@@ -271,6 +303,10 @@ canvas {
   .hud__corner {
     left: 12px;
     bottom: 84px;
+  }
+
+  .hud__actions {
+    right: 12px;
   }
 
   .panel--feed {

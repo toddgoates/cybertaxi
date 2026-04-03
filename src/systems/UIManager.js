@@ -5,6 +5,10 @@ export class UIManager {
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
+      <div class="hud__actions">
+        <button class="hud__button" type="button" data-field="musicToggle">Music</button>
+        <div class="hud__status" data-field="musicStatus"></div>
+      </div>
       <div class="hud__top">
         <div class="panel">
           <div class="eyebrow">Current Fare</div>
@@ -51,7 +55,7 @@ export class UIManager {
           <div class="feed" data-field="feed"></div>
         </div>
       </div>
-      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | R rise | F descend | Space boost</div>
+      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost</div>
     `;
     mount.appendChild(this.root);
 
@@ -68,8 +72,14 @@ export class UIManager {
       boostText: this.root.querySelector('[data-field="boostText"]'),
       navTargets: this.root.querySelector('[data-field="navTargets"]'),
       navStatus: this.root.querySelector('[data-field="navStatus"]'),
+      musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
+      musicStatus: this.root.querySelector('[data-field="musicStatus"]'),
       feed: this.root.querySelector('[data-field="feed"]'),
     };
+  }
+
+  setMusicToggleHandler(handler) {
+    this.fields.musicToggle.addEventListener('click', handler);
   }
 
   pushFeed(message, tone = 'info') {
@@ -89,6 +99,8 @@ export class UIManager {
     this.fields.speedText.textContent = `${Math.round(Math.abs(state.player.forwardSpeed))} u/s forward thrust`;
     this.fields.boostBar.style.width = `${Math.round(state.player.getBoostRatio() * 100)}%`;
     this.fields.boostText.textContent = state.player.getBoostStatusText();
+    this.fields.musicToggle.textContent = state.music.muted ? 'Unmute music' : 'Mute music';
+    this.fields.musicStatus.textContent = state.music.label;
     this.renderNavigator(state);
   }
 

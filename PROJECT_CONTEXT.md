@@ -46,6 +46,7 @@ The project is currently a lightweight, code-driven game with no external assets
 - Lower-left navigator panel
 - Navigator shows the active mission target relative to the player
 - During pickup, navigator also shows the future drop-off as a secondary marker
+- Top-right music control with mute toggle and looping background track support from `public/audio/`
 
 ### Vehicle art direction changes
 
@@ -82,7 +83,9 @@ The project is currently a lightweight, code-driven game with no external assets
 - `src/systems/CollisionSystem.js`
   - Player collisions against buildings and traffic
 - `src/systems/UIManager.js`
-  - HUD structure and rendering, including navigator logic
+  - HUD structure and rendering, including navigator logic and music controls
+- `src/systems/MusicManager.js`
+  - Looping background music playback, autoplay fallback, and mute state
 - `src/styles.css`
   - All HUD styling including navigator placement in the lower-left corner
 

@@ -9,6 +9,7 @@ import { MissionSystem } from '../systems/MissionSystem.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js';
 import { UIManager } from '../systems/UIManager.js';
 import { EffectsHooks } from '../systems/EffectsHooks.js';
+import { MusicManager } from '../systems/MusicManager.js';
 
 export class GameApp {
   constructor(mount) {
@@ -29,6 +30,8 @@ export class GameApp {
     this.input = new InputManager();
     this.ui = new UIManager(this.mount);
     this.effects = new EffectsHooks();
+    this.music = new MusicManager('/audio/midnight_circuits_1.mp3');
+    this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
     this.setupLights();
 
@@ -59,6 +62,7 @@ export class GameApp {
   }
 
   start() {
+    this.music.start();
     this.animate();
   }
 
@@ -80,6 +84,7 @@ export class GameApp {
       player: this.player,
       mission: this.missions.getState(),
       district: this.worldData.getDistrictName(this.player.mesh.position),
+      music: this.music.getState(),
     });
 
     this.renderer.render(this.scene, this.camera);

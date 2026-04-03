@@ -22,35 +22,118 @@ export class PlayerController {
 
   createTaxiMesh() {
     const root = new THREE.Group();
+    const bodyMaterial = new THREE.MeshStandardMaterial({
+      color: 0xd7dbe2,
+      emissive: 0x0f1622,
+      emissiveIntensity: 0.16,
+      metalness: 0.32,
+      roughness: 0.42,
+    });
+    const trimMaterial = new THREE.MeshStandardMaterial({
+      color: 0x202632,
+      emissive: 0x0b1220,
+      emissiveIntensity: 0.18,
+      metalness: 0.45,
+      roughness: 0.36,
+    });
+    const glassMaterial = new THREE.MeshStandardMaterial({
+      color: 0x9fdcff,
+      emissive: 0x2b8fff,
+      emissiveIntensity: 0.4,
+      transparent: true,
+      opacity: 0.72,
+      metalness: 0.12,
+      roughness: 0.2,
+    });
+    const lightMaterial = new THREE.MeshStandardMaterial({
+      color: 0x86d9ff,
+      emissive: 0x1fb6ff,
+      emissiveIntensity: 1.4,
+      transparent: true,
+      opacity: 0.95,
+    });
 
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(3.8, 1.2, 8),
-      new THREE.MeshStandardMaterial({ color: 0x1b2034, emissive: 0x1989ff, emissiveIntensity: 0.45, metalness: 0.35, roughness: 0.35 }),
-    );
-    body.position.y = 0.4;
-    root.add(body);
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.05, 8.8), bodyMaterial);
+    chassis.position.y = 0.2;
+    root.add(chassis);
 
-    const canopy = new THREE.Mesh(
-      new THREE.BoxGeometry(2.6, 1, 3.2),
-      new THREE.MeshStandardMaterial({ color: 0x78d8ff, emissive: 0x1273ff, emissiveIntensity: 0.55, transparent: true, opacity: 0.78 }),
-    );
-    canopy.position.set(0, 1.1, -0.1);
-    root.add(canopy);
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.7, 2.4), bodyMaterial);
+    hood.position.set(0, 0.78, -2.25);
+    root.add(hood);
 
-    const fin = new THREE.Mesh(
-      new THREE.BoxGeometry(0.35, 1.1, 2),
-      new THREE.MeshStandardMaterial({ color: 0xff4fd8, emissive: 0xff4fd8, emissiveIntensity: 0.75 }),
-    );
-    fin.position.set(0, 1.3, 2.2);
-    root.add(fin);
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.25, 3.7), bodyMaterial);
+    cabin.position.set(0, 1.18, 0.1);
+    root.add(cabin);
 
-    const thrusterGeometry = new THREE.CylinderGeometry(0.3, 0.4, 1.4, 8);
-    const thrusterMaterial = new THREE.MeshStandardMaterial({ color: 0x090c14, emissive: 0x00e6ff, emissiveIntensity: 0.95 });
-    [-1.8, 1.8].forEach((x) => {
-      const thruster = new THREE.Mesh(thrusterGeometry, thrusterMaterial);
-      thruster.rotation.z = Math.PI / 2;
-      thruster.position.set(x, -0.3, 1.1);
-      root.add(thruster);
+    const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.8, 1.2), glassMaterial);
+    windshield.position.set(0, 1.45, -0.82);
+    root.add(windshield);
+
+    const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.75, 1.05), glassMaterial);
+    rearGlass.position.set(0, 1.42, 1.02);
+    root.add(rearGlass);
+
+    const bumperFront = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.42, 0.42), trimMaterial);
+    bumperFront.position.set(0, 0.1, -4.28);
+    root.add(bumperFront);
+
+    const bumperRear = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.42, 0.42), trimMaterial);
+    bumperRear.position.set(0, 0.1, 4.2);
+    root.add(bumperRear);
+
+    const sideSkirtGeometry = new THREE.BoxGeometry(0.24, 0.42, 6.2);
+    [-2.05, 2.05].forEach((x) => {
+      const skirt = new THREE.Mesh(sideSkirtGeometry, trimMaterial);
+      skirt.position.set(x, -0.05, 0.28);
+      root.add(skirt);
+    });
+
+    const wheelGeometry = new THREE.CylinderGeometry(0.68, 0.68, 0.5, 18);
+    const wheelMaterial = new THREE.MeshStandardMaterial({
+      color: 0x0d1118,
+      emissive: 0x060a10,
+      emissiveIntensity: 0.15,
+      roughness: 0.82,
+      metalness: 0.18,
+    });
+    [-1.95, 1.95].forEach((x) => {
+      [-2.55, 2.45].forEach((z) => {
+        const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(x, -0.18, z);
+        root.add(wheel);
+      });
+    });
+
+    const roofLightBase = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.18, 0.58), trimMaterial);
+    roofLightBase.position.set(0, 1.98, -0.05);
+    root.add(roofLightBase);
+
+    const roofLight = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.26, 0.42), lightMaterial);
+    roofLight.position.set(0, 2.18, -0.05);
+    root.add(roofLight);
+
+    const flameMaterial = new THREE.MeshStandardMaterial({
+      color: 0xbff3ff,
+      emissive: 0x7ae7ff,
+      emissiveIntensity: 1.6,
+      transparent: true,
+      opacity: 0.85,
+    });
+    const flameGeometry = new THREE.ConeGeometry(0.34, 1.2, 10);
+    const flameOffsets = [
+      [-1.2, -0.85, -1.7],
+      [1.2, -0.85, -1.7],
+      [-1.2, -0.85, 1.7],
+      [1.2, -0.85, 1.7],
+    ];
+    this.hoverFlames = flameOffsets.map(([x, y, z], index) => {
+      const flame = new THREE.Mesh(flameGeometry, flameMaterial.clone());
+      flame.position.set(x, y, z);
+      flame.rotation.x = Math.PI;
+      flame.scale.setScalar(0.92 + index * 0.04);
+      root.add(flame);
+      return flame;
     });
 
     root.userData.radius = this.config.collisionRadius;
@@ -104,6 +187,12 @@ export class PlayerController {
     this.mesh.position.y += Math.sin(this.hoverTime * 7) * 0.018;
     this.mesh.rotation.z = THREE.MathUtils.damp(this.mesh.rotation.z, -turnInput * 0.18 - this.strafeVelocity * 0.012, 7, delta);
     this.mesh.rotation.x = THREE.MathUtils.damp(this.mesh.rotation.x, -this.forwardSpeed * 0.003, 6, delta);
+
+    this.hoverFlames.forEach((flame, index) => {
+      const flicker = 0.82 + Math.sin(this.hoverTime * 14 + index * 0.9) * 0.14;
+      flame.scale.y = flicker + Math.abs(this.verticalVelocity) * 0.01;
+      flame.material.opacity = 0.72 + Math.sin(this.hoverTime * 18 + index) * 0.08;
+    });
   }
 
   getSpeedRatio() {

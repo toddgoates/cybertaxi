@@ -55,7 +55,7 @@ export class UIManager {
           <div class="feed" data-field="feed"></div>
         </div>
       </div>
-      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost</div>
+      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | M toggle music</div>
     `;
     mount.appendChild(this.root);
 
@@ -99,7 +99,7 @@ export class UIManager {
     this.fields.speedText.textContent = `${Math.round(Math.abs(state.player.forwardSpeed))} u/s forward thrust`;
     this.fields.boostBar.style.width = `${Math.round(state.player.getBoostRatio() * 100)}%`;
     this.fields.boostText.textContent = state.player.getBoostStatusText();
-    this.fields.musicToggle.textContent = state.music.muted ? 'Unmute music' : 'Mute music';
+    this.fields.musicToggle.textContent = state.music.muted ? 'Music: off' : 'Music: on';
     this.fields.musicStatus.textContent = state.music.label;
     this.renderNavigator(state);
   }

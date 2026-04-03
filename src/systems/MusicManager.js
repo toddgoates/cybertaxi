@@ -10,10 +10,18 @@ export class MusicManager {
     this.audio.muted = this.muted;
     this.awaitingInteraction = false;
     this.tryStartPlayback = this.tryStartPlayback.bind(this);
+    this.handleKeydown = this.handleKeydown.bind(this);
   }
 
   start() {
+    window.addEventListener('keydown', this.handleKeydown);
     this.tryStartPlayback();
+  }
+
+  handleKeydown(event) {
+    if (event.repeat) return;
+    if (event.code !== 'KeyM') return;
+    this.toggleMute();
   }
 
   tryStartPlayback() {

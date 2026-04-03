@@ -36,7 +36,7 @@ export const GAME_CONFIG = {
     damping: 5.2,
   },
   traffic: {
-    obstacleCount: 10,
-    ambientCount: 20,
+    obstacleCount: 32,
+    ambientCount: 0,
   },
 };

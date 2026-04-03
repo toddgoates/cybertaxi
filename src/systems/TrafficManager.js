@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+const TRAFFIC_COLORS = [0xff5a6b, 0x44a6ff, 0x63ff83, 0xb86bff, 0xf3f7ff];
+
 function createVehicleMesh(color, emissiveIntensity = 0.7, scale = 1) {
   const group = new THREE.Group();
   const body = new THREE.Mesh(
@@ -23,7 +25,7 @@ export class TrafficManager {
     this.config = config.traffic;
     this.vehicles = [];
 
-    const collidablePaths = flightPaths.slice(0, this.config.obstacleCount);
+    const collidablePaths = flightPaths.slice();
     const ambientPaths = flightPaths.slice().reverse();
 
     for (let i = 0; i < this.config.obstacleCount; i += 1) {
@@ -36,18 +38,28 @@ export class TrafficManager {
   }
 
   spawnVehicle(pathData, collidable, seed) {
-    const mesh = createVehicleMesh(collidable ? 0xff8a3d : 0x44f1ff, collidable ? 0.95 : 0.35, collidable ? 1 : 0.75);
-    mesh.position.copy(pathData.waypoints[seed % pathData.waypoints.length]);
+    const color = TRAFFIC_COLORS[seed % TRAFFIC_COLORS.length];
+    const mesh = createVehicleMesh(color, collidable ? 0.95 : 0.35, collidable ? 1 : 0.75);
+    const startIndex = seed % pathData.waypoints.length;
+    const nextIndex = (startIndex + 1) % pathData.waypoints.length;
+    mesh.position.lerpVectors(
+      pathData.waypoints[startIndex],
+      pathData.waypoints[nextIndex],
+      ((seed * 0.37) % 1),
+    );
     this.scene.add(mesh);
+
+    const baseSpeed = pathData.kind === 'road' ? 18 : 26;
 
     return {
       mesh,
       collidable,
       path: pathData.waypoints,
-      currentIndex: seed % pathData.waypoints.length,
-      speed: collidable ? 26 + (seed % 4) * 6 : 18 + (seed % 3) * 5,
+      currentIndex: startIndex,
+      speed: collidable ? baseSpeed + (seed % 4) * 3 : baseSpeed - 4 + (seed % 3) * 3,
       radius: collidable ? 3.8 : 3,
       pathName: pathData.district,
+      bobOffset: Math.random() * Math.PI * 2,
     };
   }
 
@@ -58,7 +70,7 @@ export class TrafficManager {
       const direction = target.clone().sub(vehicle.mesh.position);
       const distance = direction.length();
 
-      if (distance < 4) {
+      if (distance < 5) {
         vehicle.currentIndex = targetIndex;
         return;
       }
@@ -69,7 +81,7 @@ export class TrafficManager {
         new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction.clone().setY(0).normalize()),
         0.08,
       );
-      vehicle.mesh.position.y += Math.sin(performance.now() * 0.002 + vehicle.speed) * 0.01;
+      vehicle.mesh.position.y += Math.sin(performance.now() * 0.002 + vehicle.bobOffset) * 0.01;
     });
   }
 

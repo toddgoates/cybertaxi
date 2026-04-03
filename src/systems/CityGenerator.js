@@ -83,6 +83,8 @@ export class CityGenerator {
     const roadHalf = districtSize * 0.42;
     const buildingInset = districtSize * 0.075;
     const step = districtSize / 12;
+    const perimeter = halfDistrict * 0.88;
+    const boulevard = halfDistrict * 0.5;
     const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x111824, emissive: 0x14243c, emissiveIntensity: 0.22 });
     const road = new THREE.Mesh(new THREE.BoxGeometry(districtSize, 1, districtSize), roadMaterial);
     road.position.set(center.x, 0.5, center.y);
@@ -126,13 +128,31 @@ export class CityGenerator {
       }
     }
 
-    const laneLoop = [
-      new THREE.Vector3(center.x - halfDistrict * 0.88, 20, center.y - halfDistrict * 0.88),
-      new THREE.Vector3(center.x + halfDistrict * 0.88, 20, center.y - halfDistrict * 0.88),
-      new THREE.Vector3(center.x + halfDistrict * 0.88, 26, center.y + halfDistrict * 0.88),
-      new THREE.Vector3(center.x - halfDistrict * 0.88, 24, center.y + halfDistrict * 0.88),
+    const roadLoop = [
+      new THREE.Vector3(center.x - boulevard, 10, center.y - boulevard),
+      new THREE.Vector3(center.x + boulevard, 10, center.y - boulevard),
+      new THREE.Vector3(center.x + boulevard, 10, center.y + boulevard),
+      new THREE.Vector3(center.x - boulevard, 10, center.y + boulevard),
     ];
-    flightPaths.push({ district: district.name, waypoints: laneLoop });
+    const airLoop = [
+      new THREE.Vector3(center.x - perimeter, 20, center.y - perimeter),
+      new THREE.Vector3(center.x + perimeter, 20, center.y - perimeter),
+      new THREE.Vector3(center.x + perimeter, 26, center.y + perimeter),
+      new THREE.Vector3(center.x - perimeter, 24, center.y + perimeter),
+    ];
+    const skyLane = [
+      new THREE.Vector3(center.x - perimeter, 28, center.y),
+      new THREE.Vector3(center.x - boulevard, 24, center.y),
+      new THREE.Vector3(center.x + boulevard, 24, center.y),
+      new THREE.Vector3(center.x + perimeter, 28, center.y),
+      new THREE.Vector3(center.x + boulevard, 24, center.y),
+      new THREE.Vector3(center.x - boulevard, 24, center.y),
+    ];
+    flightPaths.push(
+      { district: district.name, kind: 'road', waypoints: roadLoop },
+      { district: district.name, kind: 'air', waypoints: airLoop },
+      { district: district.name, kind: 'air', waypoints: skyLane },
+    );
 
     const accent = new THREE.PointLight(district.palette[0], 28, 250, 2);
     accent.position.set(center.x, 24, center.y);

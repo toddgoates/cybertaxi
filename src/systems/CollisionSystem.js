@@ -5,6 +5,7 @@ export class CollisionSystem {
     this.staticColliders = staticColliders;
     this.penalty = config.mission.collisionPenalty;
     this.playerRadius = config.player.collisionRadius;
+    this.boostPenaltyMultiplier = config.player.boostCollisionPenaltyMultiplier;
     this.cooldowns = new Map();
   }
 
@@ -20,7 +21,11 @@ export class CollisionSystem {
       const normal = this.boxCollisionNormal(collider, player.mesh.position);
       player.bounce(normal, 0.22);
       this.cooldowns.set(cooldownKey, now + 800);
-      events.push({ penalty: this.penalty, source: 'impact' });
+      const boosted = player.isBoosting;
+      events.push({
+        penalty: this.penalty * (boosted ? this.boostPenaltyMultiplier : 1),
+        source: boosted ? 'boost impact' : 'impact',
+      });
     });
 
     trafficVehicles.forEach((vehicle, index) => {
@@ -32,7 +37,11 @@ export class CollisionSystem {
       const normal = player.mesh.position.clone().sub(vehicle.mesh.position).setY(0).normalize();
       player.bounce(normal.lengthSq() === 0 ? new THREE.Vector3(1, 0, 0) : normal, 0.3);
       this.cooldowns.set(cooldownKey, now + 900);
-      events.push({ penalty: this.penalty + 6, source: 'traffic collision' });
+      const boosted = player.isBoosting;
+      events.push({
+        penalty: (this.penalty + 6) * (boosted ? this.boostPenaltyMultiplier : 1),
+        source: boosted ? 'boost traffic collision' : 'traffic collision',
+      });
     });
 
     return events;

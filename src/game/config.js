@@ -23,6 +23,11 @@ export const GAME_CONFIG = {
     strafeSpeed: 22,
     strafeAcceleration: 42,
     collisionRadius: 4.2,
+    boostDuration: 3,
+    boostCooldown: 5,
+    boostSpeedMultiplier: 2.15,
+    boostAccelerationMultiplier: 1.6,
+    boostCollisionPenaltyMultiplier: 2.4,
   },
   camera: {
     followDistance: 18,

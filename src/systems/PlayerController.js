@@ -18,6 +18,9 @@ export class PlayerController {
     this.verticalVelocity = 0;
     this.strafeVelocity = 0;
     this.hoverTime = 0;
+    this.isBoosting = false;
+    this.boostCharge = this.config.boostDuration;
+    this.boostCooldownTimer = 0;
   }
 
   createTaxiMesh() {
@@ -136,18 +139,42 @@ export class PlayerController {
       return flame;
     });
 
+    const boostFlameGeometry = new THREE.ConeGeometry(0.7, 3.2, 14);
+    const boostFlameMaterial = new THREE.MeshStandardMaterial({
+      color: 0xc8f6ff,
+      emissive: 0x39d7ff,
+      emissiveIntensity: 2.2,
+      transparent: true,
+      opacity: 0,
+    });
+    this.boostFlames = [-1.05, 1.05].map((x) => {
+      const flame = new THREE.Mesh(boostFlameGeometry, boostFlameMaterial.clone());
+      flame.position.set(x, 0.15, 4.95);
+      flame.rotation.x = Math.PI / 2;
+      flame.scale.set(0.7, 0.7, 0.7);
+      root.add(flame);
+      return flame;
+    });
+
     root.userData.radius = this.config.collisionRadius;
     return root;
   }
 
   update(delta) {
+    this.updateBoostState(delta);
+
     const forwardInput = (this.input.isDown('forward') ? 1 : 0) - (this.input.isDown('brake') ? 1 : 0);
     const turnInput = this.input.getAxis('left', 'right');
     const verticalInput = this.input.getAxis('descend', 'ascend');
     const strafeInput = this.input.getAxis('strafeLeft', 'strafeRight');
+    const boostMultiplier = this.isBoosting ? this.config.boostSpeedMultiplier : 1;
+    const accelerationMultiplier = this.isBoosting ? this.config.boostAccelerationMultiplier : 1;
 
     if (forwardInput > 0) {
-      this.forwardSpeed = Math.min(this.forwardSpeed + this.config.acceleration * delta, this.config.maxForwardSpeed);
+      this.forwardSpeed = Math.min(
+        this.forwardSpeed + this.config.acceleration * accelerationMultiplier * delta,
+        this.config.maxForwardSpeed * boostMultiplier,
+      );
     } else if (forwardInput < 0) {
       this.forwardSpeed = Math.max(this.forwardSpeed - this.config.braking * delta, -this.config.maxReverseSpeed);
     } else {
@@ -193,10 +220,59 @@ export class PlayerController {
       flame.scale.y = flicker + Math.abs(this.verticalVelocity) * 0.01;
       flame.material.opacity = 0.72 + Math.sin(this.hoverTime * 18 + index) * 0.08;
     });
+
+    this.boostFlames.forEach((flame, index) => {
+      const boostPulse = this.isBoosting ? 1 + Math.sin(this.hoverTime * 24 + index * 0.7) * 0.18 : 0.45;
+      const targetScale = this.isBoosting ? 1.15 : 0.001;
+      flame.scale.x = THREE.MathUtils.damp(flame.scale.x, targetScale * boostPulse, 10, delta);
+      flame.scale.y = THREE.MathUtils.damp(flame.scale.y, targetScale * (1.3 + index * 0.08), 10, delta);
+      flame.scale.z = THREE.MathUtils.damp(flame.scale.z, targetScale * boostPulse, 10, delta);
+      flame.material.opacity = THREE.MathUtils.damp(flame.material.opacity, this.isBoosting ? 0.92 : 0, 12, delta);
+    });
+  }
+
+  updateBoostState(delta) {
+    const wantsBoost = this.input.isDown('boost');
+
+    if (this.boostCooldownTimer > 0) {
+      this.boostCooldownTimer = Math.max(0, this.boostCooldownTimer - delta);
+    }
+
+    this.isBoosting = wantsBoost && this.boostCharge > 0 && this.boostCooldownTimer === 0 && this.forwardSpeed > 0;
+
+    if (this.isBoosting) {
+      this.boostCharge = Math.max(0, this.boostCharge - delta);
+      if (this.boostCharge === 0) {
+        this.isBoosting = false;
+        this.boostCooldownTimer = this.config.boostCooldown;
+      }
+      return;
+    }
+
+    if (this.boostCharge < this.config.boostDuration && this.boostCooldownTimer === 0) {
+      this.boostCharge = Math.min(this.config.boostDuration, this.boostCharge + delta);
+    }
   }
 
   getSpeedRatio() {
-    return Math.min(Math.abs(this.forwardSpeed) / this.config.maxForwardSpeed, 1);
+    const maxForwardSpeed = this.config.maxForwardSpeed * this.config.boostSpeedMultiplier;
+    return Math.min(Math.abs(this.forwardSpeed) / maxForwardSpeed, 1);
+  }
+
+  getBoostRatio() {
+    return this.boostCharge / this.config.boostDuration;
+  }
+
+  getBoostStatusText() {
+    if (this.isBoosting) {
+      return `Boost engaged ${this.boostCharge.toFixed(1)}s`;
+    }
+
+    if (this.boostCooldownTimer > 0) {
+      return `Boost recharging ${this.boostCooldownTimer.toFixed(1)}s`;
+    }
+
+    return 'Boost ready';
   }
 
   bounce(normal, strength = 0.35) {

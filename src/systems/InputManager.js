@@ -10,6 +10,7 @@ export class InputManager {
       descend: ['KeyF'],
       strafeLeft: ['KeyQ'],
       strafeRight: ['KeyE'],
+      boost: ['Space'],
     };
 
     window.addEventListener('keydown', (event) => this.keys.add(event.code));

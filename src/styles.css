@@ -105,11 +105,20 @@ canvas {
   margin-top: 10px;
 }
 
+.meter--boost {
+  margin-top: 12px;
+}
+
 .meter__fill {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, #12d7ff, #ff4fd8);
   box-shadow: 0 0 18px rgba(18, 215, 255, 0.45);
+}
+
+.meter__fill--boost {
+  background: linear-gradient(90deg, #8ef1ff, #12b8ff);
+  box-shadow: 0 0 20px rgba(90, 222, 255, 0.55);
 }
 
 .feed {

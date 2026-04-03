@@ -43,13 +43,15 @@ export class UIManager {
           <div class="eyebrow">Thrust</div>
           <div class="meter"><div class="meter__fill" data-field="speedBar"></div></div>
           <div class="subvalue" data-field="speedText"></div>
+          <div class="meter meter--boost"><div class="meter__fill meter__fill--boost" data-field="boostBar"></div></div>
+          <div class="subvalue" data-field="boostText"></div>
         </div>
         <div class="panel panel--feed">
           <div class="eyebrow">Cab Dispatch</div>
           <div class="feed" data-field="feed"></div>
         </div>
       </div>
-      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | R rise | F descend</div>
+      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | R rise | F descend | Space boost</div>
     `;
     mount.appendChild(this.root);
 
@@ -62,6 +64,8 @@ export class UIManager {
       district: this.root.querySelector('[data-field="district"]'),
       speedBar: this.root.querySelector('[data-field="speedBar"]'),
       speedText: this.root.querySelector('[data-field="speedText"]'),
+      boostBar: this.root.querySelector('[data-field="boostBar"]'),
+      boostText: this.root.querySelector('[data-field="boostText"]'),
       navTargets: this.root.querySelector('[data-field="navTargets"]'),
       navStatus: this.root.querySelector('[data-field="navStatus"]'),
       feed: this.root.querySelector('[data-field="feed"]'),
@@ -83,6 +87,8 @@ export class UIManager {
     this.fields.district.textContent = `District: ${state.district}`;
     this.fields.speedBar.style.width = `${Math.round(state.player.getSpeedRatio() * 100)}%`;
     this.fields.speedText.textContent = `${Math.round(Math.abs(state.player.forwardSpeed))} u/s forward thrust`;
+    this.fields.boostBar.style.width = `${Math.round(state.player.getBoostRatio() * 100)}%`;
+    this.fields.boostText.textContent = state.player.getBoostStatusText();
     this.renderNavigator(state);
   }
 

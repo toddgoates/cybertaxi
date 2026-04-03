@@ -22,6 +22,22 @@ export class UIManager {
           <div class="subvalue" data-field="district"></div>
         </div>
       </div>
+      <div class="hud__corner">
+        <div class="panel panel--nav">
+          <div class="eyebrow">Navigator</div>
+          <div class="navigator">
+            <div class="navigator__scope">
+              <div class="navigator__ring navigator__ring--outer"></div>
+              <div class="navigator__ring navigator__ring--inner"></div>
+              <div class="navigator__crosshair navigator__crosshair--x"></div>
+              <div class="navigator__crosshair navigator__crosshair--y"></div>
+              <div class="navigator__targets" data-field="navTargets"></div>
+              <div class="navigator__cab"></div>
+            </div>
+          </div>
+          <div class="subvalue" data-field="navStatus"></div>
+        </div>
+      </div>
       <div class="hud__bottom">
         <div class="panel panel--compact">
           <div class="eyebrow">Thrust</div>
@@ -46,6 +62,8 @@ export class UIManager {
       district: this.root.querySelector('[data-field="district"]'),
       speedBar: this.root.querySelector('[data-field="speedBar"]'),
       speedText: this.root.querySelector('[data-field="speedText"]'),
+      navTargets: this.root.querySelector('[data-field="navTargets"]'),
+      navStatus: this.root.querySelector('[data-field="navStatus"]'),
       feed: this.root.querySelector('[data-field="feed"]'),
     };
   }
@@ -65,6 +83,50 @@ export class UIManager {
     this.fields.district.textContent = `District: ${state.district}`;
     this.fields.speedBar.style.width = `${Math.round(state.player.getSpeedRatio() * 100)}%`;
     this.fields.speedText.textContent = `${Math.round(Math.abs(state.player.forwardSpeed))} u/s forward thrust`;
+    this.renderNavigator(state);
+  }
+
+  renderNavigator(state) {
+    const playerPosition = state.player.mesh.position;
+    const heading = state.player.mesh.rotation.y;
+    const range = 220;
+    const radius = 72;
+    const sin = Math.sin(heading);
+    const cos = Math.cos(heading);
+    const targets = [];
+
+    const activeTarget = state.mission.phase === 'pickup' ? state.mission.pickupTarget : state.mission.dropoffTarget;
+    targets.push({ ...activeTarget, role: state.mission.phase, active: true });
+
+    if (state.mission.phase === 'pickup') {
+      targets.push({ ...state.mission.dropoffTarget, role: 'dropoff', active: false });
+    }
+
+    this.fields.navTargets.innerHTML = targets
+      .map((target) => {
+        const dx = target.x - playerPosition.x;
+        const dz = target.z - playerPosition.z;
+        const localX = dx * cos - dz * sin;
+        const localZ = dx * sin + dz * cos;
+        const distance = Math.hypot(dx, dz);
+        const clampedDistance = Math.min(distance, range);
+        const scale = distance > 0 ? clampedDistance / distance : 0;
+        const x = localX * scale * (radius / range);
+        const y = localZ * scale * (radius / range);
+        const classes = ['navigator__target', `navigator__target--${target.role}`];
+
+        if (target.active) classes.push('navigator__target--active');
+        if (distance > range) classes.push('navigator__target--edge');
+
+        return `<div class="${classes.join(' ')}" style="transform: translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px));" title="${target.name} ${Math.round(distance)}m"></div>`;
+      })
+      .join('');
+
+    const distance = Math.round(
+      Math.hypot(activeTarget.x - playerPosition.x, activeTarget.z - playerPosition.z),
+    );
+    const label = state.mission.phase === 'pickup' ? 'Pickup' : 'Drop-off';
+    this.fields.navStatus.textContent = `${label} beacon ${distance}m out`;
   }
 
   renderFeed() {

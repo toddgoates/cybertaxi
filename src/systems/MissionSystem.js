@@ -117,6 +117,16 @@ export class MissionSystem {
       routeLabel: this.routeLabel,
       phase: this.phase,
       pendingPenaltyText: this.pendingPenaltyText,
+      pickupTarget: {
+        name: this.pickupDistrict.name,
+        x: this.pickupZone.position.x,
+        z: this.pickupZone.position.z,
+      },
+      dropoffTarget: {
+        name: this.dropoffDistrict.name,
+        x: this.dropoffZone.position.x,
+        z: this.dropoffZone.position.z,
+      },
     };
   }
 }

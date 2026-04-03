@@ -33,6 +33,12 @@ canvas {
   text-shadow: 0 0 16px rgba(72, 217, 255, 0.3);
 }
 
+.hud__corner {
+  position: absolute;
+  left: 16px;
+  bottom: 92px;
+}
+
 .hud__top,
 .hud__bottom {
   display: grid;
@@ -61,6 +67,10 @@ canvas {
 .panel--feed {
   justify-self: end;
   width: min(460px, 100%);
+}
+
+.panel--nav {
+  width: min(260px, calc(100vw - 32px));
 }
 
 .eyebrow {
@@ -108,6 +118,111 @@ canvas {
   margin-top: 8px;
 }
 
+.navigator {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.navigator__scope {
+  position: relative;
+  width: 160px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(18, 215, 255, 0.08), rgba(6, 10, 18, 0.78) 68%),
+    linear-gradient(180deg, rgba(8, 12, 24, 0.9), rgba(8, 12, 24, 0.5));
+  border: 1px solid rgba(123, 229, 255, 0.22);
+  box-shadow: inset 0 0 28px rgba(18, 215, 255, 0.08);
+  overflow: hidden;
+}
+
+.navigator__ring,
+.navigator__crosshair,
+.navigator__targets,
+.navigator__cab {
+  position: absolute;
+  inset: 0;
+}
+
+.navigator__ring {
+  margin: auto;
+  border-radius: 50%;
+  border: 1px solid rgba(123, 229, 255, 0.16);
+}
+
+.navigator__ring--outer {
+  width: 126px;
+  height: 126px;
+}
+
+.navigator__ring--inner {
+  width: 72px;
+  height: 72px;
+}
+
+.navigator__crosshair::before {
+  content: '';
+  position: absolute;
+  background: rgba(123, 229, 255, 0.15);
+}
+
+.navigator__crosshair--x::before {
+  top: 50%;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+}
+
+.navigator__crosshair--y::before {
+  left: 50%;
+  top: 16px;
+  bottom: 16px;
+  width: 1px;
+}
+
+.navigator__cab::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(135deg, #dff4ff, #12d7ff);
+  border: 1px solid rgba(223, 244, 255, 0.85);
+  box-shadow: 0 0 18px rgba(18, 215, 255, 0.45);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.navigator__target {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  background: rgba(5, 9, 16, 0.92);
+  box-shadow: 0 0 16px currentColor;
+}
+
+.navigator__target--active {
+  width: 14px;
+  height: 14px;
+}
+
+.navigator__target--edge {
+  background: currentColor;
+}
+
+.navigator__target--pickup {
+  color: #12d7ff;
+}
+
+.navigator__target--dropoff {
+  color: #ff4fd8;
+}
+
 .feed__item {
   padding: 8px 10px;
   border-radius: 10px;
@@ -142,6 +257,11 @@ canvas {
   .hud__top,
   .hud__bottom {
     grid-template-columns: 1fr;
+  }
+
+  .hud__corner {
+    left: 12px;
+    bottom: 84px;
   }
 
   .panel--feed {

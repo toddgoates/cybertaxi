@@ -213,8 +213,8 @@ export class PlayerController {
 
     this.hoverTime += delta;
     this.mesh.position.y += Math.sin(this.hoverTime * 7) * 0.018;
-    this.mesh.rotation.z = THREE.MathUtils.damp(this.mesh.rotation.z, -turnInput * 0.18 - this.strafeVelocity * 0.012, 7, delta);
-    this.mesh.rotation.x = THREE.MathUtils.damp(this.mesh.rotation.x, -this.forwardSpeed * 0.003, 6, delta);
+    this.mesh.rotation.z = THREE.MathUtils.damp(this.mesh.rotation.z, -turnInput * 0.08 - this.strafeVelocity * 0.004, 7, delta);
+    this.mesh.rotation.x = THREE.MathUtils.damp(this.mesh.rotation.x, -this.forwardSpeed * 0.0012, 6, delta);
 
     this.hoverFlames.forEach((flame, index) => {
       const flicker = 0.82 + Math.sin(this.hoverTime * 14 + index * 0.9) * 0.14;

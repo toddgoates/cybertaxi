@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { GAME_CONFIG } from './config.js';
 import { InputManager } from '../systems/InputManager.js';
 import { PlayerController } from '../systems/PlayerController.js';
@@ -18,16 +21,19 @@ export class GameApp {
     this.mount = mount;
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x060814);
-    this.scene.fog = new THREE.FogExp2(0x0a1020, 0.0042);
+    this.scene.background = new THREE.Color(0x140d24);
+    this.scene.fog = new THREE.FogExp2(0x180f2d, 0.0026);
 
     this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.1;
 
     this.mount.appendChild(this.renderer.domElement);
+    this.setupPostProcessing();
 
     this.input = new InputManager();
     this.ui = new UIManager(this.mount);
@@ -53,16 +59,24 @@ export class GameApp {
   }
 
   setupLights() {
-    const hemi = new THREE.HemisphereLight(0x5c7dff, 0x10141f, 0.9);
+    const hemi = new THREE.HemisphereLight(0x7fd7ff, 0x1b1022, 1.45);
     this.scene.add(hemi);
 
-    const keyLight = new THREE.DirectionalLight(0x7be2ff, 1.15);
-    keyLight.position.set(40, 80, 20);
-    this.scene.add(keyLight);
+    const ambient = new THREE.AmbientLight(0x8e6cff, 0.58);
+    this.scene.add(ambient);
+  }
 
-    const magentaLight = new THREE.PointLight(0xff4fd8, 18, 180, 2);
-    magentaLight.position.set(0, 60, 0);
-    this.scene.add(magentaLight);
+  setupPostProcessing() {
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+
+    this.bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      0.65,
+      0.45,
+      0.72,
+    );
+    this.composer.addPass(this.bloomPass);
   }
 
   start() {
@@ -103,12 +117,13 @@ export class GameApp {
       rivals: this.rivals.getState(),
     });
 
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
   };
 
   onResize() {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.composer.setSize(window.innerWidth, window.innerHeight);
   }
 }

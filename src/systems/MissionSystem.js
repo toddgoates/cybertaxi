@@ -13,6 +13,7 @@ export class MissionSystem {
     this.effects = effects;
     this.totalCredits = 0;
     this.currentFare = 0;
+    this.originalFare = 0;
     this.phase = 'pickup';
     this.pickupZone = this.createZone(0x00e6ff, this.config.pickupRadius);
     this.dropoffZone = this.createZone(0xff4fd8, this.config.dropoffRadius);
@@ -58,7 +59,8 @@ export class MissionSystem {
 
     this.pickupDistrict = pickup;
     this.dropoffDistrict = dropoff;
-    this.currentFare = THREE.MathUtils.randInt(this.config.baseFareMin, this.config.baseFareMax);
+    this.originalFare = THREE.MathUtils.randInt(this.config.baseFareMin, this.config.baseFareMax);
+    this.currentFare = this.originalFare;
     this.phase = 'pickup';
     this.pendingPenaltyText = '';
     this.pickupZone.visible = true;
@@ -67,7 +69,7 @@ export class MissionSystem {
     this.dropoffZone.position.copy(dropoff.position);
     this.objective = `Pick up passenger in ${pickup.name}`;
     this.routeLabel = formatDistrictTrip(pickup.name, dropoff.name);
-    this.ui.pushFeed(`New fare quoted at ${this.currentFare} credits`, 'good');
+    this.ui.pushFeed(`New fare quoted at ${this.originalFare} credits`, 'good');
   }
 
   update(delta, player) {
@@ -87,6 +89,16 @@ export class MissionSystem {
 
     if (this.phase === 'dropoff') {
       this.currentFare = Math.max(0, this.currentFare - this.config.timePenaltyPerSecond * delta);
+
+      if (this.currentFare === 0) {
+        const compensation = Math.round(this.originalFare * 0.5);
+        this.totalCredits -= compensation;
+        this.pendingPenaltyText = `Passenger refund -${compensation} credits`;
+        this.ui.pushFeed(`Fare failed. Passenger charged you ${compensation} credits`, 'bad');
+        this.startNextFare(player.mesh.position);
+        return;
+      }
+
       if (player.mesh.position.distanceTo(this.dropoffZone.position) < this.config.dropoffRadius) {
         const payout = Math.round(this.currentFare);
         this.totalCredits += payout;

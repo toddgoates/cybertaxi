@@ -21,6 +21,7 @@ export class CityGenerator {
     const colliders = [];
     const districtAnchors = [];
     const flightPaths = [];
+    const stationCandidates = [];
     const districtSpacing = this.config.districtSpacing;
 
     this.addGround();
@@ -29,12 +30,15 @@ export class CityGenerator {
     DISTRICTS.forEach((district) => {
       const center = new THREE.Vector2(district.grid.x * districtSpacing, district.grid.y * districtSpacing);
       districtAnchors.push({ name: district.name, position: new THREE.Vector3(center.x, 18, center.y) });
-      this.addDistrict(district, center, colliders, flightPaths);
+      this.addDistrict(district, center, colliders, flightPaths, stationCandidates);
     });
+
+    const energyStations = this.createEnergyStations(stationCandidates);
 
     return {
       colliders,
       flightPaths,
+      energyStations,
       districtAnchors,
       spawnPoint: new THREE.Vector3(-districtSpacing, 18, -districtSpacing + this.config.districtSize * 0.2),
       getDistrictName: (position) => this.getDistrictName(position),
@@ -77,7 +81,7 @@ export class CityGenerator {
     this.scene.add(rain);
   }
 
-  addDistrict(district, center, colliders, flightPaths) {
+  addDistrict(district, center, colliders, flightPaths, stationCandidates) {
     const group = new THREE.Group();
     const districtSize = this.config.districtSize;
     const halfDistrict = districtSize / 2;
@@ -116,6 +120,11 @@ export class CityGenerator {
           type: 'building',
           min: new THREE.Vector3(posX - width / 2, 0, posZ - depth / 2),
           max: new THREE.Vector3(posX + width / 2, height, posZ + depth / 2),
+        });
+        stationCandidates.push({
+          district: district.name,
+          height,
+          position: new THREE.Vector3(posX, height + 2.5, posZ),
         });
 
         if (Math.random() > 0.45) {
@@ -207,6 +216,31 @@ export class CityGenerator {
     group.add(accent);
 
     this.scene.add(group);
+  }
+
+  createEnergyStations(candidates) {
+    const byDistrict = DISTRICTS.map((district) => {
+      const districtCandidates = candidates
+        .filter((candidate) => candidate.district === district.name)
+        .sort((a, b) => b.height - a.height);
+      return districtCandidates[0];
+    }).filter(Boolean);
+
+    const chosen = [...byDistrict];
+    const remaining = candidates
+      .filter((candidate) => !chosen.includes(candidate))
+      .sort((a, b) => b.height - a.height);
+
+    remaining.forEach((candidate) => {
+      if (chosen.length >= 6) return;
+      const separated = chosen.every((station) => station.position.distanceTo(candidate.position) > this.config.districtSize * 0.3);
+      if (separated) chosen.push(candidate);
+    });
+
+    return chosen.slice(0, 6).map((station, index) => ({
+      name: `Energy Station ${index + 1}`,
+      position: station.position,
+    }));
   }
 
   getDistrictName(position) {

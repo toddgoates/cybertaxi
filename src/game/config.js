@@ -13,6 +13,16 @@ export const GAME_CONFIG = {
     pickupRadius: 12,
     dropoffRadius: 14,
   },
+  energy: {
+    maxEnergy: 100,
+    baseDrainPerSecond: 0.14,
+    motionDrainPerSecond: 0.22,
+    boostDrainPerSecond: 0.5,
+    stationRadius: 14,
+    refuelSeconds: 5,
+    depletedMovementScale: 0.4,
+    emptyPassengerPenalty: 1000,
+  },
   player: {
     maxForwardSpeed: 90,
     maxReverseSpeed: 24,

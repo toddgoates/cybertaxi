@@ -10,6 +10,7 @@ import { CollisionSystem } from '../systems/CollisionSystem.js';
 import { UIManager } from '../systems/UIManager.js';
 import { EffectsHooks } from '../systems/EffectsHooks.js';
 import { MusicManager } from '../systems/MusicManager.js';
+import { EnergySystem } from '../systems/EnergySystem.js';
 
 export class GameApp {
   constructor(mount) {
@@ -41,6 +42,7 @@ export class GameApp {
     this.player = new PlayerController(this.scene, this.input, GAME_CONFIG, this.worldData.spawnPoint);
     this.traffic = new TrafficManager(this.scene, GAME_CONFIG, this.worldData.flightPaths);
     this.missions = new MissionSystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.effects);
+    this.energy = new EnergySystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.missions);
     this.collisions = new CollisionSystem(this.worldData.colliders, GAME_CONFIG, this.ui, this.effects);
     this.cameraController = new CameraController(this.camera, this.player.mesh, GAME_CONFIG);
 
@@ -70,8 +72,9 @@ export class GameApp {
     requestAnimationFrame(this.animate);
     const delta = Math.min(this.clock.getDelta(), 0.033);
 
-    this.player.update(delta);
+    this.player.update(delta, this.energy.getDriveState());
     this.traffic.update(delta);
+    this.energy.update(delta, this.player);
 
     const trafficColliders = this.traffic.getCollidableVehicles();
     const collisionEvents = this.collisions.resolvePlayerCollisions(this.player, trafficColliders, delta);
@@ -83,6 +86,7 @@ export class GameApp {
     this.ui.render({
       player: this.player,
       mission: this.missions.getState(),
+      energy: this.energy.getState(),
       district: this.worldData.getDistrictName(this.player.mesh.position),
       music: this.music.getState(),
     });

@@ -160,36 +160,37 @@ export class PlayerController {
     return root;
   }
 
-  update(delta) {
-    this.updateBoostState(delta);
+  update(delta, driveState = { canBoost: true, movementScale: 1 }) {
+    this.updateBoostState(delta, driveState.canBoost);
 
     const forwardInput = (this.input.isDown('forward') ? 1 : 0) - (this.input.isDown('brake') ? 1 : 0);
     const turnInput = this.input.getAxis('left', 'right');
     const verticalInput = this.input.getAxis('descend', 'ascend');
     const strafeInput = this.input.getAxis('strafeLeft', 'strafeRight');
     const boostMultiplier = this.isBoosting ? this.config.boostSpeedMultiplier : 1;
-    const accelerationMultiplier = this.isBoosting ? this.config.boostAccelerationMultiplier : 1;
+    const accelerationMultiplier = (this.isBoosting ? this.config.boostAccelerationMultiplier : 1) * driveState.movementScale;
+    const maxForwardSpeed = this.config.maxForwardSpeed * boostMultiplier * driveState.movementScale;
 
     if (forwardInput > 0) {
       this.forwardSpeed = Math.min(
         this.forwardSpeed + this.config.acceleration * accelerationMultiplier * delta,
-        this.config.maxForwardSpeed * boostMultiplier,
+        maxForwardSpeed,
       );
     } else if (forwardInput < 0) {
-      this.forwardSpeed = Math.max(this.forwardSpeed - this.config.braking * delta, -this.config.maxReverseSpeed);
+      this.forwardSpeed = Math.max(this.forwardSpeed - this.config.braking * delta, -this.config.maxReverseSpeed * driveState.movementScale);
     } else {
       this.forwardSpeed = damp(this.forwardSpeed, 0, this.config.drag, delta);
     }
 
     this.verticalVelocity = damp(
       this.verticalVelocity,
-      verticalInput * this.config.verticalSpeed,
+      verticalInput * this.config.verticalSpeed * driveState.movementScale,
       this.config.verticalAcceleration / this.config.verticalSpeed,
       delta,
     );
     this.strafeVelocity = damp(
       this.strafeVelocity,
-      strafeInput * this.config.strafeSpeed,
+      strafeInput * this.config.strafeSpeed * driveState.movementScale,
       this.config.strafeAcceleration / this.config.strafeSpeed,
       delta,
     );
@@ -231,14 +232,14 @@ export class PlayerController {
     });
   }
 
-  updateBoostState(delta) {
+  updateBoostState(delta, canBoost) {
     const wantsBoost = this.input.isDown('boost');
 
     if (this.boostCooldownTimer > 0) {
       this.boostCooldownTimer = Math.max(0, this.boostCooldownTimer - delta);
     }
 
-    this.isBoosting = wantsBoost && this.boostCharge > 0 && this.boostCooldownTimer === 0 && this.forwardSpeed > 0;
+    this.isBoosting = canBoost && wantsBoost && this.boostCharge > 0 && this.boostCooldownTimer === 0 && this.forwardSpeed > 0;
 
     if (this.isBoosting) {
       this.boostCharge = Math.max(0, this.boostCharge - delta);

@@ -11,9 +11,10 @@ You pilot a futuristic cab through a neon city, pick up passengers, deliver them
 - Third-person hover taxi driving
 - Procedural neon city with different districts
 - Pickup and drop-off mission loop
-- Fare timer and collision penalties
+- Fare timer, distance-scaled pricing, and collision penalties
 - Boost system with recharge
 - Collidable NPC traffic
+- Energy system with rooftop recharge stations
 - HUD with fare info, dispatch feed, and navigator
 - Background music support with mute toggle
 
@@ -86,7 +87,11 @@ Important rules:
 - Your fare value drains over time while a passenger is onboard.
 - Crashes during a ride reduce the fare further.
 - Crashing while boosting causes a larger penalty.
+- Longer trips pay more than shorter trips.
 - If a fare drops to `0`, the ride fails and you lose 50% of the original fare from your credits.
+- Energy drains over time and faster while boosting.
+- You must stay parked in an energy station for 5 seconds to refill.
+- If energy hits `0` while carrying a passenger, you are charged a `1000` credit penalty.
 
 ## Project Structure
 
@@ -104,6 +109,8 @@ Important rules:
   - NPC traffic spawning and movement
 - `src/systems/MissionSystem.js`
   - Fare generation, pickup/drop-off logic, and payout handling
+- `src/systems/EnergySystem.js`
+  - Energy drain, rooftop recharge stations, and depletion penalties
 - `src/systems/CollisionSystem.js`
   - Building and traffic collision handling
 - `src/systems/UIManager.js`

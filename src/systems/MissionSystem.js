@@ -129,6 +129,15 @@ export class MissionSystem {
     this.effects.onCollision();
   }
 
+  onEnergyDepleted(playerPosition, penalty) {
+    if (this.phase !== 'dropoff') return;
+
+    this.totalCredits -= penalty;
+    this.pendingPenaltyText = `Passenger refund -${penalty} credits`;
+    this.ui.pushFeed(`Passenger stranded. Emergency tow fee ${penalty} credits`, 'bad');
+    this.startNextFare(playerPosition);
+  }
+
   getState() {
     return {
       currentFare: Math.round(this.currentFare),

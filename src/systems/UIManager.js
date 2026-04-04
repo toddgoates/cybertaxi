@@ -49,6 +49,13 @@ export class UIManager {
           <div class="subvalue" data-field="speedText"></div>
           <div class="meter meter--boost"><div class="meter__fill meter__fill--boost" data-field="boostBar"></div></div>
           <div class="subvalue" data-field="boostText"></div>
+          <div class="meter meter--energy"><div class="meter__fill meter__fill--energy" data-field="energyBar"></div></div>
+          <div class="subvalue" data-field="energyText"></div>
+          <div class="charge-ring" data-field="chargeRing">
+            <div class="charge-ring__disc">
+              <div class="charge-ring__label" data-field="chargeLabel"></div>
+            </div>
+          </div>
         </div>
         <div class="panel panel--feed">
           <div class="eyebrow">Cab Dispatch</div>
@@ -70,6 +77,10 @@ export class UIManager {
       speedText: this.root.querySelector('[data-field="speedText"]'),
       boostBar: this.root.querySelector('[data-field="boostBar"]'),
       boostText: this.root.querySelector('[data-field="boostText"]'),
+      energyBar: this.root.querySelector('[data-field="energyBar"]'),
+      energyText: this.root.querySelector('[data-field="energyText"]'),
+      chargeRing: this.root.querySelector('[data-field="chargeRing"]'),
+      chargeLabel: this.root.querySelector('[data-field="chargeLabel"]'),
       navTargets: this.root.querySelector('[data-field="navTargets"]'),
       navStatus: this.root.querySelector('[data-field="navStatus"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
@@ -99,6 +110,12 @@ export class UIManager {
     this.fields.speedText.textContent = `${Math.round(Math.abs(state.player.forwardSpeed))} u/s forward thrust`;
     this.fields.boostBar.style.width = `${Math.round(state.player.getBoostRatio() * 100)}%`;
     this.fields.boostText.textContent = state.player.getBoostStatusText();
+    this.fields.energyBar.style.width = `${Math.round(state.energy.ratio * 100)}%`;
+    this.fields.energyText.textContent = `${state.energy.currentEnergy}% energy | ${state.energy.status}`;
+    const chargePercent = Math.round((state.energy.refuelRatio || 0) * 100);
+    this.fields.chargeRing.style.setProperty('--charge-progress', `${chargePercent}%`);
+    this.fields.chargeRing.classList.toggle('charge-ring--active', chargePercent > 0 && chargePercent < 100);
+    this.fields.chargeLabel.textContent = chargePercent > 0 ? `${chargePercent}%` : '';
     this.fields.musicToggle.textContent = state.music.muted ? 'Music: off' : 'Music: on';
     this.fields.musicStatus.textContent = state.music.label;
     this.renderNavigator(state);
@@ -115,6 +132,7 @@ export class UIManager {
 
     const activeTarget = state.mission.phase === 'pickup' ? state.mission.pickupTarget : state.mission.dropoffTarget;
     targets.push({ ...activeTarget, role: state.mission.phase, active: true });
+    state.energy.stations.forEach((station) => targets.push({ ...station, role: 'energy', active: false }));
 
     this.fields.navTargets.innerHTML = targets
       .map((target) => {
@@ -140,7 +158,7 @@ export class UIManager {
       Math.hypot(activeTarget.x - playerPosition.x, activeTarget.z - playerPosition.z),
     );
     const label = state.mission.phase === 'pickup' ? 'Pickup' : 'Drop-off';
-    this.fields.navStatus.textContent = `${label} beacon ${distance}m out`;
+    this.fields.navStatus.textContent = `${label} beacon ${distance}m out | ${state.energy.status}`;
   }
 
   renderFeed() {

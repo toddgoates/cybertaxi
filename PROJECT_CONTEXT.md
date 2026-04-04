@@ -2,7 +2,7 @@
 
 ## Overview
 
-`cybertaxi` is a small Three.js arcade prototype built with Vite. The player pilots a hovering taxi through a neon city, picks up passengers in one district, and drops them off in another while avoiding collisions that reduce fare payout.
+`cybertaxi` is a small Three.js arcade prototype built with Vite. The player pilots a hovering taxi through a neon city, picks up passengers in one district, and drops them off in another while managing fare decay, traffic collisions, boost usage, and energy consumption.
 
 The project is currently a lightweight, code-driven game with no external assets, no backend, and no save system.
 
@@ -25,8 +25,10 @@ The project is currently a lightweight, code-driven game with no external assets
 - The player controls a hovering taxi in a third-person view.
 - A mission loop selects a random pickup district and a different drop-off district.
 - The active fare decreases over time during the drop-off phase.
-- Collisions apply additional fare penalties.
-- The HUD shows fare, objective, route, credits, district, thrust, dispatch feed, and a navigator.
+- Fares scale with trip distance so longer trips start with higher quoted values.
+- Collisions apply fare penalties, with larger penalties while boosting.
+- The player manages an energy meter that drains over time and faster while boosting.
+- The HUD shows fare, objective, route, credits, district, thrust, boost, energy, dispatch feed, music state, and a navigator.
 
 ## What Has Been Built So Far
 
@@ -35,9 +37,11 @@ The project is currently a lightweight, code-driven game with no external assets
 - Scene setup, lighting, camera, renderer, animation loop
 - Procedural city generation with four themed districts
 - Player movement with forward, reverse, turning, strafing, and vertical hover control
-- Ambient and collidable traffic vehicles following district flight loops
+- Collidable NPC traffic following road and air lanes through each district
 - Mission flow for pickup and drop-off
 - Collision penalties and feedback effects hooks
+- Distance-scaled fare generation and failed-fare penalties
+- Energy system with rooftop recharge stations and depletion penalties
 
 ### HUD and mission guidance
 
@@ -45,8 +49,9 @@ The project is currently a lightweight, code-driven game with no external assets
 - Dispatch feed for mission and penalty events
 - Lower-left navigator panel
 - Navigator shows the active mission target relative to the player
-- During pickup, navigator also shows the future drop-off as a secondary marker
 - Top-right music control with mute toggle and looping background track support from `public/audio/`
+- Navigator also shows yellow energy station dots
+- Energy meter and charging progress ring for rooftop refueling
 
 ### Vehicle art direction changes
 
@@ -61,6 +66,7 @@ The project is currently a lightweight, code-driven game with no external assets
 - The city was enlarged substantially so traversing from one end to another takes longer
 - District spacing is now derived from config instead of fixed hardcoded centers
 - District road/building footprint and traffic loops scale with city size
+- Added larger glowing billboards to liven up the skyline
 
 ## Important Files
 
@@ -77,13 +83,15 @@ The project is currently a lightweight, code-driven game with no external assets
 - `src/systems/CameraController.js`
   - Third-person follow camera
 - `src/systems/TrafficManager.js`
-  - Spawns and updates AI traffic on flight loops
+  - Spawns and updates collidable NPC traffic on road and air routes
 - `src/systems/MissionSystem.js`
-  - Mission selection, pickup/drop-off zones, fare logic, and mission state exposed to UI
+  - Mission selection, pickup/drop-off zones, distance-scaled fare logic, failure penalties, and mission state exposed to UI
+- `src/systems/EnergySystem.js`
+  - Energy drain, rooftop station placement/interaction, and depletion penalties
 - `src/systems/CollisionSystem.js`
   - Player collisions against buildings and traffic
 - `src/systems/UIManager.js`
-  - HUD structure and rendering, including navigator logic and music controls
+  - HUD structure and rendering, including navigator logic, energy display, charging ring, and music controls
 - `src/systems/MusicManager.js`
   - Looping background music playback, autoplay fallback, and mute state
 - `src/styles.css`
@@ -93,10 +101,12 @@ The project is currently a lightweight, code-driven game with no external assets
 
 At the time of writing:
 
-- `worldSize` is `1800`
-- `districtSize` is `560`
+- `worldSize` is `3600`
+- `districtSize` is `1120`
+- `districtSpacing` is `520`
 - Player top forward speed is `90`
 - Mission pickup and drop-off radii are `12` and `14`
+- Energy stations require `5` seconds parked in-zone to refill
 
 These values live in `src/game/config.js` and are the main place to tune feel and scale.
 
@@ -105,15 +115,15 @@ These values live in `src/game/config.js` and are the main place to tune feel an
 - `GameApp` owns the systems and passes state into `UIManager.render(...)` each frame.
 - Systems are mostly independent and communicate through simple method calls and shared state.
 - Mission targets are represented both in-world as visible zone meshes and in UI state as target coordinates.
+- Energy stations are selected from the tallest rooftops generated in the city and rendered as yellow beacon markers.
 - The navigator is not a full map. It is a radar/compass-style relative indicator rendered in HTML/CSS.
 
 ## Known Limitations
 
 - No persistence or game progression beyond total credits in memory
-- No audio
 - No menus, pause flow, settings, or rebinding UI
 - No minimap with actual street or district geometry, only the relative navigator
-- Traffic routes are simple loops per district, not a city-wide network
+- Traffic routes are simple fixed lanes per district, not a city-wide dynamic network
 - Vehicle visuals are mesh primitives only
 
 ## Suggested Next Improvements
@@ -123,7 +133,7 @@ These values live in `src/game/config.js` and are the main place to tune feel an
 - Add better mission variety such as timed bonuses or VIP fares
 - Add environmental landmarks so larger districts are easier to navigate
 - Add basic game states such as start screen, pause, and restart
-- Add sound and music
+- Add more sound design beyond the current music playback
 - Improve vehicle art further with headlights, taillights, and a more sculpted front profile
 
 ## Notes For Future Chat Sessions
@@ -132,8 +142,9 @@ If continuing this project in another session, mention:
 
 - This is a Vite + Three.js hover-taxi game prototype
 - The city has already been enlarged and district placement now scales from config
-- The HUD already includes a lower-left navigator panel for pickup and drop-off guidance
-- The player car has already been updated to an off-white hovering car with wheels, blue roof light, and blue hover flames
-- The main gameplay wiring lives in `GameApp`, `MissionSystem`, `PlayerController`, `CityGenerator`, and `UIManager`
+- The HUD includes a lower-left navigator, energy meter, charging ring, and music controls
+- The player car has been updated to an off-white hovering car with wheels, blue roof light, blue hover flames, and boost flames
+- The game includes collidable NPC traffic, distance-scaled fares, failed-fare penalties, and rooftop energy stations
+- The main gameplay wiring lives in `GameApp`, `MissionSystem`, `PlayerController`, `CityGenerator`, `EnergySystem`, and `UIManager`
 
 This should give the next session enough context to continue without re-discovering the current state from scratch.

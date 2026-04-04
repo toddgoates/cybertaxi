@@ -116,10 +116,6 @@ export class UIManager {
     const activeTarget = state.mission.phase === 'pickup' ? state.mission.pickupTarget : state.mission.dropoffTarget;
     targets.push({ ...activeTarget, role: state.mission.phase, active: true });
 
-    if (state.mission.phase === 'pickup') {
-      targets.push({ ...state.mission.dropoffTarget, role: 'dropoff', active: false });
-    }
-
     this.fields.navTargets.innerHTML = targets
       .map((target) => {
         const dx = target.x - playerPosition.x;

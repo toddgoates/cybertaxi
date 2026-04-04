@@ -128,6 +128,53 @@ export class CityGenerator {
       }
     }
 
+    const billboardPalette = [...district.palette, 0xffffff, 0x7c8dff, 0xff7a59, 0x63ff83];
+    const billboardSpots = [
+      new THREE.Vector3(center.x - boulevard * 1.1, 22, center.y - perimeter * 0.68),
+      new THREE.Vector3(center.x + boulevard * 1.08, 24, center.y + perimeter * 0.62),
+      new THREE.Vector3(center.x - perimeter * 0.72, 20, center.y + boulevard * 1.05),
+    ];
+
+    billboardSpots.forEach((spot, index) => {
+      const boardWidth = randRange(20, 34);
+      const boardHeight = randRange(8, 14);
+      const color = billboardPalette[(index + Math.floor(Math.random() * billboardPalette.length)) % billboardPalette.length];
+      const facingCenter = new THREE.Vector3(center.x - spot.x, 0, center.y - spot.z).normalize();
+      const board = new THREE.Mesh(
+        new THREE.BoxGeometry(boardWidth, boardHeight, 1.4),
+        new THREE.MeshStandardMaterial({
+          color: 0x151a28,
+          emissive: color,
+          emissiveIntensity: 1.25,
+          metalness: 0.2,
+          roughness: 0.28,
+        }),
+      );
+      board.position.copy(spot);
+      board.lookAt(spot.x + facingCenter.x, spot.y, spot.z + facingCenter.z);
+      group.add(board);
+
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(boardWidth + 2.4, boardHeight + 2.2, 0.5),
+        new THREE.MeshStandardMaterial({ color: 0x0c111b, emissive: color, emissiveIntensity: 0.45, metalness: 0.35, roughness: 0.4 }),
+      );
+      frame.position.copy(spot).add(new THREE.Vector3(0, 0, -0.55).applyQuaternion(board.quaternion));
+      frame.quaternion.copy(board.quaternion);
+      group.add(frame);
+
+      [-boardWidth * 0.32, boardWidth * 0.32].forEach((offsetX) => {
+        const support = new THREE.Mesh(
+          new THREE.BoxGeometry(1.1, spot.y - 4, 1.1),
+          new THREE.MeshStandardMaterial({ color: 0x0d131d, metalness: 0.4, roughness: 0.55 }),
+        );
+        support.position.copy(spot);
+        support.position.y = (spot.y - 4) * 0.5;
+        support.position.add(new THREE.Vector3(offsetX, -boardHeight * 0.08, -0.4).applyQuaternion(board.quaternion));
+        support.quaternion.copy(board.quaternion);
+        group.add(support);
+      });
+    });
+
     const roadLoop = [
       new THREE.Vector3(center.x - boulevard, 10, center.y - boulevard),
       new THREE.Vector3(center.x + boulevard, 10, center.y - boulevard),

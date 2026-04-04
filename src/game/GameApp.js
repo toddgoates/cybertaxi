@@ -11,6 +11,7 @@ import { UIManager } from '../systems/UIManager.js';
 import { EffectsHooks } from '../systems/EffectsHooks.js';
 import { MusicManager } from '../systems/MusicManager.js';
 import { EnergySystem } from '../systems/EnergySystem.js';
+import { RivalTaxiManager } from '../systems/rivals/RivalTaxiManager.js';
 
 export class GameApp {
   constructor(mount) {
@@ -44,6 +45,7 @@ export class GameApp {
     this.missions = new MissionSystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.effects);
     this.energy = new EnergySystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.missions);
     this.collisions = new CollisionSystem(this.worldData.colliders, GAME_CONFIG, this.ui, this.effects);
+    this.rivals = new RivalTaxiManager(this.scene, GAME_CONFIG, this.worldData, this.ui);
     this.cameraController = new CameraController(this.camera, this.player.mesh, GAME_CONFIG);
 
     this.resizeHandler = () => this.onResize();
@@ -75,20 +77,30 @@ export class GameApp {
     this.player.update(delta, this.energy.getDriveState());
     this.traffic.update(delta);
     this.energy.update(delta, this.player);
+    const missionState = this.missions.getState();
+    this.rivals.update(delta, this.player, missionState);
 
     const trafficColliders = this.traffic.getCollidableVehicles();
-    const collisionEvents = this.collisions.resolvePlayerCollisions(this.player, trafficColliders, delta);
-    collisionEvents.forEach((event) => this.missions.applyCollisionPenalty(event.penalty, event.source));
+    const rivalColliders = this.rivals.getCollidableVehicles();
+    const collisionEvents = this.collisions.resolvePlayerCollisions(this.player, [...trafficColliders, ...rivalColliders], delta);
+    collisionEvents.forEach((event) => {
+      this.missions.applyCollisionPenalty(event.penalty, event.source);
+      if (event.enemy) {
+        this.rivals.onCollision(event.penalty / GAME_CONFIG.mission.collisionPenalty);
+      }
+    });
 
     this.missions.update(delta, this.player, this.traffic.getVehicles());
     this.cameraController.update(delta, this.player.velocity);
+    const nextMissionState = this.missions.getState();
 
     this.ui.render({
       player: this.player,
-      mission: this.missions.getState(),
+      mission: nextMissionState,
       energy: this.energy.getState(),
       district: this.worldData.getDistrictName(this.player.mesh.position),
       music: this.music.getState(),
+      rivals: this.rivals.getState(),
     });
 
     this.renderer.render(this.scene, this.camera);

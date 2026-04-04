@@ -56,6 +56,9 @@ export class MissionSystem {
     this.totalCredits = 0;
     this.currentFare = 0;
     this.originalFare = 0;
+    this.completedFares = 0;
+    this.perfectFares = 0;
+    this.currentRunHadIncident = false;
     this.phase = 'pickup';
     this.pickupSpots = this.createPickupSpots();
     this.pickupZones = Array.from({ length: PICKUP_OPTION_COUNT }, () => this.createZone(0x00e6ff, this.config.pickupRadius));
@@ -141,6 +144,7 @@ export class MissionSystem {
     this.dropoffDistrict = null;
     this.originalFare = 0;
     this.currentFare = 0;
+    this.currentRunHadIncident = false;
     this.phase = 'pickup';
     this.pendingPenaltyText = 'Choose a passenger to lock in a fare';
     this.pickupZones.forEach((zone, index) => {
@@ -170,6 +174,7 @@ export class MissionSystem {
     this.currentFare = offer.quotedFare;
     this.phase = 'dropoff';
     this.pendingPenaltyText = '';
+    this.currentRunHadIncident = false;
     this.pickupZones.forEach((zone) => {
       zone.visible = false;
       zone.userData.labelSprite.visible = false;
@@ -207,12 +212,16 @@ export class MissionSystem {
         return;
       }
 
-      if (player.mesh.position.distanceTo(this.dropoffZone.position) < this.config.dropoffRadius) {
-        const payout = Math.round(this.currentFare);
-        this.totalCredits += payout;
-        this.ui.pushFeed(`Dropoff complete. Earned ${payout} credits`, 'good');
-        this.effects.onDropoff();
-        this.startNextFare(player.mesh.position);
+        if (player.mesh.position.distanceTo(this.dropoffZone.position) < this.config.dropoffRadius) {
+          const payout = Math.round(this.currentFare);
+          this.totalCredits += payout;
+          this.completedFares += 1;
+          if (!this.currentRunHadIncident && payout >= Math.round(this.originalFare * 0.96)) {
+            this.perfectFares += 1;
+          }
+          this.ui.pushFeed(`Dropoff complete. Earned ${payout} credits`, 'good');
+          this.effects.onDropoff();
+          this.startNextFare(player.mesh.position);
       }
     }
   }
@@ -230,6 +239,7 @@ export class MissionSystem {
     if (this.phase !== 'dropoff') return;
 
     this.currentFare = Math.max(0, this.currentFare - amount);
+    this.currentRunHadIncident = true;
     const rounded = Math.round(amount);
     this.pendingPenaltyText = `-${rounded} credits from ${source}`;
     this.ui.pushFeed(this.pendingPenaltyText, 'bad');
@@ -240,6 +250,7 @@ export class MissionSystem {
     if (this.phase !== 'dropoff') return;
 
     this.totalCredits -= penalty;
+    this.currentRunHadIncident = true;
     this.pendingPenaltyText = `Passenger refund -${penalty} credits`;
     this.ui.pushFeed(`Passenger stranded. Emergency tow fee ${penalty} credits`, 'bad');
     this.startNextFare(playerPosition);
@@ -249,6 +260,8 @@ export class MissionSystem {
     return {
       currentFare: Math.round(this.currentFare),
       totalCredits: this.totalCredits,
+      completedFares: this.completedFares,
+      perfectFares: this.perfectFares,
       objective: this.objective,
       routeLabel: this.routeLabel,
       phase: this.phase,
@@ -257,12 +270,14 @@ export class MissionSystem {
         name: offer.pickupDistrict.name,
         fare: offer.quotedFare,
         x: offer.pickupPosition.x,
+        y: offer.pickupPosition.y,
         z: offer.pickupPosition.z,
       })),
       dropoffTarget: this.dropoffDistrict
         ? {
             name: this.dropoffDistrict.name,
             x: this.dropoffZone.position.x,
+            y: this.dropoffZone.position.y,
             z: this.dropoffZone.position.z,
           }
         : null,

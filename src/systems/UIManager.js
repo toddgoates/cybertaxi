@@ -105,7 +105,7 @@ export class UIManager {
     this.fields.objective.textContent = state.mission.objective;
     this.fields.route.textContent = state.mission.routeLabel;
     this.fields.credits.textContent = `${state.mission.totalCredits} cr`;
-    this.fields.district.textContent = `District: ${state.district}`;
+    this.fields.district.textContent = `District: ${state.district} | Heat: ${state.rivals.tier} | Rivals: ${state.rivals.activeRivals}`;
     this.fields.speedBar.style.width = `${Math.round(state.player.getSpeedRatio() * 100)}%`;
     this.fields.speedText.textContent = `${Math.round(Math.abs(state.player.forwardSpeed))} u/s forward thrust`;
     this.fields.boostBar.style.width = `${Math.round(state.player.getBoostRatio() * 100)}%`;

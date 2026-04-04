@@ -31,16 +31,20 @@ export class CollisionSystem {
     trafficVehicles.forEach((vehicle, index) => {
       const distance = player.mesh.position.distanceTo(vehicle.mesh.position);
       if (distance > this.playerRadius + vehicle.radius) return;
-      const cooldownKey = `traffic-${index}`;
+      const cooldownKey = `traffic-${vehicle.mesh.id ?? index}`;
       if (this.isCoolingDown(cooldownKey, now)) return;
 
       const normal = player.mesh.position.clone().sub(vehicle.mesh.position).setY(0).normalize();
-      player.bounce(normal.lengthSq() === 0 ? new THREE.Vector3(1, 0, 0) : normal, 0.3);
+      const bounceStrength = vehicle.collisionStrength ?? 0.3;
+      player.bounce(normal.lengthSq() === 0 ? new THREE.Vector3(1, 0, 0) : normal, bounceStrength);
       this.cooldowns.set(cooldownKey, now + 900);
       const boosted = player.isBoosting;
+      const basePenalty = vehicle.collisionPenalty ?? (this.penalty + 6);
+      const source = vehicle.collisionSource ?? (boosted ? 'boost traffic collision' : 'traffic collision');
       events.push({
-        penalty: (this.penalty + 6) * (boosted ? this.boostPenaltyMultiplier : 1),
-        source: boosted ? 'boost traffic collision' : 'traffic collision',
+        penalty: basePenalty * (boosted ? this.boostPenaltyMultiplier : 1),
+        source,
+        enemy: vehicle.enemy === true,
       });
     });
 

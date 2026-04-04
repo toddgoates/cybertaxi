@@ -1,11 +1,13 @@
 export const GAME_CONFIG = {
-  worldSize: 1800,
-  districtSize: 560,
+  worldSize: 3600,
+  districtSize: 1120,
+  districtSpacing: 520,
   hoverFloor: 8,
   hoverCeiling: 180,
   mission: {
-    baseFareMin: 90,
-    baseFareMax: 180,
+    baseFareMin: 55,
+    baseFareMax: 115,
+    distanceFareMultiplier: 0.04,
     timePenaltyPerSecond: 2.4,
     collisionPenalty: 12,
     pickupRadius: 12,

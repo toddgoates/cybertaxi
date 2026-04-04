@@ -21,7 +21,7 @@ export class CityGenerator {
     const colliders = [];
     const districtAnchors = [];
     const flightPaths = [];
-    const districtSpacing = this.config.districtSize / 2;
+    const districtSpacing = this.config.districtSpacing;
 
     this.addGround();
     this.addRain();
@@ -59,11 +59,12 @@ export class CityGenerator {
   addRain() {
     const rainCount = 3200;
     const positions = new Float32Array(rainCount * 3);
+    const span = this.config.worldSize * 0.47;
 
     for (let i = 0; i < rainCount; i += 1) {
-      positions[i * 3] = randRange(-420, 420);
+      positions[i * 3] = randRange(-span, span);
       positions[i * 3 + 1] = randRange(10, 220);
-      positions[i * 3 + 2] = randRange(-420, 420);
+      positions[i * 3 + 2] = randRange(-span, span);
     }
 
     const geometry = new THREE.BufferGeometry();
@@ -81,8 +82,8 @@ export class CityGenerator {
     const districtSize = this.config.districtSize;
     const halfDistrict = districtSize / 2;
     const roadHalf = districtSize * 0.42;
-    const buildingInset = districtSize * 0.075;
-    const step = districtSize / 12;
+    const buildingInset = districtSize * 0.05;
+    const step = districtSize / 18;
     const perimeter = halfDistrict * 0.88;
     const boulevard = halfDistrict * 0.5;
     const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x111824, emissive: 0x14243c, emissiveIntensity: 0.22 });
@@ -100,8 +101,8 @@ export class CityGenerator {
         if (Math.abs(x) < buildingInset || Math.abs(z) < buildingInset) continue;
         if (Math.random() > district.density) continue;
 
-        const width = randRange(12, 20);
-        const depth = randRange(12, 20);
+        const width = randRange(12, 22);
+        const depth = randRange(12, 22);
         const height = randRange(...district.height);
         const posX = center.x + x + randRange(-step * 0.16, step * 0.16);
         const posZ = center.y + z + randRange(-step * 0.16, step * 0.16);
@@ -209,7 +210,7 @@ export class CityGenerator {
   }
 
   getDistrictName(position) {
-    const districtSpacing = this.config.districtSize / 2;
+    const districtSpacing = this.config.districtSpacing;
     let closest = DISTRICTS[0];
     let bestDistance = Infinity;
     DISTRICTS.forEach((district) => {

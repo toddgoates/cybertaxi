@@ -17,7 +17,7 @@ export class GameApp {
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x060814);
-    this.scene.fog = new THREE.FogExp2(0x0a1020, 0.0055);
+    this.scene.fog = new THREE.FogExp2(0x0a1020, 0.0042);
 
     this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });

@@ -59,7 +59,10 @@ export class MissionSystem {
 
     this.pickupDistrict = pickup;
     this.dropoffDistrict = dropoff;
-    this.originalFare = THREE.MathUtils.randInt(this.config.baseFareMin, this.config.baseFareMax);
+    const tripDistance = pickup.position.distanceTo(dropoff.position);
+    const baseFare = THREE.MathUtils.randInt(this.config.baseFareMin, this.config.baseFareMax);
+    const distanceBonus = Math.round(tripDistance * this.config.distanceFareMultiplier);
+    this.originalFare = baseFare + distanceBonus;
     this.currentFare = this.originalFare;
     this.phase = 'pickup';
     this.pendingPenaltyText = '';

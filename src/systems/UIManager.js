@@ -130,8 +130,12 @@ export class UIManager {
     const cos = Math.cos(heading);
     const targets = [];
 
-    const activeTarget = state.mission.phase === 'pickup' ? state.mission.pickupTarget : state.mission.dropoffTarget;
-    targets.push({ ...activeTarget, role: state.mission.phase, active: true });
+    if (state.mission.phase === 'pickup') {
+      state.mission.pickupTargets.forEach((target) => targets.push({ ...target, role: 'pickup', active: true }));
+    } else if (state.mission.dropoffTarget) {
+      targets.push({ ...state.mission.dropoffTarget, role: 'dropoff', active: true });
+    }
+
     state.energy.stations.forEach((station) => targets.push({ ...station, role: 'energy', active: false }));
 
     this.fields.navTargets.innerHTML = targets
@@ -150,15 +154,34 @@ export class UIManager {
         if (target.active) classes.push('navigator__target--active');
         if (distance > range) classes.push('navigator__target--edge');
 
-        return `<div class="${classes.join(' ')}" style="transform: translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px));" title="${target.name} ${Math.round(distance)}m"></div>`;
+        const fareLabel = target.fare ? ` | ${target.fare} cr` : '';
+        return `<div class="${classes.join(' ')}" style="transform: translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px));" title="${target.name} ${Math.round(distance)}m${fareLabel}"></div>`;
       })
       .join('');
 
-    const distance = Math.round(
-      Math.hypot(activeTarget.x - playerPosition.x, activeTarget.z - playerPosition.z),
-    );
-    const label = state.mission.phase === 'pickup' ? 'Pickup' : 'Drop-off';
-    this.fields.navStatus.textContent = `${label} beacon ${distance}m out | ${state.energy.status}`;
+    if (state.mission.phase === 'pickup') {
+      const nearestPickup = state.mission.pickupTargets.reduce((nearest, target) => {
+        const distance = Math.hypot(target.x - playerPosition.x, target.z - playerPosition.z);
+        if (!nearest || distance < nearest.distance) {
+          return { distance, fare: target.fare };
+        }
+        return nearest;
+      }, null);
+      const distanceLabel = nearestPickup ? `${Math.round(nearestPickup.distance)}m` : '--';
+      const fareLabel = nearestPickup ? `${nearestPickup.fare} cr` : '--';
+      this.fields.navStatus.textContent = `${state.mission.pickupTargets.length} fares live | Nearest ${distanceLabel} | ${fareLabel} | ${state.energy.status}`;
+      return;
+    }
+
+    if (state.mission.dropoffTarget) {
+      const distance = Math.round(
+        Math.hypot(state.mission.dropoffTarget.x - playerPosition.x, state.mission.dropoffTarget.z - playerPosition.z),
+      );
+      this.fields.navStatus.textContent = `Drop-off beacon ${distance}m out | ${state.energy.status}`;
+      return;
+    }
+
+    this.fields.navStatus.textContent = state.energy.status;
   }
 
   renderFeed() {

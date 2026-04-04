@@ -79,6 +79,7 @@ export class RivalTaxiManager {
     this.spawnSystem = new SpawnSystem(this.config.spawn, config, worldData.colliders);
     this.agents = Array.from({ length: this.config.poolSize }, () => new RivalTaxiAgent(scene, worldData.colliders, this.config.agent));
     this.spawnCooldown = 3;
+    this.spawnSuppressionTimer = 0;
     this.activeVehicles = [];
     this.managerState = {
       forward: new THREE.Vector3(0, 0, -1),
@@ -91,6 +92,7 @@ export class RivalTaxiManager {
     const heatState = this.heatSystem.getState();
     const profile = getHeatProfile(heatState.tier);
     this.spawnCooldown = Math.max(0, this.spawnCooldown - delta);
+    this.spawnSuppressionTimer = Math.max(0, this.spawnSuppressionTimer - delta);
 
     this.updateBasisVectors(player);
     this.recycleFarAgents(player.mesh.position, profile.desiredCount);
@@ -125,7 +127,7 @@ export class RivalTaxiManager {
 
   spawnIfNeeded(player, missionState, heatState, profile) {
     const activeCount = this.getActiveAgents().length;
-    if (activeCount >= profile.desiredCount || this.spawnCooldown > 0) return;
+    if (activeCount >= profile.desiredCount || this.spawnCooldown > 0 || this.spawnSuppressionTimer > 0) return;
 
     const agent = this.agents.find((entry) => !entry.active);
     if (!agent) return;
@@ -189,6 +191,23 @@ export class RivalTaxiManager {
 
   onCollision(severity = 1) {
     this.heatSystem.recordCollision(severity);
+  }
+
+  disruptNearest(origin, limit, radius, suppressSeconds = 0) {
+    const activeAgents = this.getActiveAgents()
+      .filter((agent) => agent.position.distanceToSquared(origin) <= radius * radius)
+      .sort((a, b) => a.position.distanceToSquared(origin) - b.position.distanceToSquared(origin));
+
+    const disrupted = activeAgents.slice(0, limit);
+    disrupted.forEach((agent) => agent.deactivate());
+
+    if (disrupted.length > 0) {
+      this.heatSystem.addHeat(-Math.min(2.5, disrupted.length * 0.18));
+      this.spawnSuppressionTimer = Math.max(this.spawnSuppressionTimer, suppressSeconds);
+    }
+
+    this.activeVehicles = this.getActiveAgents().map((agent) => agent.getVehicle());
+    return disrupted.length;
   }
 
   getCollidableVehicles() {

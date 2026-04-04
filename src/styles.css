@@ -43,6 +43,37 @@ canvas {
   gap: 6px;
 }
 
+.hud__inventory {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(99, 255, 131, 0.24);
+  background: linear-gradient(180deg, rgba(8, 18, 14, 0.92), rgba(8, 12, 24, 0.7));
+  box-shadow: inset 0 0 18px rgba(99, 255, 131, 0.08), 0 0 18px rgba(99, 255, 131, 0.08);
+  color: #c9ffd6;
+}
+
+.hud__inventory--active {
+  border-color: rgba(99, 255, 131, 0.48);
+  box-shadow: inset 0 0 18px rgba(99, 255, 131, 0.12), 0 0 20px rgba(99, 255, 131, 0.16);
+}
+
+.hud__inventory-icon {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #7dffa3;
+}
+
+.hud__inventory-value {
+  min-width: 18px;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
+
 .hud__button {
   pointer-events: auto;
   padding: 10px 14px;
@@ -311,6 +342,12 @@ canvas {
   color: #ffd43b;
   border-width: 1px;
   box-shadow: 0 0 12px rgba(255, 212, 59, 0.85);
+}
+
+.navigator__target--emp {
+  color: #63ff83;
+  border-width: 2px;
+  box-shadow: 0 0 14px rgba(99, 255, 131, 0.95);
 }
 
 .feed__item {

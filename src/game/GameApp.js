@@ -15,6 +15,7 @@ import { EffectsHooks } from '../systems/EffectsHooks.js';
 import { MusicManager } from '../systems/MusicManager.js';
 import { EnergySystem } from '../systems/EnergySystem.js';
 import { RivalTaxiManager } from '../systems/rivals/RivalTaxiManager.js';
+import { EmpSystem } from '../systems/EmpSystem.js';
 
 export class GameApp {
   constructor(mount) {
@@ -52,6 +53,7 @@ export class GameApp {
     this.energy = new EnergySystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.missions);
     this.collisions = new CollisionSystem(this.worldData.colliders, GAME_CONFIG, this.ui, this.effects);
     this.rivals = new RivalTaxiManager(this.scene, GAME_CONFIG, this.worldData, this.ui);
+    this.emp = new EmpSystem(this.scene, this.input, this.worldData, GAME_CONFIG, this.ui);
     this.cameraController = new CameraController(this.camera, this.player.mesh, GAME_CONFIG);
 
     this.resizeHandler = () => this.onResize();
@@ -93,6 +95,7 @@ export class GameApp {
     this.energy.update(delta, this.player);
     const missionState = this.missions.getState();
     this.rivals.update(delta, this.player, missionState);
+    this.emp.update(delta, this.player, this.rivals);
 
     const trafficColliders = this.traffic.getCollidableVehicles();
     const rivalColliders = this.rivals.getCollidableVehicles();
@@ -115,6 +118,7 @@ export class GameApp {
       district: this.worldData.getDistrictName(this.player.mesh.position),
       music: this.music.getState(),
       rivals: this.rivals.getState(),
+      emp: this.emp.getState(),
     });
 
     this.composer.render();

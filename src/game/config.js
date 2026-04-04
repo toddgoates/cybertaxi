@@ -85,4 +85,12 @@ export const GAME_CONFIG = {
       separationDistance: 18,
     },
   },
+  emp: {
+    spawnIntervalSeconds: 180,
+    pickupRadius: 14,
+    maxCharges: 5,
+    maxTargetsPerBlast: 10,
+    blastRadius: 360,
+    respawnDelayAfterUse: 5,
+  },
 };

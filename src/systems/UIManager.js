@@ -6,6 +6,10 @@ export class UIManager {
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud__actions">
+        <div class="hud__inventory" data-field="empInventory">
+          <span class="hud__inventory-icon">EMP</span>
+          <span class="hud__inventory-value" data-field="empCount">0</span>
+        </div>
         <button class="hud__button" type="button" data-field="musicToggle">Music</button>
         <div class="hud__status" data-field="musicStatus"></div>
       </div>
@@ -62,7 +66,7 @@ export class UIManager {
           <div class="feed" data-field="feed"></div>
         </div>
       </div>
-      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | M toggle music</div>
+      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | M toggle music</div>
     `;
     mount.appendChild(this.root);
 
@@ -83,6 +87,8 @@ export class UIManager {
       chargeLabel: this.root.querySelector('[data-field="chargeLabel"]'),
       navTargets: this.root.querySelector('[data-field="navTargets"]'),
       navStatus: this.root.querySelector('[data-field="navStatus"]'),
+      empInventory: this.root.querySelector('[data-field="empInventory"]'),
+      empCount: this.root.querySelector('[data-field="empCount"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       musicStatus: this.root.querySelector('[data-field="musicStatus"]'),
       feed: this.root.querySelector('[data-field="feed"]'),
@@ -116,6 +122,8 @@ export class UIManager {
     this.fields.chargeRing.style.setProperty('--charge-progress', `${chargePercent}%`);
     this.fields.chargeRing.classList.toggle('charge-ring--active', chargePercent > 0 && chargePercent < 100);
     this.fields.chargeLabel.textContent = chargePercent > 0 ? `${chargePercent}%` : '';
+    this.fields.empCount.textContent = state.emp.charges;
+    this.fields.empInventory.classList.toggle('hud__inventory--active', state.emp.charges > 0);
     this.fields.musicToggle.textContent = state.music.muted ? 'Music: off' : 'Music: on';
     this.fields.musicStatus.textContent = state.music.label;
     this.renderNavigator(state);
@@ -134,6 +142,10 @@ export class UIManager {
       state.mission.pickupTargets.forEach((target) => targets.push({ ...target, role: 'pickup', active: true }));
     } else if (state.mission.dropoffTarget) {
       targets.push({ ...state.mission.dropoffTarget, role: 'dropoff', active: true });
+    }
+
+    if (state.emp.pickupTarget) {
+      targets.push({ ...state.emp.pickupTarget, role: 'emp', active: false });
     }
 
     state.energy.stations.forEach((station) => targets.push({ ...station, role: 'energy', active: false }));
@@ -169,7 +181,8 @@ export class UIManager {
       }, null);
       const distanceLabel = nearestPickup ? `${Math.round(nearestPickup.distance)}m` : '--';
       const fareLabel = nearestPickup ? `${nearestPickup.fare} cr` : '--';
-      this.fields.navStatus.textContent = `${state.mission.pickupTargets.length} fares live | Nearest ${distanceLabel} | ${fareLabel} | ${state.energy.status}`;
+      const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
+      this.fields.navStatus.textContent = `${state.mission.pickupTargets.length} fares live | Nearest ${distanceLabel} | ${fareLabel}${empLabel} | ${state.energy.status}`;
       return;
     }
 
@@ -177,7 +190,16 @@ export class UIManager {
       const distance = Math.round(
         Math.hypot(state.mission.dropoffTarget.x - playerPosition.x, state.mission.dropoffTarget.z - playerPosition.z),
       );
-      this.fields.navStatus.textContent = `Drop-off beacon ${distance}m out | ${state.energy.status}`;
+      const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
+      this.fields.navStatus.textContent = `Drop-off beacon ${distance}m out${empLabel} | ${state.energy.status}`;
+      return;
+    }
+
+    if (state.emp.pickupTarget) {
+      const empDistance = Math.round(
+        Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z),
+      );
+      this.fields.navStatus.textContent = `EMP charge ${empDistance}m out | ${state.energy.status}`;
       return;
     }
 

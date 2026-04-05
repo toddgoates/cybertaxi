@@ -25,6 +25,10 @@ export class PlayerController {
 
   createTaxiMesh() {
     const root = new THREE.Group();
+    const visual = new THREE.Group();
+    root.add(visual);
+    this.visualMesh = visual;
+
     const bodyMaterial = new THREE.MeshStandardMaterial({
       color: 0xd7dbe2,
       emissive: 0x0f1622,
@@ -58,37 +62,37 @@ export class PlayerController {
 
     const chassis = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.05, 8.8), bodyMaterial);
     chassis.position.y = 0.2;
-    root.add(chassis);
+    visual.add(chassis);
 
     const hood = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.7, 2.4), bodyMaterial);
     hood.position.set(0, 0.78, -2.25);
-    root.add(hood);
+    visual.add(hood);
 
     const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.25, 3.7), bodyMaterial);
     cabin.position.set(0, 1.18, 0.1);
-    root.add(cabin);
+    visual.add(cabin);
 
     const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.8, 1.2), glassMaterial);
     windshield.position.set(0, 1.45, -0.82);
-    root.add(windshield);
+    visual.add(windshield);
 
     const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.75, 1.05), glassMaterial);
     rearGlass.position.set(0, 1.42, 1.02);
-    root.add(rearGlass);
+    visual.add(rearGlass);
 
     const bumperFront = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.42, 0.42), trimMaterial);
     bumperFront.position.set(0, 0.1, -4.28);
-    root.add(bumperFront);
+    visual.add(bumperFront);
 
     const bumperRear = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.42, 0.42), trimMaterial);
     bumperRear.position.set(0, 0.1, 4.2);
-    root.add(bumperRear);
+    visual.add(bumperRear);
 
     const sideSkirtGeometry = new THREE.BoxGeometry(0.24, 0.42, 6.2);
     [-2.05, 2.05].forEach((x) => {
       const skirt = new THREE.Mesh(sideSkirtGeometry, trimMaterial);
       skirt.position.set(x, -0.05, 0.28);
-      root.add(skirt);
+      visual.add(skirt);
     });
 
     const wheelGeometry = new THREE.CylinderGeometry(0.68, 0.68, 0.5, 18);
@@ -104,17 +108,17 @@ export class PlayerController {
         const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
         wheel.rotation.z = Math.PI / 2;
         wheel.position.set(x, -0.18, z);
-        root.add(wheel);
+        visual.add(wheel);
       });
     });
 
     const roofLightBase = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.18, 0.58), trimMaterial);
     roofLightBase.position.set(0, 1.98, -0.05);
-    root.add(roofLightBase);
+    visual.add(roofLightBase);
 
     const roofLight = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.26, 0.42), lightMaterial);
     roofLight.position.set(0, 2.18, -0.05);
-    root.add(roofLight);
+    visual.add(roofLight);
 
     const flameMaterial = new THREE.MeshStandardMaterial({
       color: 0xbff3ff,
@@ -135,7 +139,7 @@ export class PlayerController {
       flame.position.set(x, y, z);
       flame.rotation.x = Math.PI;
       flame.scale.setScalar(0.92 + index * 0.04);
-      root.add(flame);
+      visual.add(flame);
       return flame;
     });
 
@@ -152,7 +156,7 @@ export class PlayerController {
       flame.position.set(x, 0.15, 4.95);
       flame.rotation.x = Math.PI / 2;
       flame.scale.set(0.7, 0.7, 0.7);
-      root.add(flame);
+      visual.add(flame);
       return flame;
     });
 
@@ -213,8 +217,13 @@ export class PlayerController {
 
     this.hoverTime += delta;
     this.mesh.position.y += Math.sin(this.hoverTime * 7) * 0.018;
-    this.mesh.rotation.z = THREE.MathUtils.damp(this.mesh.rotation.z, -turnInput * 0.08 - this.strafeVelocity * 0.004, 7, delta);
-    this.mesh.rotation.x = THREE.MathUtils.damp(this.mesh.rotation.x, -this.forwardSpeed * 0.0012, 6, delta);
+    this.visualMesh.rotation.z = THREE.MathUtils.damp(
+      this.visualMesh.rotation.z,
+      -turnInput * 0.08 - this.strafeVelocity * 0.004,
+      7,
+      delta,
+    );
+    this.visualMesh.rotation.x = THREE.MathUtils.damp(this.visualMesh.rotation.x, -this.forwardSpeed * 0.0012, 6, delta);
 
     this.hoverFlames.forEach((flame, index) => {
       const flicker = 0.82 + Math.sin(this.hoverTime * 14 + index * 0.9) * 0.14;

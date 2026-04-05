@@ -285,9 +285,9 @@ export class CityGenerator {
     const resources = this.getDistrictResources(district);
     const districtSize = this.config.districtSize;
     const halfDistrict = districtSize / 2;
-    const roadHalf = districtSize * 0.42;
-    const buildingInset = districtSize * 0.05;
-    const step = districtSize / 18;
+    const roadHalf = districtSize * 0.45;
+    const buildingInset = districtSize * 0.038;
+    const step = districtSize / 20;
     const perimeter = halfDistrict * 0.88;
     const boulevard = halfDistrict * 0.5;
     const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x141b29, emissive: 0x15365d, emissiveIntensity: 0.34, metalness: 0.12, roughness: 0.8 });
@@ -305,10 +305,12 @@ export class CityGenerator {
     for (let x = -roadHalf; x <= roadHalf; x += step) {
       for (let z = -roadHalf; z <= roadHalf; z += step) {
         if (Math.abs(x) < buildingInset || Math.abs(z) < buildingInset) continue;
-        if (Math.random() > district.density) continue;
+        const edgeFactor = Math.max(Math.abs(x), Math.abs(z)) / roadHalf;
+        const densityBias = edgeFactor > 0.82 ? 0.08 : edgeFactor < 0.3 ? -0.04 : 0;
+        if (Math.random() > Math.min(0.985, district.density + densityBias)) continue;
 
-        const width = randRange(12, 22);
-        const depth = randRange(12, 22);
+        const width = randRange(11, 20);
+        const depth = randRange(11, 20);
         const height = randRange(...district.height);
         const posX = center.x + x + randRange(-step * 0.16, step * 0.16);
         const posZ = center.y + z + randRange(-step * 0.16, step * 0.16);

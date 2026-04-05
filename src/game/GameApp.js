@@ -55,6 +55,7 @@ export class GameApp {
     this.rivals = new RivalTaxiManager(this.scene, GAME_CONFIG, this.worldData, this.ui);
     this.emp = new EmpSystem(this.scene, this.input, this.worldData, GAME_CONFIG, this.ui);
     this.cameraController = new CameraController(this.camera, this.player.mesh, GAME_CONFIG);
+    this.paused = false;
 
     this.resizeHandler = () => this.onResize();
     window.addEventListener('resize', this.resizeHandler);
@@ -90,25 +91,32 @@ export class GameApp {
     requestAnimationFrame(this.animate);
     const delta = Math.min(this.clock.getDelta(), 0.033);
 
-    this.player.update(delta, this.energy.getDriveState());
-    this.traffic.update(delta);
-    this.energy.update(delta, this.player);
-    const missionState = this.missions.getState();
-    this.rivals.update(delta, this.player, missionState);
-    this.emp.update(delta, this.player, this.rivals);
+    if (this.input.consumePress('pause')) {
+      this.paused = !this.paused;
+    }
 
-    const trafficColliders = this.traffic.getCollidableVehicles();
-    const rivalColliders = this.rivals.getCollidableVehicles();
-    const collisionEvents = this.collisions.resolvePlayerCollisions(this.player, [...trafficColliders, ...rivalColliders], delta);
-    collisionEvents.forEach((event) => {
-      this.missions.applyCollisionPenalty(event.penalty, event.source);
-      if (event.enemy) {
-        this.rivals.onCollision(event.penalty / GAME_CONFIG.mission.collisionPenalty);
-      }
-    });
+    if (!this.paused) {
+      this.player.update(delta, this.energy.getDriveState());
+      this.traffic.update(delta);
+      this.energy.update(delta, this.player);
+      const missionState = this.missions.getState();
+      this.rivals.update(delta, this.player, missionState);
+      this.emp.update(delta, this.player, this.rivals);
 
-    this.missions.update(delta, this.player, this.traffic.getVehicles());
-    this.cameraController.update(delta, this.player.velocity);
+      const trafficColliders = this.traffic.getCollidableVehicles();
+      const rivalColliders = this.rivals.getCollidableVehicles();
+      const collisionEvents = this.collisions.resolvePlayerCollisions(this.player, [...trafficColliders, ...rivalColliders], delta);
+      collisionEvents.forEach((event) => {
+        this.missions.applyCollisionPenalty(event.penalty, event.source);
+        if (event.enemy) {
+          this.rivals.onCollision(event.penalty / GAME_CONFIG.mission.collisionPenalty);
+        }
+      });
+
+      this.missions.update(delta, this.player, this.traffic.getVehicles());
+      this.cameraController.update(delta, this.player.velocity);
+    }
+
     const nextMissionState = this.missions.getState();
 
     this.ui.render({
@@ -119,6 +127,7 @@ export class GameApp {
       music: this.music.getState(),
       rivals: this.rivals.getState(),
       emp: this.emp.getState(),
+      paused: this.paused,
     });
 
     this.composer.render();

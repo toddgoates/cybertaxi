@@ -66,7 +66,13 @@ export class UIManager {
           <div class="feed" data-field="feed"></div>
         </div>
       </div>
-      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | M toggle music</div>
+      <div class="hud__pause" data-field="pauseOverlay">
+        <div class="hud__pause-card">
+          <div class="hud__pause-title">Paused</div>
+          <div class="hud__pause-subtitle">Press Esc to resume</div>
+        </div>
+      </div>
+      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | Esc pause | M toggle music</div>
     `;
     mount.appendChild(this.root);
 
@@ -89,6 +95,7 @@ export class UIManager {
       navStatus: this.root.querySelector('[data-field="navStatus"]'),
       empInventory: this.root.querySelector('[data-field="empInventory"]'),
       empCount: this.root.querySelector('[data-field="empCount"]'),
+      pauseOverlay: this.root.querySelector('[data-field="pauseOverlay"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       musicStatus: this.root.querySelector('[data-field="musicStatus"]'),
       feed: this.root.querySelector('[data-field="feed"]'),
@@ -106,6 +113,7 @@ export class UIManager {
   }
 
   render(state) {
+    this.fields.pauseOverlay.classList.toggle('hud__pause--visible', Boolean(state.paused));
     this.fields.fare.textContent = `${state.mission.currentFare} cr`;
     this.fields.penalty.textContent = state.mission.pendingPenaltyText || 'Timer drains fare every second';
     this.fields.objective.textContent = state.mission.objective;

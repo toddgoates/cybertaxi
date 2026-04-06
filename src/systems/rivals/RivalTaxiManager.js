@@ -6,8 +6,8 @@ import { SpawnSystem } from './SpawnSystem.js';
 function getHeatProfile(heat) {
   if (heat >= 9) {
     return {
-      desiredCount: 16,
-      spawnInterval: 1.4,
+      desiredCount: 18,
+      spawnInterval: 1.15,
       aggression: 0.96,
       speed: 118,
       force: 68,
@@ -19,8 +19,8 @@ function getHeatProfile(heat) {
 
   if (heat >= 6) {
     return {
-      desiredCount: 10,
-      spawnInterval: 2,
+      desiredCount: 12,
+      spawnInterval: 1.65,
       aggression: 0.8,
       speed: 102,
       force: 54,
@@ -32,8 +32,8 @@ function getHeatProfile(heat) {
 
   if (heat >= 3) {
     return {
-      desiredCount: 5,
-      spawnInterval: 2.8,
+      desiredCount: 6,
+      spawnInterval: 2.25,
       aggression: 0.58,
       speed: 88,
       force: 42,
@@ -45,8 +45,8 @@ function getHeatProfile(heat) {
 
   if (heat >= 1) {
     return {
-      desiredCount: 2,
-      spawnInterval: 4.2,
+      desiredCount: 3,
+      spawnInterval: 3.1,
       aggression: 0.34,
       speed: 72,
       force: 28,
@@ -78,7 +78,7 @@ export class RivalTaxiManager {
     this.heatSystem = new HeatSystem({ ...this.config.heat, referenceSpeed: config.player.maxForwardSpeed });
     this.spawnSystem = new SpawnSystem(this.config.spawn, config, worldData.colliders);
     this.agents = Array.from({ length: this.config.poolSize }, () => new RivalTaxiAgent(scene, worldData.colliders, this.config.agent));
-    this.spawnCooldown = 3;
+    this.spawnCooldown = 2;
     this.spawnSuppressionTimer = 0;
     this.activeVehicles = [];
     this.managerState = {

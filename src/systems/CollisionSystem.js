@@ -25,6 +25,8 @@ export class CollisionSystem {
       events.push({
         penalty: this.penalty * (boosted ? this.boostPenaltyMultiplier : 1),
         source: this.getStaticCollisionSource(collider, boosted),
+        position: player.mesh.position.clone(),
+        normal: normal.clone(),
       });
     });
 
@@ -45,6 +47,8 @@ export class CollisionSystem {
         penalty: basePenalty * (boosted ? this.boostPenaltyMultiplier : 1),
         source,
         enemy: vehicle.enemy === true,
+        position: player.mesh.position.clone(),
+        normal: (normal.lengthSq() === 0 ? new THREE.Vector3(1, 0, 0) : normal).clone(),
       });
     });
 

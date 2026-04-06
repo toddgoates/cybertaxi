@@ -123,6 +123,13 @@ export class EmpSystem {
     this.pickupSpots = this.createPickupSpots();
     this.pickupActive = false;
     this.pickupTarget = null;
+    this.audioIndex = 0;
+    this.zapSounds = Array.from({ length: 3 }, () => {
+      const audio = new Audio('/audio/zap.mp3');
+      audio.preload = 'auto';
+      audio.volume = 0.48;
+      return audio;
+    });
   }
 
   createPickupSpots() {
@@ -185,11 +192,19 @@ export class EmpSystem {
 
     this.charges -= 1;
     const eliminated = rivals.disruptNearest(player.mesh.position, this.config.maxTargetsPerBlast, this.config.blastRadius, this.config.respawnDelayAfterUse);
+    this.playZapSound();
     this.effect.visible = true;
     this.effect.userData.timer = 0.65;
     this.effect.position.copy(player.mesh.position);
     this.ui.pushFeed(eliminated > 0 ? `EMP burst disabled ${eliminated} rival taxis` : 'EMP burst discharged with no lock', eliminated > 0 ? 'good' : 'info');
     return { used: true, eliminated };
+  }
+
+  playZapSound() {
+    const audio = this.zapSounds[this.audioIndex];
+    this.audioIndex = (this.audioIndex + 1) % this.zapSounds.length;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
   }
 
   updateEffect(delta, player) {

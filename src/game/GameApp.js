@@ -38,7 +38,7 @@ export class GameApp {
 
     this.input = new InputManager();
     this.ui = new UIManager(this.mount);
-    this.effects = new EffectsHooks();
+    this.effects = new EffectsHooks(this.scene);
     this.music = new MusicManager('/audio/midnight_circuits_1.mp3');
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
@@ -104,12 +104,14 @@ export class GameApp {
       const missionState = this.missions.getState();
       this.rivals.update(delta, this.player, missionState);
       this.emp.update(delta, this.player, this.rivals);
+      this.effects.update(delta);
 
       const trafficColliders = this.traffic.getCollidableVehicles();
       const rivalColliders = this.rivals.getCollidableVehicles();
       const collisionEvents = this.collisions.resolvePlayerCollisions(this.player, [...trafficColliders, ...rivalColliders], delta);
       collisionEvents.forEach((event) => {
         this.missions.applyCollisionPenalty(event.penalty, event.source);
+        this.effects.onCollision(event.position, event.normal);
         if (event.enemy) {
           this.rivals.onCollision(event.penalty / GAME_CONFIG.mission.collisionPenalty);
         }

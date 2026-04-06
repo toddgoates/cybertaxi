@@ -243,7 +243,6 @@ export class MissionSystem {
     const rounded = Math.round(amount);
     this.pendingPenaltyText = `-${rounded} credits from ${source}`;
     this.ui.pushFeed(this.pendingPenaltyText, 'bad');
-    this.effects.onCollision();
   }
 
   onEnergyDepleted(playerPosition, penalty) {

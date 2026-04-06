@@ -24,7 +24,7 @@ export class CollisionSystem {
       const boosted = player.isBoosting;
       events.push({
         penalty: this.penalty * (boosted ? this.boostPenaltyMultiplier : 1),
-        source: boosted ? 'boost impact' : 'impact',
+        source: this.getStaticCollisionSource(collider, boosted),
       });
     });
 
@@ -53,6 +53,14 @@ export class CollisionSystem {
 
   isCoolingDown(key, now) {
     return this.cooldowns.has(key) && this.cooldowns.get(key) > now;
+  }
+
+  getStaticCollisionSource(collider, boosted) {
+    if (collider.type === 'blimp') {
+      return boosted ? 'boosted into a blimp' : 'hit a blimp';
+    }
+
+    return boosted ? 'boost impact' : 'impact';
   }
 
   intersectsBoxSphere(box, center, radius) {

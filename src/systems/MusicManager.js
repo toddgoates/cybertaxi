@@ -8,6 +8,7 @@ export class MusicManager {
     this.audio.preload = 'auto';
     this.muted = window.localStorage.getItem(MUSIC_STORAGE_KEY) === 'true';
     this.audio.muted = this.muted;
+    this.paused = false;
     this.awaitingInteraction = false;
     this.tryStartPlayback = this.tryStartPlayback.bind(this);
     this.handleKeydown = this.handleKeydown.bind(this);
@@ -25,7 +26,7 @@ export class MusicManager {
   }
 
   tryStartPlayback() {
-    if (this.muted) return;
+    if (this.muted || this.paused) return;
 
     this.audio.play()
       .then(() => {
@@ -62,10 +63,23 @@ export class MusicManager {
     this.tryStartPlayback();
   }
 
+  setPaused(paused) {
+    this.paused = paused;
+
+    if (paused) {
+      this.audio.pause();
+      this.awaitingInteraction = false;
+      this.removeInteractionListeners();
+      return;
+    }
+
+    this.tryStartPlayback();
+  }
+
   getState() {
     return {
       muted: this.muted,
-      label: this.muted ? 'Music muted' : this.awaitingInteraction ? 'Music ready on input' : 'Music playing',
+      label: this.muted ? 'Music muted' : this.paused ? 'Music paused' : this.awaitingInteraction ? 'Music ready on input' : 'Music playing',
     };
   }
 }

@@ -93,9 +93,11 @@ export class GameApp {
 
     if (this.input.consumePress('pause')) {
       this.paused = !this.paused;
+      this.music.setPaused(this.paused);
     }
 
     if (!this.paused) {
+      this.city.update(delta);
       this.player.update(delta, this.energy.getDriveState());
       this.traffic.update(delta);
       this.energy.update(delta, this.player);

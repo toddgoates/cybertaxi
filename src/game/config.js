@@ -3,7 +3,7 @@ export const GAME_CONFIG = {
   districtSize: 1120,
   districtSpacing: 520,
   hoverFloor: 8,
-  hoverCeiling: 180,
+  hoverCeiling: 220,
   mission: {
     baseFareMin: 55,
     baseFareMax: 115,

@@ -102,6 +102,7 @@ export class CityGenerator {
     this.config = config;
     this.skyTexture = createSkyTexture();
     this.districtResources = new Map();
+    this.skySearchlights = [];
   }
 
   build() {
@@ -120,6 +121,9 @@ export class CityGenerator {
       districtAnchors.push({ name: district.name, position: new THREE.Vector3(center.x, 18, center.y) });
       this.addDistrict(district, center, colliders, flightPaths, stationCandidates);
     });
+
+    this.addSkySearchlights(stationCandidates);
+    this.addSkyBlimps(colliders);
 
     const energyStations = this.createEnergyStations(stationCandidates);
 
@@ -190,6 +194,248 @@ export class CityGenerator {
       new THREE.PointsMaterial({ color: 0x9fd8ff, size: 0.9, transparent: true, opacity: 0.5 }),
     );
     this.scene.add(rain);
+  }
+
+  addSkySearchlights(candidates) {
+    const beamGeometry = new THREE.CylinderGeometry(3.8, 13.5, 180, 24, 1, true);
+    const capGeometry = new THREE.SphereGeometry(4.6, 18, 18);
+    const mastGeometry = new THREE.CylinderGeometry(2.8, 3.6, 16, 12);
+    const baseGeometry = new THREE.CylinderGeometry(7.2, 8.8, 5.5, 16);
+    const beamColors = [0x7be5ff, 0xff7ee6, 0xffef7a];
+    const searchlightAnchors = this.selectSearchlightAnchors(candidates);
+
+    searchlightAnchors.forEach((anchor, index) => {
+      const color = beamColors[index % beamColors.length];
+      const group = new THREE.Group();
+      group.position.copy(anchor);
+
+      const base = new THREE.Mesh(
+        baseGeometry,
+        new THREE.MeshStandardMaterial({ color: 0x151e2d, emissive: 0x08111d, emissiveIntensity: 0.24, metalness: 0.36, roughness: 0.6 }),
+      );
+      base.position.y = 2.75;
+      group.add(base);
+
+      const mast = new THREE.Mesh(
+        mastGeometry,
+        new THREE.MeshStandardMaterial({ color: 0x1d2940, emissive: 0x0b1526, emissiveIntensity: 0.3, metalness: 0.28, roughness: 0.54 }),
+      );
+      mast.position.y = 13;
+      group.add(mast);
+
+      const head = new THREE.Group();
+      head.position.y = 20;
+      group.add(head);
+
+      const emitter = new THREE.Mesh(
+        new THREE.BoxGeometry(8.2, 4.2, 6.4),
+        new THREE.MeshStandardMaterial({ color: 0x243149, emissive: color, emissiveIntensity: 0.18, metalness: 0.42, roughness: 0.42 }),
+      );
+      head.add(emitter);
+
+      const lens = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.9, 1.9, 4.8, 18),
+        new THREE.MeshBasicMaterial({ color, toneMapped: false }),
+      );
+      lens.rotation.z = Math.PI / 2;
+      lens.position.z = -4.2;
+      head.add(lens);
+
+      const beam = new THREE.Mesh(
+        beamGeometry,
+        new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.12,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+        }),
+      );
+      beam.position.y = -90;
+      beam.rotation.z = Math.PI / 2;
+      head.add(beam);
+
+      const beamCap = new THREE.Mesh(
+        capGeometry,
+        new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.16,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          toneMapped: false,
+        }),
+      );
+      beamCap.scale.set(1.3, 0.45, 1.3);
+      beamCap.position.y = -178;
+      head.add(beamCap);
+
+      const target = new THREE.Object3D();
+      target.position.copy(anchor).add(new THREE.Vector3(0, 180, 0));
+      this.scene.add(target);
+
+      const light = new THREE.SpotLight(color, 200, 420, 0.16, 0.35, 1.2);
+      light.position.set(0, 0, 0);
+      light.target = target;
+      light.castShadow = false;
+      head.add(light);
+
+      this.scene.add(group);
+      this.skySearchlights.push({
+        group,
+        head,
+        target,
+        beam,
+        beamCap,
+        baseX: anchor.x,
+        baseZ: anchor.z,
+        phase: index * 1.9,
+        yawAmplitude: 0.8 + index * 0.08,
+        pitchBase: 0.95,
+        pitchAmplitude: 0.18 + index * 0.02,
+        sweepSpeed: 0.34 + index * 0.05,
+      });
+    });
+  }
+
+  selectSearchlightAnchors(candidates) {
+    const anchors = [];
+    const sortedCandidates = [...candidates].sort((a, b) => b.height - a.height);
+
+    sortedCandidates.forEach((candidate) => {
+      if (anchors.length >= 3) return;
+      const anchor = candidate.position.clone();
+      const separated = anchors.every((existing) => existing.distanceTo(anchor) > this.config.districtSize * 0.55);
+      if (!separated) return;
+      anchors.push(anchor);
+    });
+
+    if (anchors.length === 3) {
+      return anchors;
+    }
+
+    const fallbackAnchors = [
+      new THREE.Vector3(-860, 96, -160),
+      new THREE.Vector3(0, 112, 40),
+      new THREE.Vector3(860, 100, 180),
+    ];
+    return [...anchors, ...fallbackAnchors.slice(anchors.length)].slice(0, 3);
+  }
+
+  addSkyBlimps(colliders) {
+    const hullMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2a3140,
+      emissive: 0x0b1324,
+      emissiveIntensity: 0.32,
+      metalness: 0.28,
+      roughness: 0.54,
+    });
+    const gondolaMaterial = new THREE.MeshStandardMaterial({
+      color: 0x131c2b,
+      emissive: 0x08111d,
+      emissiveIntensity: 0.26,
+      metalness: 0.22,
+      roughness: 0.62,
+    });
+    const finMaterial = new THREE.MeshStandardMaterial({
+      color: 0x1e2637,
+      emissive: 0x0a1020,
+      emissiveIntensity: 0.24,
+      metalness: 0.32,
+      roughness: 0.56,
+    });
+    const hullGeometry = new THREE.SphereGeometry(1, 30, 22);
+    const gondolaGeometry = new THREE.BoxGeometry(11, 3.6, 4.8);
+    const finGeometry = new THREE.BoxGeometry(4.8, 0.7, 8);
+    const pylonGeometry = new THREE.BoxGeometry(0.36, 3.5, 0.36);
+    const lightStripGeometry = new THREE.BoxGeometry(1.8, 0.2, 40);
+    const lightRingGeometry = new THREE.TorusGeometry(4.2, 0.2, 8, 28);
+
+    const positions = [
+      new THREE.Vector3(-720, 164, -180),
+      new THREE.Vector3(690, 154, -260),
+      new THREE.Vector3(-610, 176, 560),
+      new THREE.Vector3(760, 160, 460),
+      new THREE.Vector3(0, 188, 0),
+      new THREE.Vector3(220, 148, -760),
+    ];
+
+    positions.forEach((position, index) => {
+      const group = new THREE.Group();
+      group.position.copy(position);
+      group.rotation.y = randRange(0, Math.PI * 2);
+      group.rotation.z = randRange(-0.08, 0.08);
+
+      const hullLength = randRange(42, 56);
+      const hullHeight = randRange(11.5, 15.5);
+      const hullWidth = randRange(14, 18);
+      const neonColor = GLOBAL_NEON_PALETTE[index % GLOBAL_NEON_PALETTE.length];
+      const neonMaterial = new THREE.MeshBasicMaterial({ color: neonColor, toneMapped: false });
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: neonColor,
+        transparent: true,
+        opacity: 0.7,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false,
+      });
+
+      const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+      hull.scale.set(hullWidth * 0.5, hullHeight * 0.5, hullLength * 0.5);
+      group.add(hull);
+
+      const gondola = new THREE.Mesh(gondolaGeometry, gondolaMaterial);
+      gondola.position.set(0, -hullHeight * 0.52, hullLength * 0.08);
+      group.add(gondola);
+
+      [-2.6, 2.6].forEach((x) => {
+        const pylon = new THREE.Mesh(pylonGeometry, finMaterial);
+        pylon.position.set(x, -hullHeight * 0.34, hullLength * 0.07);
+        group.add(pylon);
+      });
+
+      [
+        { x: 0, y: hullHeight * 0.06, z: hullLength * 0.42, sx: 1.2, sy: 1, sz: 1 },
+        { x: 0, y: -hullHeight * 0.1, z: hullLength * 0.42, sx: 1.2, sy: 1, sz: 1 },
+        { x: hullWidth * 0.36, y: 0, z: hullLength * 0.4, sx: 1, sy: 1, sz: 0.82 },
+        { x: -hullWidth * 0.36, y: 0, z: hullLength * 0.4, sx: 1, sy: 1, sz: 0.82 },
+      ].forEach(({ x, y, z, sx, sy, sz }) => {
+        const fin = new THREE.Mesh(finGeometry, finMaterial);
+        fin.position.set(x, y, z);
+        fin.scale.set(sx, sy, sz);
+        if (x !== 0) fin.rotation.z = Math.PI / 2;
+        group.add(fin);
+      });
+
+      [-1, 1].forEach((xDir) => {
+        const strip = new THREE.Mesh(lightStripGeometry, glowMaterial);
+        strip.position.set(xDir * (hullWidth * 0.34), 0, 0);
+        group.add(strip);
+      });
+
+      [-0.18, 0.22].forEach((zFactor) => {
+        const ring = new THREE.Mesh(lightRingGeometry, neonMaterial);
+        ring.rotation.y = Math.PI / 2;
+        ring.scale.set(hullWidth * 0.2, hullHeight * 0.16, 1);
+        ring.position.set(0, 0, hullLength * zFactor);
+        group.add(ring);
+      });
+
+      const noseLight = new THREE.Mesh(new THREE.SphereGeometry(1.3, 16, 16), glowMaterial);
+      noseLight.position.set(0, 0, -hullLength * 0.5);
+      noseLight.scale.set(1.2, 1, 1.6);
+      group.add(noseLight);
+
+      this.scene.add(group);
+
+      colliders.push({
+        type: 'blimp',
+        min: new THREE.Vector3(position.x - hullWidth * 0.5, position.y - hullHeight * 0.7, position.z - hullLength * 0.5),
+        max: new THREE.Vector3(position.x + hullWidth * 0.5, position.y + hullHeight * 0.5, position.z + hullLength * 0.5),
+      });
+    });
   }
 
   getDistrictResources(district) {
@@ -453,5 +699,24 @@ export class CityGenerator {
       }
     });
     return closest.name;
+  }
+
+  update(delta) {
+    if (this.skySearchlights.length === 0) return;
+
+    const time = performance.now() * 0.001;
+    this.skySearchlights.forEach((searchlight, index) => {
+      const swing = Math.sin(time * searchlight.sweepSpeed + searchlight.phase);
+      const nod = Math.sin(time * (searchlight.sweepSpeed * 1.35) + searchlight.phase * 0.8);
+      searchlight.group.rotation.y = swing * searchlight.yawAmplitude;
+      searchlight.head.rotation.z = searchlight.pitchBase + nod * searchlight.pitchAmplitude;
+      searchlight.beam.material.opacity = 0.1 + (nod * 0.5 + 0.5) * 0.05;
+      searchlight.beamCap.material.opacity = 0.13 + (swing * 0.5 + 0.5) * 0.07;
+      searchlight.target.position.set(
+        searchlight.baseX + Math.sin(time * searchlight.sweepSpeed + searchlight.phase) * (180 + index * 36),
+        290 + Math.cos(time * (searchlight.sweepSpeed * 1.2) + searchlight.phase) * 24,
+        searchlight.baseZ + Math.cos(time * searchlight.sweepSpeed + searchlight.phase) * (150 + index * 28),
+      );
+    });
   }
 }

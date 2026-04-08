@@ -139,6 +139,10 @@ export class EmpSystem {
     })));
   }
 
+  setStartingCharges(count) {
+    this.charges = THREE.MathUtils.clamp(Math.round(count), 0, this.config.maxCharges);
+  }
+
   update(delta, player, rivals) {
     this.updateSpawn(delta, player);
     this.updatePickup(delta, player);

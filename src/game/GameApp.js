@@ -18,8 +18,9 @@ import { RivalTaxiManager } from '../systems/rivals/RivalTaxiManager.js';
 import { EmpSystem } from '../systems/EmpSystem.js';
 
 export class GameApp {
-  constructor(mount) {
+  constructor(mount, options = {}) {
     this.mount = mount;
+    this.options = options;
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x140d24);
@@ -57,8 +58,43 @@ export class GameApp {
     this.cameraController = new CameraController(this.camera, this.player.mesh, GAME_CONFIG);
     this.paused = false;
 
+    this.applyDebugFlags();
+
     this.resizeHandler = () => this.onResize();
     window.addEventListener('resize', this.resizeHandler);
+  }
+
+  applyDebugFlags() {
+    if (!import.meta.env.DEV || !this.options.debug) return;
+
+    const { startingCredits, startingHeat, startingRivals, startingEmpCharges } = this.options.debug;
+    const applied = [];
+
+    if (startingCredits != null) {
+      this.missions.setStartingCredits(startingCredits);
+      applied.push(`credits=${startingCredits}`);
+    }
+
+    if (startingHeat != null || startingRivals != null) {
+      const result = this.rivals.setDebugState({
+        startingHeat,
+        startingRivals,
+        player: this.player,
+        missionState: this.missions.getState(),
+      });
+
+      if (startingHeat != null) applied.push(`heat=${result.heat}`);
+      if (startingRivals != null) applied.push(`rivals=${result.rivals}`);
+    }
+
+    if (startingEmpCharges != null) {
+      this.emp.setStartingCharges(startingEmpCharges);
+      applied.push(`emp=${this.emp.charges}`);
+    }
+
+    if (applied.length > 0) {
+      this.ui.pushFeed(`DEV flags active: ${applied.join(' | ')}`, 'info');
+    }
   }
 
   setupLights() {

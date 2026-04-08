@@ -87,6 +87,26 @@ export class RivalTaxiManager {
     };
   }
 
+  setDebugState({ startingHeat, startingRivals, player, missionState }) {
+    const desiredRivals = startingRivals == null ? null : THREE.MathUtils.clamp(Math.round(startingRivals), 0, this.config.poolSize);
+    const derivedHeat = desiredRivals == null ? 0 : this.getMinimumHeatForRivals(desiredRivals);
+    const heat = THREE.MathUtils.clamp(
+      Math.max(startingHeat ?? 0, derivedHeat),
+      0,
+      this.config.heat.maxHeat,
+    );
+
+    this.heatSystem.setHeat(heat);
+    this.spawnCooldown = 0;
+
+    if (desiredRivals != null && desiredRivals > 0) {
+      this.seedRivals(player, missionState, desiredRivals);
+    }
+
+    this.activeVehicles = this.getActiveAgents().map((agent) => agent.getVehicle());
+    return { heat: this.heatSystem.getState().tier, rivals: this.activeVehicles.length };
+  }
+
   update(delta, player, missionState) {
     this.heatSystem.update(delta, player, missionState);
     const heatState = this.heatSystem.getState();
@@ -107,6 +127,39 @@ export class RivalTaxiManager {
       this.managerState.forward.set(0, 0, -1);
     }
     this.managerState.right.crossVectors(this.managerState.forward, _up).normalize();
+  }
+
+  seedRivals(player, missionState, desiredCount) {
+    const heatState = this.heatSystem.getState();
+    const profile = getHeatProfile(heatState.tier);
+
+    this.updateBasisVectors(player);
+    for (let activeCount = this.getActiveAgents().length; activeCount < desiredCount; activeCount += 1) {
+      const agent = this.agents.find((entry) => !entry.active);
+      if (!agent) break;
+
+      const spawnPoint = this.spawnSystem.findSpawnPoint(player, heatState, 16);
+      const behavior = this.chooseBehavior(profile, activeCount, missionState);
+      const spawnVelocity = player.velocity.lengthSq() > 1 ? player.velocity : this.managerState.forward;
+      agent.activate(spawnPoint, behavior, {
+        aggression: profile.aggression,
+        maxSpeed: profile.speed,
+        maxForce: profile.force,
+        collisionPenalty: profile.collisionPenalty,
+        collisionStrength: profile.collisionStrength,
+        collisionSource: behavior === 'rammer' ? 'rammed by rival taxi' : behavior === 'blocker' ? 'boxed in by rival taxi' : 'intercepted by rival taxi',
+        initialVelocity: spawnVelocity,
+        swarmSlot: activeCount % 4,
+      });
+    }
+  }
+
+  getMinimumHeatForRivals(count) {
+    if (count >= 16) return 9;
+    if (count >= 10) return 6;
+    if (count >= 5) return 3;
+    if (count >= 1) return 1;
+    return 0;
   }
 
   recycleFarAgents(playerPosition, desiredCount) {

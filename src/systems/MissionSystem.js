@@ -46,6 +46,10 @@ function formatDistrictTrip(from, to) {
   return `${from} -> ${to}`;
 }
 
+function randomInt(min, max) {
+  return THREE.MathUtils.randInt(min, max);
+}
+
 export class MissionSystem {
   constructor(scene, worldData, config, ui, effects) {
     this.scene = scene;
@@ -60,6 +64,9 @@ export class MissionSystem {
     this.perfectFares = 0;
     this.currentRunHadIncident = false;
     this.phase = 'pickup';
+    this.nextSpecialFareCredits = this.config.specialFareThreshold;
+    this.queuedSpecialFares = 0;
+    this.activeSpecialFare = null;
     this.pickupSpots = this.createPickupSpots();
     this.pickupZones = Array.from({ length: PICKUP_OPTION_COUNT }, () => this.createZone(0x00e6ff, this.config.pickupRadius));
     this.dropoffZone = this.createZone(0xff4fd8, this.config.dropoffRadius);
@@ -107,8 +114,57 @@ export class MissionSystem {
     const labelSprite = createFareLabelSprite();
     labelSprite.visible = false;
     group.add(labelSprite);
-    group.userData.labelSprite = labelSprite;
+    group.userData = { labelSprite, ring, beacon, baseColor: color };
     return group;
+  }
+
+  setZoneColor(zone, color) {
+    zone.userData.ring.material.color.setHex(color);
+    zone.userData.ring.material.emissive.setHex(color);
+    zone.userData.beacon.material.emissive.setHex(color);
+  }
+
+  buildOffer(pickup, districts, special = false) {
+    let dropoff = districts[Math.floor(Math.random() * districts.length)];
+
+    while (dropoff.name === pickup.name) {
+      dropoff = districts[Math.floor(Math.random() * districts.length)];
+    }
+
+    const tripDistance = pickup.position.distanceTo(dropoff.position);
+    const baseFare = randomInt(this.config.baseFareMin, this.config.baseFareMax);
+    const distanceBonus = Math.round(tripDistance * this.config.distanceFareMultiplier);
+    const quotedFare = baseFare + distanceBonus;
+
+    return {
+      pickupId: pickup.id,
+      pickupDistrict: pickup.district,
+      pickupPosition: pickup.position.clone(),
+      dropoffDistrict: dropoff,
+      quotedFare: special ? Math.round(quotedFare * this.config.specialFarePayoutMultiplier) : quotedFare,
+      special,
+      timeLimitSeconds: special ? randomInt(this.config.specialFareMinSeconds, this.config.specialFareMaxSeconds) : null,
+    };
+  }
+
+  maybeQueueSpecialFare() {
+    let queued = 0;
+    while (this.totalCredits >= this.nextSpecialFareCredits) {
+      this.queuedSpecialFares += 1;
+      queued += 1;
+      this.nextSpecialFareCredits += this.config.specialFareThreshold;
+    }
+
+    if (queued > 0) {
+      this.ui.pushFeed('Priority fare unlocked on the grid', 'info');
+    }
+  }
+
+  setStartingCredits(amount) {
+    this.totalCredits = Math.max(0, Math.round(amount));
+    const threshold = this.config.specialFareThreshold;
+    this.nextSpecialFareCredits = Math.floor(this.totalCredits / threshold + 1) * threshold;
+    this.queuedSpecialFares = 0;
   }
 
   startNextFare(playerPosition = null) {
@@ -120,30 +176,22 @@ export class MissionSystem {
     const pickupPool = pickupCandidates.length >= PICKUP_OPTION_COUNT ? pickupCandidates : this.pickupSpots;
     const shuffledPool = [...pickupPool].sort(() => Math.random() - 0.5);
 
-    this.pickupOffers = shuffledPool.slice(0, PICKUP_OPTION_COUNT).map((pickup) => {
-      let dropoff = districts[Math.floor(Math.random() * districts.length)];
+    this.pickupOffers = shuffledPool.slice(0, PICKUP_OPTION_COUNT).map((pickup) => this.buildOffer(pickup, districts));
 
-      while (dropoff.name === pickup.name) {
-        dropoff = districts[Math.floor(Math.random() * districts.length)];
-      }
-
-      const tripDistance = pickup.position.distanceTo(dropoff.position);
-      const baseFare = THREE.MathUtils.randInt(this.config.baseFareMin, this.config.baseFareMax);
-      const distanceBonus = Math.round(tripDistance * this.config.distanceFareMultiplier);
-      const quotedFare = baseFare + distanceBonus;
-
-      return {
-        pickupDistrict: pickup.district,
-        pickupPosition: pickup.position.clone(),
-        dropoffDistrict: dropoff,
-        quotedFare,
-      };
-    });
+    if (this.queuedSpecialFares > 0 && this.pickupOffers.length > 0) {
+      const usedPickups = new Set(this.pickupOffers.map((offer) => offer.pickupId));
+      const specialPickup = shuffledPool.slice(PICKUP_OPTION_COUNT).find((pickup) => !usedPickups.has(pickup.id)) ?? shuffledPool[0];
+      const replaceIndex = Math.min(this.pickupOffers.length - 1, randomInt(0, this.pickupOffers.length - 1));
+      this.pickupOffers[replaceIndex] = this.buildOffer(specialPickup, districts, true);
+      this.queuedSpecialFares -= 1;
+      this.ui.pushFeed('Priority fare beacon is live', 'info');
+    }
 
     this.pickupDistrict = null;
     this.dropoffDistrict = null;
     this.originalFare = 0;
     this.currentFare = 0;
+    this.activeSpecialFare = null;
     this.currentRunHadIncident = false;
     this.phase = 'pickup';
     this.pendingPenaltyText = 'Choose a passenger to lock in a fare';
@@ -152,6 +200,7 @@ export class MissionSystem {
       zone.visible = Boolean(offer);
       if (offer) {
         zone.position.copy(offer.pickupPosition);
+        this.setZoneColor(zone, offer.special ? 0x58a6ff : zone.userData.baseColor);
         updateFareLabelSprite(zone.userData.labelSprite, `${offer.quotedFare} cr`);
         zone.userData.labelSprite.visible = true;
       } else {
@@ -172,18 +221,33 @@ export class MissionSystem {
     this.dropoffDistrict = offer.dropoffDistrict;
     this.originalFare = offer.quotedFare;
     this.currentFare = offer.quotedFare;
+    this.activeSpecialFare = offer.special
+      ? {
+          timeLimitSeconds: offer.timeLimitSeconds,
+          timeRemaining: offer.timeLimitSeconds,
+          penaltyLoss: 0,
+        }
+      : null;
     this.phase = 'dropoff';
     this.pendingPenaltyText = '';
     this.currentRunHadIncident = false;
     this.pickupZones.forEach((zone) => {
       zone.visible = false;
       zone.userData.labelSprite.visible = false;
+      this.setZoneColor(zone, zone.userData.baseColor);
     });
     this.dropoffZone.visible = true;
     this.dropoffZone.position.copy(offer.dropoffDistrict.position);
-    this.objective = `Deliver passenger to ${this.dropoffDistrict.name}`;
-    this.routeLabel = formatDistrictTrip(this.pickupDistrict.name, this.dropoffDistrict.name);
-    this.ui.pushFeed(`Passenger onboard. Fare locked at ${this.originalFare} credits`, 'info');
+    this.objective = offer.special ? `Priority fare to ${this.dropoffDistrict.name}` : `Deliver passenger to ${this.dropoffDistrict.name}`;
+    this.routeLabel = offer.special
+      ? `${formatDistrictTrip(this.pickupDistrict.name, this.dropoffDistrict.name)} | ${offer.timeLimitSeconds}s priority window`
+      : formatDistrictTrip(this.pickupDistrict.name, this.dropoffDistrict.name);
+    this.ui.pushFeed(
+      offer.special
+        ? `Priority fare onboard. ${offer.timeLimitSeconds}s to earn up to ${this.originalFare} credits`
+        : `Passenger onboard. Fare locked at ${this.originalFare} credits`,
+      'info',
+    );
     this.effects.onPickup();
   }
 
@@ -201,7 +265,14 @@ export class MissionSystem {
     }
 
     if (this.phase === 'dropoff') {
-      this.currentFare = Math.max(0, this.currentFare - this.config.timePenaltyPerSecond * delta);
+      if (this.activeSpecialFare) {
+        this.activeSpecialFare.timeRemaining = Math.max(0, this.activeSpecialFare.timeRemaining - delta);
+        const timedFare = this.originalFare * (this.activeSpecialFare.timeRemaining / this.activeSpecialFare.timeLimitSeconds);
+        this.currentFare = Math.max(0, timedFare - this.activeSpecialFare.penaltyLoss);
+        this.routeLabel = `${formatDistrictTrip(this.pickupDistrict.name, this.dropoffDistrict.name)} | ${Math.ceil(this.activeSpecialFare.timeRemaining)}s priority window`;
+      } else {
+        this.currentFare = Math.max(0, this.currentFare - this.config.timePenaltyPerSecond * delta);
+      }
 
       if (this.currentFare === 0) {
         const compensation = Math.round(this.originalFare * 0.5);
@@ -215,11 +286,17 @@ export class MissionSystem {
         if (player.mesh.position.distanceTo(this.dropoffZone.position) < this.config.dropoffRadius) {
           const payout = Math.round(this.currentFare);
           this.totalCredits += payout;
+          this.maybeQueueSpecialFare();
           this.completedFares += 1;
           if (!this.currentRunHadIncident && payout >= Math.round(this.originalFare * 0.96)) {
             this.perfectFares += 1;
           }
-          this.ui.pushFeed(`Dropoff complete. Earned ${payout} credits`, 'good');
+          this.ui.pushFeed(
+            this.activeSpecialFare
+              ? `Priority drop-off complete. Earned ${payout} credits`
+              : `Dropoff complete. Earned ${payout} credits`,
+            'good',
+          );
           this.effects.onDropoff();
           this.startNextFare(player.mesh.position);
       }
@@ -239,6 +316,9 @@ export class MissionSystem {
     if (this.phase !== 'dropoff') return;
 
     this.currentFare = Math.max(0, this.currentFare - amount);
+    if (this.activeSpecialFare) {
+      this.activeSpecialFare.penaltyLoss += amount;
+    }
     this.currentRunHadIncident = true;
     const rounded = Math.round(amount);
     this.pendingPenaltyText = `-${rounded} credits from ${source}`;
@@ -264,10 +344,13 @@ export class MissionSystem {
       objective: this.objective,
       routeLabel: this.routeLabel,
       phase: this.phase,
+      specialFareActive: Boolean(this.activeSpecialFare),
+      specialFareTimeRemaining: this.activeSpecialFare ? Math.ceil(this.activeSpecialFare.timeRemaining) : null,
       pendingPenaltyText: this.pendingPenaltyText,
       pickupTargets: this.pickupOffers.map((offer) => ({
         name: offer.pickupDistrict.name,
         fare: offer.quotedFare,
+        special: offer.special,
         x: offer.pickupPosition.x,
         y: offer.pickupPosition.y,
         z: offer.pickupPosition.z,
@@ -275,6 +358,7 @@ export class MissionSystem {
       dropoffTarget: this.dropoffDistrict
         ? {
             name: this.dropoffDistrict.name,
+            special: Boolean(this.activeSpecialFare),
             x: this.dropoffZone.position.x,
             y: this.dropoffZone.position.y,
             z: this.dropoffZone.position.z,

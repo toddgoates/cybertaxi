@@ -147,7 +147,11 @@ export class UIManager {
     const targets = [];
 
     if (state.mission.phase === 'pickup') {
-      state.mission.pickupTargets.forEach((target) => targets.push({ ...target, role: 'pickup', active: true }));
+      state.mission.pickupTargets.forEach((target) => targets.push({
+        ...target,
+        role: target.special ? 'special-pickup' : 'pickup',
+        active: true,
+      }));
     } else if (state.mission.dropoffTarget) {
       targets.push({ ...state.mission.dropoffTarget, role: 'dropoff', active: true });
     }
@@ -175,7 +179,8 @@ export class UIManager {
         if (distance > range) classes.push('navigator__target--edge');
 
         const fareLabel = target.fare ? ` | ${target.fare} cr` : '';
-        return `<div class="${classes.join(' ')}" style="transform: translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px));" title="${target.name} ${Math.round(distance)}m${fareLabel}"></div>`;
+        const specialLabel = target.special ? ' | Priority fare' : '';
+        return `<div class="${classes.join(' ')}" style="transform: translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px));" title="${target.name} ${Math.round(distance)}m${fareLabel}${specialLabel}"></div>`;
       })
       .join('');
 
@@ -183,14 +188,15 @@ export class UIManager {
       const nearestPickup = state.mission.pickupTargets.reduce((nearest, target) => {
         const distance = Math.hypot(target.x - playerPosition.x, target.z - playerPosition.z);
         if (!nearest || distance < nearest.distance) {
-          return { distance, fare: target.fare };
+          return { distance, fare: target.fare, special: target.special };
         }
         return nearest;
       }, null);
       const distanceLabel = nearestPickup ? `${Math.round(nearestPickup.distance)}m` : '--';
-      const fareLabel = nearestPickup ? `${nearestPickup.fare} cr` : '--';
+      const fareLabel = nearestPickup ? `${nearestPickup.fare} cr${nearestPickup.special ? ' priority' : ''}` : '--';
+      const priorityLabel = state.mission.pickupTargets.some((target) => target.special) ? ' | Priority fare live' : '';
       const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
-      this.fields.navStatus.textContent = `${state.mission.pickupTargets.length} fares live | Nearest ${distanceLabel} | ${fareLabel}${empLabel} | ${state.energy.status}`;
+      this.fields.navStatus.textContent = `${state.mission.pickupTargets.length} fares live${priorityLabel} | Nearest ${distanceLabel} | ${fareLabel}${empLabel} | ${state.energy.status}`;
       return;
     }
 

@@ -59,6 +59,11 @@ export class HeatSystem {
     this.addHeat(this.config.collisionGain * severity);
   }
 
+  setHeat(value) {
+    this.heat = THREE.MathUtils.clamp(value, 0, this.config.maxHeat);
+    this.lastTier = this.getTier();
+  }
+
   getTier() {
     return Math.floor(this.heat);
   }

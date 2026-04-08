@@ -122,10 +122,14 @@ export class CityGenerator {
       this.addDistrict(district, center, colliders, flightPaths, stationCandidates);
     });
 
-    this.addSkySearchlights(stationCandidates);
-    this.addSkyBlimps(colliders);
+    const energyStationCandidates = this.selectEnergyStations(stationCandidates);
+    const energyStations = energyStationCandidates.map((station, index) => ({
+      name: `Energy Station ${index + 1}`,
+      position: station.position,
+    }));
 
-    const energyStations = this.createEnergyStations(stationCandidates);
+    this.addSkySearchlights(stationCandidates, energyStationCandidates);
+    this.addSkyBlimps(colliders);
 
     return {
       colliders,
@@ -196,13 +200,13 @@ export class CityGenerator {
     this.scene.add(rain);
   }
 
-  addSkySearchlights(candidates) {
+  addSkySearchlights(candidates, excludedCandidates = []) {
     const beamGeometry = new THREE.CylinderGeometry(3.8, 13.5, 180, 24, 1, true);
     const capGeometry = new THREE.SphereGeometry(4.6, 18, 18);
     const mastGeometry = new THREE.CylinderGeometry(2.8, 3.6, 16, 12);
     const baseGeometry = new THREE.CylinderGeometry(7.2, 8.8, 5.5, 16);
     const beamColors = [0x7be5ff, 0xff7ee6, 0xffef7a];
-    const searchlightAnchors = this.selectSearchlightAnchors(candidates);
+    const searchlightAnchors = this.selectSearchlightAnchors(candidates, excludedCandidates);
 
     searchlightAnchors.forEach((anchor, index) => {
       const color = beamColors[index % beamColors.length];
@@ -238,7 +242,7 @@ export class CityGenerator {
         new THREE.MeshBasicMaterial({ color, toneMapped: false }),
       );
       lens.rotation.z = Math.PI / 2;
-      lens.position.z = -4.2;
+      lens.position.x = 5.2;
       head.add(lens);
 
       const beam = new THREE.Mesh(
@@ -253,7 +257,7 @@ export class CityGenerator {
           toneMapped: false,
         }),
       );
-      beam.position.y = -90;
+      beam.position.x = 92;
       beam.rotation.z = Math.PI / 2;
       head.add(beam);
 
@@ -269,7 +273,7 @@ export class CityGenerator {
         }),
       );
       beamCap.scale.set(1.3, 0.45, 1.3);
-      beamCap.position.y = -178;
+      beamCap.position.x = 178;
       head.add(beamCap);
 
       const target = new THREE.Object3D();
@@ -277,7 +281,7 @@ export class CityGenerator {
       this.scene.add(target);
 
       const light = new THREE.SpotLight(color, 200, 420, 0.16, 0.35, 1.2);
-      light.position.set(0, 0, 0);
+      light.position.set(5.2, 0, 0);
       light.target = target;
       light.castShadow = false;
       head.add(light);
@@ -300,9 +304,12 @@ export class CityGenerator {
     });
   }
 
-  selectSearchlightAnchors(candidates) {
+  selectSearchlightAnchors(candidates, excludedCandidates = []) {
     const anchors = [];
-    const sortedCandidates = [...candidates].sort((a, b) => b.height - a.height);
+    const excludedPositions = excludedCandidates.map((candidate) => candidate.position);
+    const sortedCandidates = [...candidates]
+      .filter((candidate) => excludedPositions.every((position) => position.distanceTo(candidate.position) > 1))
+      .sort((a, b) => b.height - a.height);
 
     sortedCandidates.forEach((candidate) => {
       if (anchors.length >= 3) return;
@@ -658,7 +665,7 @@ export class CityGenerator {
     this.scene.add(group);
   }
 
-  createEnergyStations(candidates) {
+  selectEnergyStations(candidates) {
     const byDistrict = DISTRICTS.map((district) => {
       const districtCandidates = candidates
         .filter((candidate) => candidate.district === district.name)
@@ -677,10 +684,7 @@ export class CityGenerator {
       if (separated) chosen.push(candidate);
     });
 
-    return chosen.slice(0, 6).map((station, index) => ({
-      name: `Energy Station ${index + 1}`,
-      position: station.position,
-    }));
+    return chosen.slice(0, 6);
   }
 
   getDistrictName(position) {

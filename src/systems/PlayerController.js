@@ -59,41 +59,98 @@ export class PlayerController {
       transparent: true,
       opacity: 0.95,
     });
+    const accentMaterial = new THREE.MeshStandardMaterial({
+      color: 0x1b2432,
+      emissive: 0x3ccfff,
+      emissiveIntensity: 0.7,
+      metalness: 0.52,
+      roughness: 0.3,
+    });
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0x46d7ff,
+      transparent: true,
+      opacity: 0.4,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
+    });
 
-    const chassis = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.05, 8.8), bodyMaterial);
-    chassis.position.y = 0.2;
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.92, 7.4), bodyMaterial);
+    chassis.position.y = 0.08;
     visual.add(chassis);
 
-    const hood = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.7, 2.4), bodyMaterial);
-    hood.position.set(0, 0.78, -2.25);
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(3.34, 0.62, 2.3), bodyMaterial);
+    nose.position.set(0, 0.5, -2.78);
+    nose.rotation.x = -0.26;
+    visual.add(nose);
+
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.54, 2), bodyMaterial);
+    hood.position.set(0, 0.76, -1.72);
+    hood.rotation.x = -0.08;
     visual.add(hood);
 
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.25, 3.7), bodyMaterial);
-    cabin.position.set(0, 1.18, 0.1);
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.9, 1.02, 3.1), bodyMaterial);
+    cabin.position.set(0, 1.06, -0.08);
     visual.add(cabin);
 
-    const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.8, 1.2), glassMaterial);
-    windshield.position.set(0, 1.45, -0.82);
+    const cockpit = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.78, 2.35), glassMaterial);
+    cockpit.position.set(0, 1.34, -0.12);
+    cockpit.rotation.x = -0.06;
+    visual.add(cockpit);
+
+    const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.5, 0.9), glassMaterial);
+    windshield.position.set(0, 1.46, -1.05);
+    windshield.rotation.x = -0.48;
     visual.add(windshield);
 
-    const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.75, 1.05), glassMaterial);
-    rearGlass.position.set(0, 1.42, 1.02);
+    const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.44, 0.84), glassMaterial);
+    rearGlass.position.set(0, 1.36, 1.04);
+    rearGlass.rotation.x = 0.38;
     visual.add(rearGlass);
 
+    const dorsalFin = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.64, 1.45), trimMaterial);
+    dorsalFin.position.set(0, 1.58, 1.48);
+    visual.add(dorsalFin);
+
     const bumperFront = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.42, 0.42), trimMaterial);
-    bumperFront.position.set(0, 0.1, -4.28);
+    bumperFront.position.set(0, 0.06, -3.96);
     visual.add(bumperFront);
 
     const bumperRear = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.42, 0.42), trimMaterial);
-    bumperRear.position.set(0, 0.1, 4.2);
+    bumperRear.position.set(0, 0.06, 3.68);
     visual.add(bumperRear);
 
     const sideSkirtGeometry = new THREE.BoxGeometry(0.24, 0.42, 6.2);
     [-2.05, 2.05].forEach((x) => {
       const skirt = new THREE.Mesh(sideSkirtGeometry, trimMaterial);
-      skirt.position.set(x, -0.05, 0.28);
+      skirt.position.set(x, -0.12, 0.18);
       visual.add(skirt);
     });
+
+    [-1.78, 1.78].forEach((x) => {
+      const lightStrip = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 5.7), accentMaterial);
+      lightStrip.position.set(x, 0.26, -0.08);
+      visual.add(lightStrip);
+    });
+
+    const rearLightBar = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.16, 0.18), new THREE.MeshStandardMaterial({
+      color: 0xff8ca6,
+      emissive: 0xff2a6d,
+      emissiveIntensity: 1.4,
+      metalness: 0.2,
+      roughness: 0.22,
+    }));
+    rearLightBar.position.set(0, 0.58, 3.84);
+    visual.add(rearLightBar);
+
+    const frontRunningLight = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.14, 0.18), lightMaterial);
+    frontRunningLight.position.set(0, 0.56, -3.82);
+    visual.add(frontRunningLight);
+
+    const underglow = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 5.6), glowMaterial);
+    underglow.position.set(0, -0.46, 0.12);
+    visual.add(underglow);
+    this.underglow = underglow;
 
     const wheelGeometry = new THREE.CylinderGeometry(0.68, 0.68, 0.5, 18);
     const wheelMaterial = new THREE.MeshStandardMaterial({
@@ -113,11 +170,11 @@ export class PlayerController {
     });
 
     const roofLightBase = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.18, 0.58), trimMaterial);
-    roofLightBase.position.set(0, 1.98, -0.05);
+    roofLightBase.position.set(0, 1.86, -0.05);
     visual.add(roofLightBase);
 
     const roofLight = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.26, 0.42), lightMaterial);
-    roofLight.position.set(0, 2.18, -0.05);
+    roofLight.position.set(0, 2.04, -0.05);
     visual.add(roofLight);
 
     const flameMaterial = new THREE.MeshStandardMaterial({
@@ -143,6 +200,15 @@ export class PlayerController {
       return flame;
     });
 
+    const thrusterGlowGeometry = new THREE.SphereGeometry(0.32, 10, 10);
+    this.hoverGlowPods = flameOffsets.map(([x, y, z]) => {
+      const glow = new THREE.Mesh(thrusterGlowGeometry, glowMaterial.clone());
+      glow.position.set(x, y + 0.3, z);
+      glow.scale.set(1.6, 0.75, 1.6);
+      visual.add(glow);
+      return glow;
+    });
+
     const boostFlameGeometry = new THREE.ConeGeometry(0.7, 3.2, 14);
     const boostFlameMaterial = new THREE.MeshStandardMaterial({
       color: 0xc8f6ff,
@@ -153,11 +219,20 @@ export class PlayerController {
     });
     this.boostFlames = [-1.05, 1.05].map((x) => {
       const flame = new THREE.Mesh(boostFlameGeometry, boostFlameMaterial.clone());
-      flame.position.set(x, 0.15, 4.95);
+      flame.position.set(x, 0.12, 4.42);
       flame.rotation.x = Math.PI / 2;
       flame.scale.set(0.7, 0.7, 0.7);
       visual.add(flame);
       return flame;
+    });
+
+    this.boostGlow = [-1.05, 1.05].map((x) => {
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 12), glowMaterial.clone());
+      glow.position.set(x, 0.12, 3.88);
+      glow.scale.set(1.3, 0.9, 2.1);
+      glow.material.opacity = 0.12;
+      visual.add(glow);
+      return glow;
     });
 
     root.userData.radius = this.config.collisionRadius;
@@ -216,19 +291,26 @@ export class PlayerController {
     }
 
     this.hoverTime += delta;
-    this.mesh.position.y += Math.sin(this.hoverTime * 7) * 0.018;
+    this.mesh.position.y += Math.sin(this.hoverTime * 7) * 0.024;
     this.visualMesh.rotation.z = THREE.MathUtils.damp(
       this.visualMesh.rotation.z,
-      -turnInput * 0.08 - this.strafeVelocity * 0.004,
+      -turnInput * 0.14 - this.strafeVelocity * 0.006,
       7,
       delta,
     );
-    this.visualMesh.rotation.x = THREE.MathUtils.damp(this.visualMesh.rotation.x, -this.forwardSpeed * 0.0012, 6, delta);
+    this.visualMesh.rotation.x = THREE.MathUtils.damp(this.visualMesh.rotation.x, -this.forwardSpeed * 0.0015 + Math.abs(this.strafeVelocity) * 0.002, 6, delta);
+    this.visualMesh.position.y = Math.sin(this.hoverTime * 5.8) * 0.06;
 
     this.hoverFlames.forEach((flame, index) => {
       const flicker = 0.82 + Math.sin(this.hoverTime * 14 + index * 0.9) * 0.14;
       flame.scale.y = flicker + Math.abs(this.verticalVelocity) * 0.01;
       flame.material.opacity = 0.72 + Math.sin(this.hoverTime * 18 + index) * 0.08;
+    });
+
+    this.hoverGlowPods.forEach((glow, index) => {
+      const pulse = 0.68 + Math.sin(this.hoverTime * 12 + index) * 0.14 + Math.abs(this.verticalVelocity) * 0.005;
+      glow.material.opacity = 0.18 + pulse * 0.16;
+      glow.scale.y = 0.7 + pulse * 0.12;
     });
 
     this.boostFlames.forEach((flame, index) => {
@@ -239,6 +321,19 @@ export class PlayerController {
       flame.scale.z = THREE.MathUtils.damp(flame.scale.z, targetScale * boostPulse, 10, delta);
       flame.material.opacity = THREE.MathUtils.damp(flame.material.opacity, this.isBoosting ? 0.92 : 0, 12, delta);
     });
+
+    this.boostGlow.forEach((glow, index) => {
+      const pulse = this.isBoosting ? 0.4 + Math.sin(this.hoverTime * 20 + index) * 0.08 : 0.08;
+      glow.material.opacity = THREE.MathUtils.damp(glow.material.opacity, pulse, 10, delta);
+      glow.scale.z = THREE.MathUtils.damp(glow.scale.z, this.isBoosting ? 2.8 : 1.6, 8, delta);
+    });
+
+    this.underglow.material.opacity = THREE.MathUtils.damp(
+      this.underglow.material.opacity,
+      0.22 + this.getSpeedRatio() * 0.3 + (this.isBoosting ? 0.12 : 0),
+      6,
+      delta,
+    );
   }
 
   updateBoostState(delta, canBoost) {

@@ -1,13 +1,20 @@
 import * as THREE from 'three';
 
 const DISTRICTS = [
-  { name: 'Neon Downtown', grid: new THREE.Vector2(-1, -1), palette: [0x12d7ff, 0xff4fd8, 0xb86bff], height: [30, 110], density: 0.92 },
-  { name: 'Industrial Sector', grid: new THREE.Vector2(1, -1), palette: [0xffc857, 0x12d7ff, 0xff7a59], height: [16, 70], density: 0.78 },
-  { name: 'Corporate Spires', grid: new THREE.Vector2(-1, 1), palette: [0x7c8dff, 0x7bfff8, 0xe86bff], height: [60, 170], density: 0.88 },
-  { name: 'Night Market', grid: new THREE.Vector2(1, 1), palette: [0xffef5a, 0xff4fd8, 0x63ff83], height: [18, 82], density: 0.84 },
+  { name: 'Neon Downtown', grid: new THREE.Vector2(-1, -1), palette: [0x12d7ff, 0xff4fd8, 0xb86bff], baseColor: 0x12192b, height: [30, 110], density: 0.92 },
+  { name: 'Industrial Sector', grid: new THREE.Vector2(1, -1), palette: [0xffc857, 0xff7a59, 0xff5e47], baseColor: 0x1b1718, height: [16, 70], density: 0.78 },
+  { name: 'Corporate Spires', grid: new THREE.Vector2(-1, 1), palette: [0x7c8dff, 0x7bfff8, 0xf3fbff], baseColor: 0x141d30, height: [60, 170], density: 0.88 },
+  { name: 'Night Market', grid: new THREE.Vector2(1, 1), palette: [0xffef5a, 0xff4fd8, 0x63ff83], baseColor: 0x1d1524, height: [18, 82], density: 0.84 },
 ];
 
 const GLOBAL_NEON_PALETTE = [0x12d7ff, 0xff4fd8, 0xb86bff, 0xffef5a];
+
+const DISTRICT_SKY_TINTS = {
+  'Neon Downtown': ['#05101c', '#20103c', '#632367'],
+  'Industrial Sector': ['#0b0d15', '#281624', '#6a2d1b'],
+  'Corporate Spires': ['#06111f', '#102347', '#234c7b'],
+  'Night Market': ['#100817', '#311343', '#5d2463'],
+};
 
 function randRange(min, max) {
   return min + Math.random() * (max - min);
@@ -44,6 +51,15 @@ function createSkyTexture() {
   horizonGlow.addColorStop(1, 'rgba(255, 79, 216, 0.28)');
   context.fillStyle = horizonGlow;
   context.fillRect(0, canvas.height * 0.56, canvas.width, canvas.height * 0.44);
+
+  Object.values(DISTRICT_SKY_TINTS).forEach(([top, mid, glow], index) => {
+    const band = context.createLinearGradient(0, canvas.height * (0.38 + index * 0.04), 0, canvas.height);
+    band.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    band.addColorStop(0.55, `${mid}22`);
+    band.addColorStop(1, `${glow}33`);
+    context.fillStyle = band;
+    context.fillRect(0, canvas.height * (0.38 + index * 0.04), canvas.width, canvas.height);
+  });
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -103,6 +119,7 @@ export class CityGenerator {
     this.skyTexture = createSkyTexture();
     this.districtResources = new Map();
     this.skySearchlights = [];
+    this.animatedNeon = [];
   }
 
   build() {
@@ -162,6 +179,21 @@ export class CityGenerator {
     );
     horizonGlow.position.y = 110;
     this.scene.add(horizonGlow);
+
+    const aurora = new THREE.Mesh(
+      new THREE.SphereGeometry(this.config.worldSize * 0.52, 28, 18),
+      new THREE.MeshBasicMaterial({
+        color: 0x6f51ff,
+        transparent: true,
+        opacity: 0.05,
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    );
+    aurora.position.y = 70;
+    this.scene.add(aurora);
   }
 
   addGround() {
@@ -198,6 +230,213 @@ export class CityGenerator {
       new THREE.PointsMaterial({ color: 0x9fd8ff, size: 0.9, transparent: true, opacity: 0.5 }),
     );
     this.scene.add(rain);
+  }
+
+  createPanelStrip(length, horizontal, material) {
+    return new THREE.Mesh(
+      new THREE.BoxGeometry(horizontal ? length : 0.18, horizontal ? 0.18 : length, 0.1),
+      material,
+    );
+  }
+
+  addBuildingSkin(group, resources, center, dimensions, district) {
+    const { x, z } = center;
+    const { width, depth, height } = dimensions;
+    const edgeMaterial = resources.edgeMaterial;
+    const panelMaterial = resources.panelMaterial;
+
+    if (height > 42 && Math.random() > 0.5) {
+      [-1, 1].forEach((sx) => {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.34, height + 0.6, 0.34), edgeMaterial);
+        post.position.set(x + sx * (width * 0.5 - 0.22), height * 0.5, z - depth * 0.5 + 0.22);
+        group.add(post);
+      });
+    }
+
+    const rows = Math.max(1, Math.floor(height / 42));
+    for (let row = 1; row <= rows; row += 1) {
+      const y = (height / (rows + 1)) * row;
+      const front = this.createPanelStrip(width - 0.7, true, panelMaterial);
+      front.position.set(x, y, z + depth * 0.5 + 0.08);
+      group.add(front);
+
+      const back = front.clone();
+      back.position.z = z - depth * 0.5 - 0.08;
+      group.add(back);
+
+      if (height > 72 && row === rows && Math.random() > 0.5) {
+        const side = this.createPanelStrip(depth - 0.7, true, panelMaterial);
+        side.rotation.y = Math.PI / 2;
+        side.position.set(x - width * 0.5 - 0.08, y, z);
+        group.add(side);
+      }
+    }
+
+    if (height > 78 && Math.random() > 0.72) {
+      const glowFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(width + 0.26, 0.28, depth + 0.26),
+        pickOne(resources.glowMaterials),
+      );
+      glowFrame.position.set(x, height + 0.22, z);
+      group.add(glowFrame);
+    }
+
+    if (district.name === 'Corporate Spires' && height > 70 && Math.random() > 0.5) {
+      const crown = new THREE.Mesh(
+        new THREE.BoxGeometry(width * 0.82, 1.8, depth * 0.82),
+        resources.capMaterial,
+      );
+      crown.position.set(x, height + 1.1, z);
+      group.add(crown);
+    }
+  }
+
+  addRooftopProps(group, resources, center, dimensions, district) {
+    const { x, z } = center;
+    const { width, depth, height } = dimensions;
+    const roofY = height + 0.6;
+
+    if (Math.random() > 0.52) {
+      const vent = new THREE.Mesh(
+        new THREE.BoxGeometry(width * randRange(0.12, 0.2), randRange(1.4, 2.8), depth * randRange(0.1, 0.18)),
+        resources.darkMetalMaterial,
+      );
+      vent.position.set(x + randRange(-width * 0.2, width * 0.2), roofY + vent.geometry.parameters.height * 0.5, z + randRange(-depth * 0.2, depth * 0.2));
+      group.add(vent);
+    }
+
+    if (height > 48 && Math.random() > 0.8) {
+      const panel = new THREE.Mesh(
+        new THREE.BoxGeometry(width * randRange(0.14, 0.28), 0.26, depth * randRange(0.18, 0.28)),
+        pickOne(resources.glowMaterials),
+      );
+      panel.position.set(x + randRange(-width * 0.18, width * 0.18), roofY + 0.3, z + randRange(-depth * 0.18, depth * 0.18));
+      group.add(panel);
+    }
+
+    if (height > 46 && Math.random() > 0.68) {
+      const mastHeight = randRange(5, district.name === 'Corporate Spires' ? 15 : 10);
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, mastHeight, 8), resources.darkMetalMaterial);
+      mast.position.set(x + randRange(-width * 0.24, width * 0.24), roofY + mastHeight * 0.5, z + randRange(-depth * 0.24, depth * 0.24));
+      group.add(mast);
+
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 10), pickOne(resources.glowMaterials));
+      tip.position.copy(mast.position).add(new THREE.Vector3(0, mastHeight * 0.5, 0));
+      group.add(tip);
+    }
+
+    if (district.name !== 'Corporate Spires' && height > 34 && Math.random() > 0.9) {
+      const tank = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, 2.8, 12), resources.darkMetalMaterial);
+      tank.position.set(x + randRange(-width * 0.14, width * 0.14), roofY + 2.2, z + randRange(-depth * 0.14, depth * 0.14));
+      group.add(tank);
+      [-1.1, 1.1].forEach((offset) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.2, 0.18), resources.darkMetalMaterial);
+        leg.position.set(tank.position.x + offset, roofY + 1, tank.position.z + 0.75);
+        group.add(leg);
+        const backLeg = leg.clone();
+        backLeg.position.z = tank.position.z - 0.75;
+        group.add(backLeg);
+      });
+    }
+  }
+
+  addNeonSign(group, resources, center, dimensions) {
+    const { x, z } = center;
+    const { width, depth, height } = dimensions;
+    const signWidth = width * randRange(0.34, 0.62);
+    const signHeight = randRange(4, Math.min(12, Math.max(5, height * 0.16)));
+    const side = Math.floor(Math.random() * 4);
+    const colorIndex = Math.floor(Math.random() * resources.neonMaterials.length);
+    const emissiveColor = resources.palette[colorIndex % resources.palette.length];
+
+    const sign = new THREE.Mesh(
+      new THREE.PlaneGeometry(signWidth, signHeight),
+      new THREE.MeshBasicMaterial({ color: emissiveColor, transparent: true, opacity: 0.9, toneMapped: false, side: THREE.DoubleSide }),
+    );
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(signWidth + 1.2, signHeight + 1.2, 0.2),
+      resources.darkMetalMaterial,
+    );
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.24, signHeight + 2.8, 0.24), resources.darkMetalMaterial);
+    const y = randRange(12, Math.max(18, height - 12));
+
+    if (side === 0) {
+      sign.position.set(x, y, z + depth * 0.5 + 0.9);
+      frame.position.set(x, y, z + depth * 0.5 + 0.72);
+      bar.position.set(x - signWidth * 0.42, y - 0.4, z + depth * 0.5 + 0.4);
+    } else if (side === 1) {
+      sign.position.set(x, y, z - depth * 0.5 - 0.9);
+      sign.rotation.y = Math.PI;
+      frame.position.set(x, y, z - depth * 0.5 - 0.72);
+      bar.position.set(x + signWidth * 0.42, y - 0.4, z - depth * 0.5 - 0.4);
+    } else if (side === 2) {
+      sign.position.set(x + width * 0.5 + 0.9, y, z);
+      sign.rotation.y = -Math.PI / 2;
+      frame.position.set(x + width * 0.5 + 0.72, y, z);
+      frame.rotation.y = -Math.PI / 2;
+      bar.position.set(x + width * 0.5 + 0.4, y - 0.4, z + signWidth * 0.42);
+    } else {
+      sign.position.set(x - width * 0.5 - 0.9, y, z);
+      sign.rotation.y = Math.PI / 2;
+      frame.position.set(x - width * 0.5 - 0.72, y, z);
+      frame.rotation.y = Math.PI / 2;
+      bar.position.set(x - width * 0.5 - 0.4, y - 0.4, z - signWidth * 0.42);
+    }
+
+    group.add(frame, sign, bar);
+    this.animatedNeon.push({
+      material: sign.material,
+      pulse: 0.72 + Math.random() * 0.25,
+      speed: 2.4 + Math.random() * 2.8,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+
+  addTieredTower(group, resources, district, center, baseDimensions) {
+    const tiers = baseDimensions.height > 72 && Math.random() > 0.74 ? 2 : baseDimensions.height > 44 && Math.random() > 0.82 ? 1 : 0;
+    let currentWidth = baseDimensions.width;
+    let currentDepth = baseDimensions.depth;
+    let heightBuilt = 0;
+
+    for (let tier = 0; tier <= tiers; tier += 1) {
+      const segmentHeight = tier === tiers
+        ? baseDimensions.height - heightBuilt
+        : baseDimensions.height * randRange(0.32, 0.5);
+      const segment = new THREE.Mesh(
+        new THREE.BoxGeometry(currentWidth, segmentHeight, currentDepth),
+        pickOne(resources.buildingMaterials),
+      );
+      segment.position.set(center.x, heightBuilt + segmentHeight * 0.5, center.z);
+      segment.position.x += tier > 0 ? randRange(-0.12, 0.12) * baseDimensions.width : 0;
+      segment.position.z += tier > 0 ? randRange(-0.12, 0.12) * baseDimensions.depth : 0;
+      group.add(segment);
+
+      this.addBuildingSkin(group, resources, { x: segment.position.x, z: segment.position.z }, {
+        width: currentWidth,
+        depth: currentDepth,
+        height: heightBuilt + segmentHeight,
+      }, district);
+
+      heightBuilt += segmentHeight;
+      currentWidth *= randRange(0.7, 0.88);
+      currentDepth *= randRange(0.7, 0.9);
+    }
+
+    const rooftopCenter = new THREE.Vector3(center.x, heightBuilt, center.z);
+    this.decorateTower(group, resources, center.x, center.z, baseDimensions.width, baseDimensions.depth, heightBuilt);
+    if (heightBuilt > 30 && Math.random() > 0.45) {
+      this.addRooftopProps(group, resources, center, { ...baseDimensions, height: heightBuilt }, district);
+    }
+    if (heightBuilt > 26 && Math.random() > 0.76) {
+      this.addNeonSign(group, resources, center, { ...baseDimensions, height: heightBuilt });
+    }
+
+    return {
+      rooftopCenter,
+      height: heightBuilt,
+      width: baseDimensions.width,
+      depth: baseDimensions.depth,
+    };
   }
 
   addSkySearchlights(candidates, excludedCandidates = []) {
@@ -452,17 +691,17 @@ export class CityGenerator {
 
     const accentPalette = [...district.palette, ...GLOBAL_NEON_PALETTE];
     const buildingMaterials = Array.from({ length: 5 }, (_, index) => {
-      const tint = new THREE.Color(0x121827);
-      tint.offsetHSL((index - 2) * 0.01, 0.04, index * 0.01);
+      const tint = new THREE.Color(district.baseColor ?? 0x121827);
+      tint.offsetHSL((index - 2) * 0.012, 0.05, index * 0.012);
       const texture = createWindowTexture(tint.getStyle(), new THREE.Color(accentPalette[index % accentPalette.length]).getStyle(), index + district.grid.x * 11 + district.grid.y * 19);
       return new THREE.MeshStandardMaterial({
         color: 0xffffff,
         map: texture,
         emissiveMap: texture,
         emissive: new THREE.Color(0xffffff),
-        emissiveIntensity: 0.82,
-        metalness: 0.12,
-        roughness: 0.74,
+        emissiveIntensity: 0.95,
+        metalness: 0.16,
+        roughness: 0.68,
       });
     });
     const neonMaterials = accentPalette.map((color) => new THREE.MeshBasicMaterial({ color, toneMapped: false }));
@@ -475,12 +714,19 @@ export class CityGenerator {
       toneMapped: false,
     }));
     const darkMetalMaterial = new THREE.MeshStandardMaterial({ color: 0x0d131f, metalness: 0.35, roughness: 0.58 });
+    const edgeMaterial = new THREE.MeshStandardMaterial({ color: 0x1e2738, emissive: district.palette[0], emissiveIntensity: 0.08, metalness: 0.24, roughness: 0.52 });
+    const panelMaterial = new THREE.MeshStandardMaterial({ color: 0x182031, emissive: district.palette[district.palette.length - 1], emissiveIntensity: 0.04, metalness: 0.18, roughness: 0.64 });
+    const capMaterial = new THREE.MeshStandardMaterial({ color: 0x27324a, emissive: district.palette[1] ?? district.palette[0], emissiveIntensity: 0.12, metalness: 0.28, roughness: 0.48 });
 
     const resources = {
       buildingMaterials,
       neonMaterials,
       glowMaterials,
       darkMetalMaterial,
+      edgeMaterial,
+      panelMaterial,
+      capMaterial,
+      palette: accentPalette,
     };
     this.districtResources.set(district.name, resources);
     return resources;
@@ -543,7 +789,7 @@ export class CityGenerator {
     const step = districtSize / 20;
     const perimeter = halfDistrict * 0.88;
     const boulevard = halfDistrict * 0.5;
-    const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x141b29, emissive: 0x15365d, emissiveIntensity: 0.34, metalness: 0.12, roughness: 0.8 });
+    const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x141b29, emissive: district.palette[0], emissiveIntensity: 0.14, metalness: 0.12, roughness: 0.8 });
     const road = new THREE.Mesh(new THREE.BoxGeometry(districtSize, 1, districtSize), roadMaterial);
     road.position.set(center.x, 0.5, center.y);
     group.add(road);
@@ -562,36 +808,24 @@ export class CityGenerator {
         const densityBias = edgeFactor > 0.82 ? 0.08 : edgeFactor < 0.3 ? -0.04 : 0;
         if (Math.random() > Math.min(0.985, district.density + densityBias)) continue;
 
-        const width = randRange(11, 20);
-        const depth = randRange(11, 20);
+        const width = randRange(11, 24);
+        const depth = randRange(11, 24);
         const height = randRange(...district.height);
         const posX = center.x + x + randRange(-step * 0.16, step * 0.16);
         const posZ = center.y + z + randRange(-step * 0.16, step * 0.16);
 
-        const tower = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), pickOne(resources.buildingMaterials));
-        tower.position.set(posX, height / 2, posZ);
-        group.add(tower);
-        this.decorateTower(group, resources, posX, posZ, width, depth, height);
+        const building = this.addTieredTower(group, resources, district, { x: posX, z: posZ }, { width, depth, height });
 
         colliders.push({
           type: 'building',
           min: new THREE.Vector3(posX - width / 2, 0, posZ - depth / 2),
-          max: new THREE.Vector3(posX + width / 2, height, posZ + depth / 2),
+          max: new THREE.Vector3(posX + width / 2, building.height, posZ + depth / 2),
         });
         stationCandidates.push({
           district: district.name,
-          height,
-          position: new THREE.Vector3(posX, height + 2.5, posZ),
+          height: building.height,
+          position: building.rooftopCenter.clone().add(new THREE.Vector3(0, 2.5, 0)),
         });
-
-        if (Math.random() > 0.45) {
-          const sign = new THREE.Mesh(
-            new THREE.BoxGeometry(width * 0.75, randRange(3, 6), 0.8),
-            pickOne(resources.neonMaterials),
-          );
-          sign.position.set(posX, randRange(10, height - 6), posZ + depth / 2 + 1.2);
-          group.add(sign);
-        }
       }
     }
 
@@ -706,9 +940,14 @@ export class CityGenerator {
   }
 
   update(delta) {
+    const time = performance.now() * 0.001;
+    this.animatedNeon.forEach((sign) => {
+      const flicker = 0.72 + Math.sin(time * sign.speed + sign.phase) * 0.12 + (Math.sin(time * sign.speed * 2.7 + sign.phase) > 0.94 ? -0.26 : 0);
+      sign.material.opacity = Math.max(0.4, flicker);
+    });
+
     if (this.skySearchlights.length === 0) return;
 
-    const time = performance.now() * 0.001;
     this.skySearchlights.forEach((searchlight, index) => {
       const swing = Math.sin(time * searchlight.sweepSpeed + searchlight.phase);
       const nod = Math.sin(time * (searchlight.sweepSpeed * 1.35) + searchlight.phase * 0.8);

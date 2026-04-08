@@ -2,9 +2,13 @@ export class UIManager {
   constructor(mount) {
     this.mount = mount;
     this.feed = [];
+    this.lastPenaltyText = '';
+    this.lastCredits = 0;
+    this.lastFare = 0;
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
+      <div class="hud__impact" data-field="impactFlash"></div>
       <div class="hud__actions">
         <div class="hud__inventory" data-field="empInventory">
           <span class="hud__inventory-icon">EMP</span>
@@ -14,17 +18,17 @@ export class UIManager {
         <div class="hud__status" data-field="musicStatus"></div>
       </div>
       <div class="hud__top">
-        <div class="panel">
+        <div class="panel panel--highlight">
           <div class="eyebrow">Current Fare</div>
           <div class="value" data-field="fare">0</div>
           <div class="subvalue" data-field="penalty">No active penalties</div>
         </div>
-        <div class="panel">
+        <div class="panel panel--objective">
           <div class="eyebrow">Objective</div>
           <div class="value value--small" data-field="objective"></div>
           <div class="subvalue" data-field="route"></div>
         </div>
-        <div class="panel">
+        <div class="panel panel--credits">
           <div class="eyebrow">Credits</div>
           <div class="value" data-field="credits">0</div>
           <div class="subvalue" data-field="district"></div>
@@ -99,6 +103,7 @@ export class UIManager {
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       musicStatus: this.root.querySelector('[data-field="musicStatus"]'),
       feed: this.root.querySelector('[data-field="feed"]'),
+      impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
     };
   }
 
@@ -114,6 +119,8 @@ export class UIManager {
 
   render(state) {
     this.fields.pauseOverlay.classList.toggle('hud__pause--visible', Boolean(state.paused));
+    this.root.classList.toggle('hud--fast', state.player.getSpeedRatio() > 0.72);
+    this.root.classList.toggle('hud--objective-pulse', Boolean(state.mission.specialFareActive));
     this.fields.fare.textContent = `${state.mission.currentFare} cr`;
     this.fields.penalty.textContent = state.mission.pendingPenaltyText || 'Timer drains fare every second';
     this.fields.objective.textContent = state.mission.objective;
@@ -134,7 +141,28 @@ export class UIManager {
     this.fields.empInventory.classList.toggle('hud__inventory--active', state.emp.charges > 0);
     this.fields.musicToggle.textContent = state.music.muted ? 'Music: off' : 'Music: on';
     this.fields.musicStatus.textContent = state.music.label;
+    this.pulseField(this.fields.fare, state.mission.currentFare !== this.lastFare);
+    this.pulseField(this.fields.credits, state.mission.totalCredits !== this.lastCredits);
+    if (state.mission.pendingPenaltyText && state.mission.pendingPenaltyText !== this.lastPenaltyText) {
+      this.flashImpact();
+    }
+    this.lastFare = state.mission.currentFare;
+    this.lastCredits = state.mission.totalCredits;
+    this.lastPenaltyText = state.mission.pendingPenaltyText;
     this.renderNavigator(state);
+  }
+
+  pulseField(field, shouldPulse) {
+    if (!shouldPulse) return;
+    field.classList.remove('value--pulse');
+    void field.offsetWidth;
+    field.classList.add('value--pulse');
+  }
+
+  flashImpact() {
+    this.fields.impactFlash.classList.remove('hud__impact--active');
+    void this.fields.impactFlash.offsetWidth;
+    this.fields.impactFlash.classList.add('hud__impact--active');
   }
 
   renderNavigator(state) {

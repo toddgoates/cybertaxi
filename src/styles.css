@@ -33,6 +33,19 @@ canvas {
   text-shadow: 0 0 16px rgba(72, 217, 255, 0.3);
 }
 
+.hud__impact {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background:
+    radial-gradient(circle at center, rgba(255, 66, 96, 0.16), rgba(255, 66, 96, 0) 55%),
+    linear-gradient(180deg, rgba(255, 92, 121, 0.08), rgba(255, 92, 121, 0));
+}
+
+.hud__impact--active {
+  animation: hud-impact 0.45s ease-out;
+}
+
 .hud__pause {
   position: absolute;
   inset: 0;
@@ -87,7 +100,7 @@ canvas {
   padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid rgba(99, 255, 131, 0.24);
-  background: linear-gradient(180deg, rgba(8, 18, 14, 0.92), rgba(8, 12, 24, 0.7));
+  background: linear-gradient(180deg, rgba(7, 22, 22, 0.92), rgba(8, 12, 24, 0.64));
   box-shadow: inset 0 0 18px rgba(99, 255, 131, 0.08), 0 0 18px rgba(99, 255, 131, 0.08);
   color: #c9ffd6;
 }
@@ -116,7 +129,7 @@ canvas {
   padding: 10px 14px;
   border-radius: 999px;
   border: 1px solid rgba(99, 235, 255, 0.24);
-  background: linear-gradient(180deg, rgba(8, 12, 24, 0.88), rgba(8, 12, 24, 0.65));
+  background: linear-gradient(180deg, rgba(12, 19, 35, 0.92), rgba(8, 12, 24, 0.6));
   color: #dff4ff;
   font: inherit;
   font-size: 12px;
@@ -152,16 +165,41 @@ canvas {
 }
 
 .panel {
-  background: linear-gradient(180deg, rgba(8, 12, 24, 0.76), rgba(8, 12, 24, 0.55));
-  border: 1px solid rgba(99, 235, 255, 0.24);
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(11, 18, 34, 0.82), rgba(8, 12, 24, 0.52)),
+    radial-gradient(circle at top right, rgba(88, 166, 255, 0.14), transparent 42%);
+  border: 1px solid rgba(99, 235, 255, 0.22);
   border-radius: 14px;
   padding: 14px 16px;
   backdrop-filter: blur(14px);
   box-shadow: inset 0 0 24px rgba(72, 217, 255, 0.05), 0 0 24px rgba(255, 79, 216, 0.08);
+  overflow: hidden;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.035);
+  pointer-events: none;
 }
 
 .panel--compact {
   max-width: 360px;
+}
+
+.panel--highlight {
+  box-shadow: inset 0 0 30px rgba(72, 217, 255, 0.09), 0 0 30px rgba(255, 79, 216, 0.12);
+}
+
+.panel--objective {
+  border-color: rgba(137, 118, 255, 0.28);
+}
+
+.panel--credits {
+  border-color: rgba(255, 212, 59, 0.26);
 }
 
 .panel--feed {
@@ -179,12 +217,14 @@ canvas {
   text-transform: uppercase;
   color: #7be5ff;
   margin-bottom: 6px;
+  text-shadow: 0 0 16px rgba(123, 229, 255, 0.4);
 }
 
 .value {
   font-size: clamp(28px, 4vw, 42px);
   line-height: 1;
   font-weight: 800;
+  transition: color 160ms ease, text-shadow 160ms ease, transform 160ms ease;
 }
 
 .value--small {
@@ -197,10 +237,14 @@ canvas {
   font-size: 13px;
 }
 
+.value--pulse {
+  animation: value-pulse 0.35s ease-out;
+}
+
 .meter {
   height: 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
   overflow: hidden;
   margin-top: 10px;
 }
@@ -218,6 +262,7 @@ canvas {
   width: 0%;
   background: linear-gradient(90deg, #12d7ff, #ff4fd8);
   box-shadow: 0 0 18px rgba(18, 215, 255, 0.45);
+  transition: width 180ms ease-out;
 }
 
 .meter__fill--boost {
@@ -283,8 +328,16 @@ canvas {
     radial-gradient(circle at center, rgba(18, 215, 255, 0.08), rgba(6, 10, 18, 0.78) 68%),
     linear-gradient(180deg, rgba(8, 12, 24, 0.9), rgba(8, 12, 24, 0.5));
   border: 1px solid rgba(123, 229, 255, 0.22);
-  box-shadow: inset 0 0 28px rgba(18, 215, 255, 0.08);
+  box-shadow: inset 0 0 28px rgba(18, 215, 255, 0.08), 0 0 30px rgba(88, 166, 255, 0.08);
   overflow: hidden;
+}
+
+.navigator__scope::after {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.035);
 }
 
 .navigator__ring,
@@ -354,11 +407,13 @@ canvas {
   border: 2px solid currentColor;
   background: rgba(5, 9, 16, 0.92);
   box-shadow: 0 0 16px currentColor;
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out, opacity 160ms ease-out;
 }
 
 .navigator__target--active {
   width: 14px;
   height: 14px;
+  animation: target-pulse 1.2s ease-in-out infinite;
 }
 
 .navigator__target--edge {
@@ -399,7 +454,8 @@ canvas {
   padding: 8px 10px;
   border-radius: 10px;
   font-size: 13px;
-  background: rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .feed__item--good {
@@ -423,6 +479,40 @@ canvas {
   color: #9ccadd;
   font-size: 12px;
   letter-spacing: 0.04em;
+}
+
+.hud--fast .panel--compact {
+  box-shadow: inset 0 0 36px rgba(72, 217, 255, 0.12), 0 0 30px rgba(72, 217, 255, 0.12);
+}
+
+.hud--fast .meter__fill--boost {
+  box-shadow: 0 0 24px rgba(90, 222, 255, 0.72);
+}
+
+.hud--objective-pulse .panel--objective {
+  animation: objective-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes hud-impact {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes value-pulse {
+  0% { transform: scale(1); text-shadow: 0 0 14px rgba(72, 217, 255, 0.35); }
+  50% { transform: scale(1.04); text-shadow: 0 0 28px rgba(255, 255, 255, 0.55); }
+  100% { transform: scale(1); text-shadow: 0 0 16px rgba(72, 217, 255, 0.3); }
+}
+
+@keyframes target-pulse {
+  0%, 100% { box-shadow: 0 0 12px currentColor; }
+  50% { box-shadow: 0 0 22px currentColor; }
+}
+
+@keyframes objective-pulse {
+  0%, 100% { box-shadow: inset 0 0 24px rgba(72, 217, 255, 0.05), 0 0 24px rgba(255, 79, 216, 0.08); }
+  50% { box-shadow: inset 0 0 32px rgba(88, 166, 255, 0.12), 0 0 34px rgba(88, 166, 255, 0.16); }
 }
 
 @media (max-width: 900px) {

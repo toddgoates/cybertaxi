@@ -783,6 +783,7 @@ export class CityGenerator {
     const group = new THREE.Group();
     const resources = this.getDistrictResources(district);
     const districtSize = this.config.districtSize;
+    const districtFootprint = this.config.districtSpacing * 0.94;
     const halfDistrict = districtSize / 2;
     const roadHalf = districtSize * 0.45;
     const buildingInset = districtSize * 0.038;
@@ -790,12 +791,12 @@ export class CityGenerator {
     const perimeter = halfDistrict * 0.88;
     const boulevard = halfDistrict * 0.5;
     const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x141b29, emissive: district.palette[0], emissiveIntensity: 0.14, metalness: 0.12, roughness: 0.8 });
-    const road = new THREE.Mesh(new THREE.BoxGeometry(districtSize, 1, districtSize), roadMaterial);
+    const road = new THREE.Mesh(new THREE.BoxGeometry(districtFootprint, 1, districtFootprint), roadMaterial);
     road.position.set(center.x, 0.5, center.y);
     group.add(road);
 
     const boulevardGlow = new THREE.Mesh(
-      new THREE.BoxGeometry(districtSize * 0.86, 0.2, districtSize * 0.86),
+      new THREE.BoxGeometry(districtFootprint * 0.82, 0.2, districtFootprint * 0.82),
       new THREE.MeshBasicMaterial({ color: pickOne(district.palette), transparent: true, opacity: 0.06, toneMapped: false }),
     );
     boulevardGlow.position.set(center.x, 0.22, center.y);

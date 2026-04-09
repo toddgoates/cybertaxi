@@ -5,6 +5,9 @@ export class UIManager {
     this.lastPenaltyText = '';
     this.lastCredits = 0;
     this.lastFare = 0;
+    this.displayedFare = 0;
+    this.displayedCredits = 0;
+    this.feedPulseTimeout = null;
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
@@ -66,7 +69,10 @@ export class UIManager {
           </div>
         </div>
         <div class="panel panel--feed">
-          <div class="eyebrow">Cab Dispatch</div>
+          <div class="panel__header">
+            <div class="eyebrow">Cab Dispatch</div>
+            <div class="dispatch__live" data-field="dispatchLive">LIVE</div>
+          </div>
           <div class="feed" data-field="feed"></div>
         </div>
       </div>
@@ -104,6 +110,7 @@ export class UIManager {
       musicStatus: this.root.querySelector('[data-field="musicStatus"]'),
       feed: this.root.querySelector('[data-field="feed"]'),
       impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
+      dispatchLive: this.root.querySelector('[data-field="dispatchLive"]'),
     };
   }
 
@@ -114,6 +121,14 @@ export class UIManager {
   pushFeed(message, tone = 'info') {
     this.feed.unshift({ message, tone, id: `${Date.now()}-${Math.random()}` });
     this.feed = this.feed.slice(0, 5);
+    this.fields.feed.classList.remove('feed--pulse');
+    void this.fields.feed.offsetWidth;
+    this.fields.feed.classList.add('feed--pulse');
+    this.fields.dispatchLive.classList.add('dispatch__live--active');
+    clearTimeout(this.feedPulseTimeout);
+    this.feedPulseTimeout = window.setTimeout(() => {
+      this.fields.dispatchLive.classList.remove('dispatch__live--active');
+    }, 700);
     this.renderFeed();
   }
 
@@ -121,11 +136,14 @@ export class UIManager {
     this.fields.pauseOverlay.classList.toggle('hud__pause--visible', Boolean(state.paused));
     this.root.classList.toggle('hud--fast', state.player.getSpeedRatio() > 0.72);
     this.root.classList.toggle('hud--objective-pulse', Boolean(state.mission.specialFareActive));
-    this.fields.fare.textContent = `${state.mission.currentFare} cr`;
+    this.root.classList.toggle('hud--low-energy', state.energy.ratio < 0.22);
+    this.displayedFare = this.animateNumber(this.displayedFare, state.mission.currentFare, 0.18);
+    this.displayedCredits = this.animateNumber(this.displayedCredits, state.mission.totalCredits, 0.14);
+    this.fields.fare.textContent = `${Math.round(this.displayedFare)} cr`;
     this.fields.penalty.textContent = state.mission.pendingPenaltyText || 'Timer drains fare every second';
     this.fields.objective.textContent = state.mission.objective;
     this.fields.route.textContent = state.mission.routeLabel;
-    this.fields.credits.textContent = `${state.mission.totalCredits} cr`;
+    this.fields.credits.textContent = `${Math.round(this.displayedCredits)} cr`;
     this.fields.district.textContent = `District: ${state.district} | Heat: ${state.rivals.tier} | Rivals: ${state.rivals.activeRivals}`;
     this.fields.speedBar.style.width = `${Math.round(state.player.getSpeedRatio() * 100)}%`;
     this.fields.speedText.textContent = `${Math.round(Math.abs(state.player.forwardSpeed))} u/s forward thrust`;
@@ -150,6 +168,11 @@ export class UIManager {
     this.lastCredits = state.mission.totalCredits;
     this.lastPenaltyText = state.mission.pendingPenaltyText;
     this.renderNavigator(state);
+  }
+
+  animateNumber(current, target, smoothing) {
+    const next = current + (target - current) * smoothing;
+    return Math.abs(target - next) < 0.35 ? target : next;
   }
 
   pulseField(field, shouldPulse) {
@@ -208,7 +231,8 @@ export class UIManager {
 
         const fareLabel = target.fare ? ` | ${target.fare} cr` : '';
         const specialLabel = target.special ? ' | Priority fare' : '';
-        return `<div class="${classes.join(' ')}" style="transform: translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px));" title="${target.name} ${Math.round(distance)}m${fareLabel}${specialLabel}"></div>`;
+        const distanceRatio = Math.min(distance / range, 1).toFixed(2);
+        return `<div class="${classes.join(' ')}" style="transform: translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)); --distance-ratio:${distanceRatio};" title="${target.name} ${Math.round(distance)}m${fareLabel}${specialLabel}"></div>`;
       })
       .join('');
 

@@ -110,24 +110,6 @@ canvas {
   gap: 10px;
 }
 
-.dispatch__live {
-  padding: 4px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(123, 229, 255, 0.2);
-  background: rgba(8, 18, 34, 0.66);
-  color: rgba(168, 234, 255, 0.68);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  transition: color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-}
-
-.dispatch__live--active {
-  color: #dff4ff;
-  border-color: rgba(99, 255, 131, 0.52);
-  box-shadow: 0 0 14px rgba(99, 255, 131, 0.18);
-}
-
 .hud__inventory {
   display: inline-flex;
   align-items: center;
@@ -138,6 +120,10 @@ canvas {
   background: linear-gradient(180deg, rgba(7, 22, 22, 0.92), rgba(8, 12, 24, 0.64));
   box-shadow: inset 0 0 18px rgba(99, 255, 131, 0.08), 0 0 18px rgba(99, 255, 131, 0.08);
   color: #c9ffd6;
+}
+
+.hud__inventory--inline {
+  margin-top: 12px;
 }
 
 .hud__inventory--active {
@@ -183,19 +169,22 @@ canvas {
 
 .hud__corner {
   position: absolute;
-  left: 16px;
-  bottom: 92px;
+  right: 16px;
+  bottom: 16px;
 }
 
 .hud__top,
 .hud__bottom {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
 .hud__bottom {
-  grid-template-columns: 0.9fr 1.1fr;
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  grid-template-columns: minmax(0, 360px);
   align-items: end;
 }
 
@@ -222,6 +211,12 @@ canvas {
   pointer-events: none;
 }
 
+.panel__divider {
+  height: 1px;
+  margin: 12px 0 10px;
+  background: linear-gradient(90deg, rgba(123, 229, 255, 0.04), rgba(123, 229, 255, 0.34), rgba(255, 79, 216, 0.22), rgba(123, 229, 255, 0.04));
+}
+
 .panel--compact {
   max-width: 360px;
 }
@@ -230,25 +225,15 @@ canvas {
   box-shadow: inset 0 0 30px rgba(72, 217, 255, 0.09), 0 0 30px rgba(255, 79, 216, 0.12);
 }
 
-.panel--objective {
-  border-color: rgba(137, 118, 255, 0.28);
-}
-
 .panel--credits {
   border-color: rgba(255, 212, 59, 0.26);
-}
-
-.panel--feed {
-  animation-duration: 8.5s;
+  justify-self: end;
+  width: min(350px, 100%);
 }
 
 .panel--nav {
-  animation-duration: 9s;
-}
-
-.panel--feed {
   justify-self: end;
-  width: min(460px, 100%);
+  animation-duration: 9s;
 }
 
 .panel--nav {
@@ -280,10 +265,6 @@ canvas {
 .panel--credits .value {
   color: #f2fbff;
   text-shadow: 0 0 22px rgba(123, 229, 255, 0.28), 0 0 32px rgba(255, 79, 216, 0.12);
-}
-
-.panel--objective .value {
-  color: #d9e8ff;
 }
 
 .subvalue {
@@ -361,16 +342,6 @@ canvas {
   color: #ffe98f;
   font-size: 11px;
   font-weight: 700;
-}
-
-.feed {
-  display: grid;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.feed--pulse .feed__item:first-child {
-  animation: feed-entry 0.45s ease-out;
 }
 
 .navigator {
@@ -520,27 +491,6 @@ canvas {
   box-shadow: 0 0 14px rgba(99, 255, 131, 0.95);
 }
 
-.feed__item {
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-size: 13px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  transform-origin: left center;
-}
-
-.feed__item--good {
-  color: #93ffbf;
-}
-
-.feed__item--bad {
-  color: #ff8fa4;
-}
-
-.feed__item--info {
-  color: #a8eaff;
-}
-
 .controls {
   align-self: center;
   padding: 10px 14px;
@@ -559,10 +509,6 @@ canvas {
 .hud--fast .meter__fill--boost {
   box-shadow: 0 0 24px rgba(90, 222, 255, 0.72);
   animation: boost-pulse 0.9s ease-in-out infinite;
-}
-
-.hud--objective-pulse .panel--objective {
-  animation: objective-pulse 1.3s ease-in-out infinite;
 }
 
 .hud--low-energy .panel--compact {
@@ -601,11 +547,6 @@ canvas {
   to { transform: rotate(360deg); }
 }
 
-@keyframes feed-entry {
-  0% { opacity: 0; transform: translateY(6px) scale(0.98); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
 @keyframes boost-pulse {
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.22); }
@@ -616,11 +557,6 @@ canvas {
   50% { box-shadow: 0 0 28px rgba(255, 170, 58, 0.72); }
 }
 
-@keyframes objective-pulse {
-  0%, 100% { box-shadow: inset 0 0 24px rgba(72, 217, 255, 0.05), 0 0 24px rgba(255, 79, 216, 0.08); }
-  50% { box-shadow: inset 0 0 32px rgba(88, 166, 255, 0.12), 0 0 34px rgba(88, 166, 255, 0.16); }
-}
-
 @media (max-width: 900px) {
   .hud__top,
   .hud__bottom {
@@ -628,17 +564,17 @@ canvas {
   }
 
   .hud__corner {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .hud__bottom {
     left: 12px;
-    bottom: 84px;
+    bottom: 12px;
   }
 
   .hud__actions {
     right: 12px;
-  }
-
-  .panel--feed {
-    justify-self: stretch;
-    width: 100%;
   }
 
   .controls {

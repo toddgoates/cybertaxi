@@ -12,25 +12,14 @@ export class UIManager {
     this.root.innerHTML = `
       <div class="hud__impact" data-field="impactFlash"></div>
       <div class="hud__actions">
-        <div class="hud__inventory" data-field="empInventory">
-          <span class="hud__inventory-icon">EMP</span>
-          <span class="hud__inventory-value" data-field="empCount">0</span>
-        </div>
         <button class="hud__button" type="button" data-field="musicToggle">Music</button>
-        <div class="hud__status" data-field="musicStatus"></div>
       </div>
       <div class="hud__top">
-        <div class="panel panel--highlight">
+        <div class="panel panel--credits panel--highlight">
           <div class="eyebrow">Current Fare</div>
           <div class="value" data-field="fare">0</div>
           <div class="subvalue" data-field="penalty">No active penalties</div>
-        </div>
-        <div class="panel panel--objective">
-          <div class="eyebrow">Objective</div>
-          <div class="value value--small" data-field="objective"></div>
-          <div class="subvalue" data-field="route"></div>
-        </div>
-        <div class="panel panel--credits">
+          <div class="panel__divider"></div>
           <div class="eyebrow">Credits</div>
           <div class="value" data-field="credits">0</div>
           <div class="subvalue" data-field="district"></div>
@@ -61,18 +50,15 @@ export class UIManager {
           <div class="subvalue" data-field="boostText"></div>
           <div class="meter meter--energy"><div class="meter__fill meter__fill--energy" data-field="energyBar"></div></div>
           <div class="subvalue" data-field="energyText"></div>
+          <div class="hud__inventory hud__inventory--inline" data-field="empInventory">
+            <span class="hud__inventory-icon">EMP</span>
+            <span class="hud__inventory-value" data-field="empCount">0</span>
+          </div>
           <div class="charge-ring" data-field="chargeRing">
             <div class="charge-ring__disc">
-              <div class="charge-ring__label" data-field="chargeLabel"></div>
+            <div class="charge-ring__label" data-field="chargeLabel"></div>
             </div>
           </div>
-        </div>
-        <div class="panel panel--feed">
-          <div class="panel__header">
-            <div class="eyebrow">Cab Dispatch</div>
-            <div class="dispatch__live" data-field="dispatchLive">LIVE</div>
-          </div>
-          <div class="feed" data-field="feed"></div>
         </div>
       </div>
       <div class="hud__pause" data-field="pauseOverlay">
@@ -88,8 +74,6 @@ export class UIManager {
     this.fields = {
       fare: this.root.querySelector('[data-field="fare"]'),
       penalty: this.root.querySelector('[data-field="penalty"]'),
-      objective: this.root.querySelector('[data-field="objective"]'),
-      route: this.root.querySelector('[data-field="route"]'),
       credits: this.root.querySelector('[data-field="credits"]'),
       district: this.root.querySelector('[data-field="district"]'),
       speedBar: this.root.querySelector('[data-field="speedBar"]'),
@@ -106,10 +90,7 @@ export class UIManager {
       empCount: this.root.querySelector('[data-field="empCount"]'),
       pauseOverlay: this.root.querySelector('[data-field="pauseOverlay"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
-      musicStatus: this.root.querySelector('[data-field="musicStatus"]'),
-      feed: this.root.querySelector('[data-field="feed"]'),
       impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
-      dispatchLive: this.root.querySelector('[data-field="dispatchLive"]'),
     };
   }
 
@@ -120,15 +101,6 @@ export class UIManager {
   pushFeed(message, tone = 'info') {
     this.feed.unshift({ message, tone, id: `${Date.now()}-${Math.random()}` });
     this.feed = this.feed.slice(0, 5);
-    this.fields.feed.classList.remove('feed--pulse');
-    void this.fields.feed.offsetWidth;
-    this.fields.feed.classList.add('feed--pulse');
-    this.fields.dispatchLive.classList.add('dispatch__live--active');
-    clearTimeout(this.feedPulseTimeout);
-    this.feedPulseTimeout = window.setTimeout(() => {
-      this.fields.dispatchLive.classList.remove('dispatch__live--active');
-    }, 700);
-    this.renderFeed();
   }
 
   render(state) {
@@ -139,8 +111,6 @@ export class UIManager {
     this.displayedCredits = this.animateNumber(this.displayedCredits, state.mission.totalCredits, 0.14);
     this.fields.fare.textContent = `${Math.ceil(state.mission.currentFare)} cr`;
     this.fields.penalty.textContent = state.mission.pendingPenaltyText || 'Timer drains fare every second';
-    this.fields.objective.textContent = state.mission.objective;
-    this.fields.route.textContent = state.mission.routeLabel;
     this.fields.credits.textContent = `${Math.round(this.displayedCredits)} cr`;
     this.fields.district.textContent = `District: ${state.district} | Heat: ${state.rivals.tier} | Rivals: ${state.rivals.activeRivals}`;
     this.fields.speedBar.style.width = `${Math.round(state.player.getSpeedRatio() * 100)}%`;
@@ -156,7 +126,6 @@ export class UIManager {
     this.fields.empCount.textContent = state.emp.charges;
     this.fields.empInventory.classList.toggle('hud__inventory--active', state.emp.charges > 0);
     this.fields.musicToggle.textContent = state.music.muted ? 'Music: off' : 'Music: on';
-    this.fields.musicStatus.textContent = state.music.label;
     this.pulseField(this.fields.credits, state.mission.totalCredits !== this.lastCredits);
     if (state.mission.pendingPenaltyText && state.mission.pendingPenaltyText !== this.lastPenaltyText) {
       this.flashImpact();
@@ -267,11 +236,5 @@ export class UIManager {
     }
 
     this.fields.navStatus.textContent = state.energy.status;
-  }
-
-  renderFeed() {
-    this.fields.feed.innerHTML = this.feed
-      .map((item) => `<div class="feed__item feed__item--${item.tone}">${item.message}</div>`)
-      .join('');
   }
 }

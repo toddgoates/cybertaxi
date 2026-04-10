@@ -127,7 +127,8 @@ export class GameApp {
     if (this.options.debug?.skipNarration) {
       this.music.start();
     } else {
-      this.introDialogue.start(() => this.music.start());
+      this.music.start(0.3);
+      this.introDialogue.start(() => this.music.setVolumeScale(1));
     }
     this.animate();
   }
@@ -143,6 +144,7 @@ export class GameApp {
     }
 
     if (!this.paused) {
+      this.music.update(delta);
       this.city.update(delta, this.player.mesh.position);
       this.player.update(delta, this.energy.getDriveState());
       this.traffic.update(delta);

@@ -2,19 +2,25 @@ const MUSIC_STORAGE_KEY = 'cybertaxi-music-muted';
 
 export class MusicManager {
   constructor(src) {
+    this.baseVolume = 0.45;
     this.audio = new Audio(src);
     this.audio.loop = true;
-    this.audio.volume = 0.45;
+    this.audio.volume = this.baseVolume;
     this.audio.preload = 'auto';
     this.muted = window.localStorage.getItem(MUSIC_STORAGE_KEY) === 'true';
     this.audio.muted = this.muted;
     this.paused = false;
     this.awaitingInteraction = false;
+    this.volumeScale = 1;
+    this.targetVolumeScale = 1;
     this.tryStartPlayback = this.tryStartPlayback.bind(this);
     this.handleKeydown = this.handleKeydown.bind(this);
   }
 
-  start() {
+  start(volumeScale = 1) {
+    this.volumeScale = volumeScale;
+    this.targetVolumeScale = volumeScale;
+    this.audio.volume = this.baseVolume * this.volumeScale;
     window.addEventListener('keydown', this.handleKeydown);
     this.tryStartPlayback();
   }
@@ -74,6 +80,15 @@ export class MusicManager {
     }
 
     this.tryStartPlayback();
+  }
+
+  setVolumeScale(volumeScale) {
+    this.targetVolumeScale = Math.max(0, Math.min(1, volumeScale));
+  }
+
+  update(delta) {
+    this.volumeScale += (this.targetVolumeScale - this.volumeScale) * Math.min(1, delta * 2.5);
+    this.audio.volume = this.baseVolume * this.volumeScale;
   }
 
   getState() {

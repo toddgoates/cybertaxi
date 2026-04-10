@@ -11,14 +11,18 @@ You pilot a futuristic cab through a neon city, choose fares, deliver passengers
 - Third-person hover taxi driving
 - Procedural neon city with different districts
 - Five-choice pickup and drop-off mission loop
+- Milestone-based special fares with blue star pickup markers and short high-value deadlines
 - Fare timer, distance-scaled pricing, and collision penalties
 - Boost system with recharge
-- Collidable NPC traffic
+- Collidable NPC traffic and heavier ambient city air traffic
 - Heat-based rival taxi pursuit system with multiple enemy behaviors
 - EMP pickups and inventory for crowd control
 - Energy system with rooftop recharge stations
-- Pause overlay and expanded HUD with fare info, dispatch feed, navigator, heat, and EMP inventory
-- Background music support with mute toggle
+- Crash sparks and crash sound effects on impacts
+- Procedural weather, moving rooftop searchlights, and high-altitude neon blimps
+- Intro narration with portrait/transcript widget and cinematic title card
+- Playlist music support with mute toggle and keyboard track switching
+- Pause overlay and streamlined HUD with fare/credits, navigator, and lower-left systems card
 
 ## Tech Stack
 
@@ -58,13 +62,30 @@ npm run build
 npm run preview
 ```
 
-## Music Setup
+## Audio Setup
 
-If you want background music, place your mp3 here:
+Place audio assets in `public/audio/`.
 
-`public/audio/midnight_circuits_1.mp3`
+Music playlist files currently used:
 
-The game will try to start music automatically when the game begins. Some browsers block autoplay until the first click or key press.
+- `public/audio/music_1.mp3`
+- `public/audio/music_2.mp3`
+- `public/audio/music_3.mp3`
+
+Intro narration files:
+
+- `public/audio/intro_1.mp3` through `public/audio/intro_7.mp3`
+
+Other sound effects currently used:
+
+- `public/audio/crash.mp3`
+- `public/audio/zap.mp3`
+
+Image assets currently used:
+
+- `public/images/player.png` for the intro dialogue portrait
+
+The game will try to start music and intro narration automatically when the game begins. Some browsers block autoplay until the first click or key press.
 
 ## Controls
 
@@ -76,8 +97,23 @@ The game will try to start music automatically when the game begins. Some browse
 - `L`: use EMP
 - `Esc`: pause / resume
 - `M`: toggle music
+- `[` / `]`: previous / next music track
 
 Arrow keys also work for forward, brake, and steering.
+
+## Dev Query Params
+
+When running `npm run dev`, you can seed debug state through URL params:
+
+- `?credits=750`
+- `?heat=4`
+- `?rivals=6`
+- `?emp=3`
+- `?skip-intro=1`
+
+These can be combined, for example:
+
+`http://localhost:5173/?credits=1000&heat=5&rivals=8&emp=4&skip-intro=1`
 
 ## Gameplay
 
@@ -87,12 +123,15 @@ Arrow keys also work for forward, brake, and steering.
 4. Deliver the passenger before the fare drops too much.
 5. Watch heat rise as you survive, earn, and complete fares.
 6. Collect green EMP charges when they appear and use them if rival taxis start to swarm.
+7. Watch for blue-star special fares that unlock every `350` credits earned.
 
 Important rules:
 
 - Your fare value drains over time while a passenger is onboard.
+- Special fares unlock every `350` total credits and pay more, but have a short timed delivery window.
 - Crashes during a ride reduce the fare further.
 - Crashing while boosting causes a larger penalty.
+- Colliding with buildings, cars, rivals, or blimps throws off sparks and plays a crash sound.
 - Longer trips pay more than shorter trips.
 - If a fare drops to `0`, the ride fails and you lose 50% of the original fare from your credits.
 - Energy drains over time and faster while boosting.
@@ -101,6 +140,7 @@ Important rules:
 - Rival taxis escalate with heat and can chase, intercept, block, ram, and swarm.
 - EMP pickups spawn every 2 minutes and can be stored for later use.
 - A single EMP blast can disable up to 10 nearby rival taxis.
+- The city includes moving rooftop searchlights, heavier rain, and large collidable neon blimps in the sky.
 
 ## Project Structure
 
@@ -127,24 +167,28 @@ Important rules:
 - `src/systems/rivals/SteeringBehaviors.js`
   - Lightweight seek, pursue, separation, and avoidance helpers
 - `src/systems/MissionSystem.js`
-  - Fare generation, five-choice pickup logic, drop-off flow, and payout handling
+  - Fare generation, five-choice pickup logic, special fare milestones, drop-off flow, and payout handling
 - `src/systems/EnergySystem.js`
   - Energy drain, rooftop recharge stations, and depletion penalties
 - `src/systems/EmpSystem.js`
   - EMP pickup spawning, inventory, activation, and blast effect
 - `src/systems/CollisionSystem.js`
-  - Building, traffic, and rival collision handling
+  - Building, traffic, rival, and blimp collision handling
 - `src/systems/UIManager.js`
-  - HUD layout, pause overlay, inventory display, and navigator updates
+  - HUD layout, intro dialogue widget, title card, pause overlay, and navigator updates
+- `src/systems/IntroDialogueManager.js`
+  - JSON-driven intro narration sequencing and pause-aware playback
 - `src/systems/MusicManager.js`
-  - Background music playback and mute state
+  - Playlist music playback, mute state, and keyboard track switching
+- `src/data/introDialogue.json`
+  - Intro narration metadata for portraits, transcript lines, and audio files
 - `src/styles.css`
   - HUD and UI styling
 
 ## Notes
 
 - This project currently has no backend or persistence.
-- Most visuals are generated from primitive geometry rather than external art assets.
+- Most visuals are generated from primitive geometry rather than heavy environment assets.
 - The city look is driven by procedural emissive windows, neon accents, fog, a sky dome, and lightweight bloom rather than heavy dynamic lights.
 - The game is meant to be easy to iterate on through `src/game/config.js` and the systems under `src/systems/`.
 

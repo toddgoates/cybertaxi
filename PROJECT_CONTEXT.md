@@ -2,16 +2,17 @@
 
 ## Overview
 
-`cybertaxi` is a small Three.js arcade prototype built with Vite. The player pilots a hovering taxi through a neon city, chooses between multiple passenger fares, drops riders off across districts, manages fare decay, traffic collisions, boost usage, energy consumption, and escalating rival taxi pressure.
+`cybertaxi` is a browser-based Three.js arcade game built with Vite. The player pilots a hovering taxi through a stylized neon city, chooses between multiple passenger fares, delivers riders across districts, manages fare decay, traffic collisions, boost usage, energy consumption, and escalating rival taxi pressure.
 
-The project is currently a lightweight, code-driven game with no external assets, no backend, and no save system.
+The project is still a lightweight, code-driven game with no backend and no save system, but it now uses a small set of local audio and image assets for music, intro narration, portraits, and effects.
 
 ## Tech Stack
 
-- `three` for rendering, scene graph, lighting, geometry, and animation
-- `vite` for local development and production builds
+- `three` for rendering, scene graph, geometry, animation, and lighting
+- `vite` for development and builds
 - Plain JavaScript modules, no framework
 - Styling in `src/styles.css`
+- Native browser `Audio` elements for music, intro dialogue, and sound effects
 
 ## Run Commands
 
@@ -24,95 +25,105 @@ The project is currently a lightweight, code-driven game with no external assets
 
 - The player controls a hovering taxi in a third-person view.
 - A mission loop presents five pickup choices, then locks one fare after selection and sends the player to a drop-off district.
+- Every `350` total credits earned, the next mission batch includes a special priority fare with a blue-star pickup marker, higher payout, and a short timed delivery window.
 - The active fare decreases over time during the drop-off phase.
 - Fares scale with trip distance so longer trips start with higher quoted values.
 - Collisions apply fare penalties, with larger penalties while boosting.
+- Collisions also trigger spark VFX and crash audio.
 - The player manages an energy meter that drains over time and faster while boosting.
 - Rival taxis escalate via a heat system and can chase, intercept, block, ram, and swarm.
 - EMP pickups spawn on the map, can be stored, and can disable nearby rival taxis.
-- The HUD shows fare, objective, route, credits, district, heat, rival count, EMP inventory, thrust, boost, energy, dispatch feed, music state, and a navigator.
+- The city includes animated rain, moving rooftop searchlights, and large collidable neon blimps.
+- The opening now includes JSON-driven narration with portrait/transcript UI plus a title card reveal.
 
 ## What Has Been Built So Far
 
 ### Core game loop
 
-- Scene setup, lighting, camera, renderer, animation loop
+- Scene setup, lighting, camera, renderer, post-processing, and animation loop
 - Procedural city generation with four themed districts
 - Player movement with forward, reverse, turning, strafing, and vertical hover control
 - Collidable NPC traffic following road and air lanes through each district
 - Mission flow for five-choice pickup selection and drop-off
-- Collision penalties and feedback effects hooks
+- Special fare milestone system with boosted payouts and timed pressure
+- Collision penalties and collision feedback effects
 - Distance-scaled fare generation and failed-fare penalties
 - Energy system with rooftop recharge stations and depletion penalties
 - Rival taxi AI with pooled agents, heat escalation, hidden spawns, and multiple steering behaviors
-- EMP pickup system with inventory, activation, and green pulse effect
-- Pause state with overlay
+- EMP pickup system with inventory, activation, and disruption effect
+- Pause state with overlay and audio pause support
 
-### HUD and mission guidance
+### HUD and presentation
 
-- Top HUD panels for fare, objective, credits, and district
-- Dispatch feed for mission and penalty events
-- Lower-left navigator panel
+- Top-right fare + credits card with district, heat, and rival count
+- Lower-left thrust / boost / energy systems card with inline EMP inventory
+- Lower-right navigator panel
+- Upper-left intro dialogue card that shows portrait and transcript during narration
+- Centered intro title card: `Todd Goates Presents` / `Cybertaxi`
+- Simplified HUD layout after removing the older dispatch and objective widgets
 - Navigator shows the active mission target relative to the player
-- Top-right music control with mute toggle and looping background track support from `public/audio/`
-- Navigator also shows yellow energy station dots
-- Navigator also shows green EMP pickup targets when present
+- Navigator also shows yellow energy station dots, green EMP pickup markers, and blue-star special fare markers
 - Energy meter and charging progress ring for rooftop refueling
-- Pause overlay and EMP inventory badge in the HUD
+- Keyboard-driven music controls with mute and track switching
 
-### Vehicle art direction changes
+### Audio and intro systems
+
+- Intro dialogue is driven by `src/data/introDialogue.json`
+- Each intro line maps an audio file, portrait image, and transcript block
+- Intro narration plays over ducked music, with the music swelling back to full volume at the end
+- Background music now plays from a playlist instead of a single looping file
+- Crash sound plays on collision and EMP uses its own zap sound
+- `skip-intro=1` can bypass the intro sequence in dev or regular local use
+
+### Vehicle and feedback changes
 
 - The player taxi has been reshaped into a more car-like hovering vehicle
-- Main body color changed to off-white/light gray
-- Added darker trim and visible side wheels
-- Added a blue roof light
-- Added animated light-blue hover flames under the car
-
-### Rival pressure and combat-lite additions
-
-- Rival taxis are all yellow for clear visual identification
-- Heat rises over time, from earnings, completed fares, perfect fares, and risky high-speed play
-- Heat currently ramps more slowly than the first pass to avoid overwhelming early runs
-- Rival taxis use lightweight steering behaviors instead of heavy pathfinding
-- EMP charges spawn every 2 minutes as green map beacons and can be saved up to clear nearby rivals
+- Main body color is off-white/light gray with darker trim
+- Added cockpit shaping, running lights, rear light bar, underglow, hover flames, and boost flames
+- Added stronger tilt/bob feedback while keeping movement yaw separate from visual tilt
+- Added collision sparks with yellow/orange particles
 
 ### Environment and rendering changes
 
-- Buildings now use procedural emissive window textures instead of mostly dark silhouettes
-- Added stronger district color variation across cyan, magenta, purple, and yellow tones
-- Added neon facade strips, rooftop glow crowns, and glowing panels/billboards
-- Added a sky dome gradient and horizon glow
-- Fog and lighting were retuned for a brighter, more alive nighttime look
+- Buildings use procedural emissive window textures instead of mostly dark silhouettes
+- Added stronger district color variation across cyan, magenta, purple, yellow, blue, and industrial orange tones
+- Added selective neon facade strips, rooftop glow crowns, panels, and billboards
+- Added a sky dome gradient, horizon glow, and atmospheric fog tuning
 - Added lightweight bloom with `UnrealBloomPass`
-- District building placement was tightened to reduce large open gaps between blocks
+- Added animated rain streaks centered around the player so the city is always raining
+- Added rooftop searchlights and large sky blimps as additional set dressing and obstacles
+- District ground overlap was corrected to stop border flicker between district color zones
 
-### World scale changes
+### Balancing and progression-related changes
 
-- The city was enlarged substantially so traversing from one end to another takes longer
-- District spacing is now derived from config instead of fixed hardcoded centers
-- District road/building footprint and traffic loops scale with city size
-- Added larger glowing billboards to liven up the skyline
+- Player hover ceiling was raised to `220`
+- Rival escalation and traffic density were increased from earlier values
+- Base fares and average payouts were nudged upward
+- Time-based fare decay was slowed to `1.5` credits per second
+- Special fare unlock threshold was lowered from `500` to `350`
 
 ## Important Files
 
 - `src/main.js`
-  - Entry point that mounts and starts the game
+  - Entry point, dev query-param parsing, and app startup
 - `src/game/GameApp.js`
-  - Main composition root for scene, camera, systems, postprocessing, pause flow, and frame update loop
+  - Main composition root for scene, camera, systems, intro flow, pause flow, and frame update loop
 - `src/game/config.js`
-  - Global gameplay, world, rival, and EMP tuning values
+  - Global gameplay, world, traffic, rival, energy, EMP, and mission tuning values
+- `src/data/introDialogue.json`
+  - Intro narration metadata for portraits, transcripts, and audio files
 - `src/systems/CityGenerator.js`
-  - Procedural district generation, emissive facades, sky, fog-friendly visuals, colliders, flight paths, and district lookup
+  - Procedural district generation, sky, rain, searchlights, blimps, colliders, flight paths, and district lookup
 - `src/systems/PlayerController.js`
-  - Player vehicle mesh, movement, hover motion, and hover flame animation
+  - Player vehicle mesh, movement, hover motion, underglow, and thruster animation
 - `src/systems/CameraController.js`
   - Third-person follow camera
 - `src/systems/TrafficManager.js`
-  - Spawns and updates collidable NPC traffic on road and air routes
+  - Ambient and collidable traffic spawning and movement
 - `src/systems/rivals/HeatSystem.js`
   - Heat accumulation and decay that drives rival escalation
 - `src/systems/rivals/RivalTaxiManager.js`
-  - Pooled rival taxi orchestration, spawn pacing, and disruption handling
+  - Pooled rival taxi orchestration, spawn pacing, debug seeding, and disruption handling
 - `src/systems/rivals/RivalTaxiAgent.js`
   - Individual rival taxi mesh, behavior selection, and steering update
 - `src/systems/rivals/SpawnSystem.js`
@@ -120,19 +131,23 @@ The project is currently a lightweight, code-driven game with no external assets
 - `src/systems/rivals/SteeringBehaviors.js`
   - Shared steering helpers used by rival agents
 - `src/systems/MissionSystem.js`
-  - Mission selection, five live pickup zones, distance-scaled fare logic, failure penalties, and mission state exposed to UI
+  - Mission selection, live pickup zones, special fare logic, distance-scaled fare logic, and payout handling
 - `src/systems/EnergySystem.js`
   - Energy drain, rooftop station placement/interaction, and depletion penalties
 - `src/systems/EmpSystem.js`
-  - EMP pickup spawning, inventory, activation, and blast VFX state
+  - EMP pickup spawning, inventory, activation, blast VFX state, and EMP sound playback
 - `src/systems/CollisionSystem.js`
-  - Player collisions against buildings, traffic, and rival taxis
+  - Player collisions against buildings, traffic, rivals, and blimps
+- `src/systems/EffectsHooks.js`
+  - Collision spark particles and crash sound support
 - `src/systems/UIManager.js`
-  - HUD structure and rendering, including navigator logic, energy display, charging ring, pause overlay, EMP inventory, and music controls
+  - HUD structure and rendering, including intro dialogue card, title card, navigator logic, systems card, and pause overlay
+- `src/systems/IntroDialogueManager.js`
+  - JSON-driven intro narration sequencing with pause-aware playback
 - `src/systems/MusicManager.js`
-  - Looping background music playback, autoplay fallback, and mute state
+  - Playlist-based background music playback, autoplay fallback, mute state, and track switching
 - `src/styles.css`
-  - All HUD styling including navigator placement in the lower-left corner
+  - HUD styling, intro card styling, dialogue widget styling, and panel positioning
 
 ## Current Configuration Notes
 
@@ -142,23 +157,59 @@ At the time of writing:
 - `districtSize` is `1120`
 - `districtSpacing` is `520`
 - Player top forward speed is `90`
+- Player hover ceiling is `220`
 - Mission pickup and drop-off radii are `12` and `14`
+- Regular fare decay is `1.5` credits per second
+- Special fare unlock threshold is `350` credits
 - Energy stations require `5` seconds parked in-zone to refill
 - EMP pickups spawn every `120` seconds
 - EMP can remove up to `10` nearby rival taxis per use
 
 These values live in `src/game/config.js` and are the main place to tune feel and scale.
 
+## Dev Query Params
+
+When running locally, the game currently supports:
+
+- `credits=<number>`
+- `heat=<number>`
+- `rivals=<number>`
+- `emp=<number>`
+- `skip-intro=1`
+
+Example:
+
+`http://localhost:5173/?credits=1000&heat=5&rivals=8&emp=4&skip-intro=1`
+
+## Asset Expectations
+
+Current runtime asset locations:
+
+- Music playlist:
+  - `public/audio/music_1.mp3`
+  - `public/audio/music_2.mp3`
+  - `public/audio/music_3.mp3`
+- Intro dialogue:
+  - `public/audio/intro_1.mp3` through `public/audio/intro_7.mp3`
+- Sound effects:
+  - `public/audio/crash.mp3`
+  - `public/audio/zap.mp3`
+- Intro portrait:
+  - `public/images/player.png`
+
 ## Architecture Notes
 
 - `GameApp` owns the systems and passes state into `UIManager.render(...)` each frame.
 - Systems are mostly independent and communicate through simple method calls and shared state.
 - Mission targets are represented both in-world as visible zone meshes and in UI state as target coordinates.
-- Energy stations are selected from the tallest rooftops generated in the city and rendered as yellow beacon markers.
-- EMP pickups are represented both in-world as green beacon markers and in UI state as navigator targets.
+- Energy stations are selected from tall rooftops generated in the city.
+- Searchlights are chosen from tall rooftops that are not already used as energy stations.
+- EMP pickups are represented both in-world and in UI state as navigator targets.
 - Rival taxis are pooled and updated centrally to stay browser-friendly.
-- City richness is driven mostly by emissive materials, procedural textures, and lightweight postprocessing rather than runtime lights.
+- City richness is driven mostly by emissive materials, procedural textures, and lightweight post-processing rather than runtime lights.
 - The navigator is not a full map. It is a radar/compass-style relative indicator rendered in HTML/CSS.
+- Music and intro narration both use browser `Audio` elements with autoplay fallback via user interaction.
+- Rain is rendered as a player-centered streak volume so coverage remains consistent across the whole city.
 
 ## Known Limitations
 
@@ -166,16 +217,17 @@ These values live in `src/game/config.js` and are the main place to tune feel an
 - No menus, settings, or rebinding UI
 - No minimap with actual street or district geometry, only the relative navigator
 - Traffic routes are simple fixed lanes per district, not a city-wide dynamic network
-- Vehicle visuals are mesh primitives only
+- Vehicle visuals are still primarily primitive meshes
+- Intro dialogue sequencing currently assumes one portrait/transcript block per audio clip rather than per-word timing data
 
 ## Suggested Next Improvements
 
 - Add a true minimap with district outlines or simple road traces
 - Add more districts or inter-district traffic routes
-- Add better mission variety such as timed bonuses or VIP fares
+- Add better mission variety beyond the current special fare system
 - Add environmental landmarks so larger districts are easier to navigate
-- Add basic game states such as start screen and restart
-- Add more sound design beyond the current music playback
+- Add basic game states such as a start screen and restart flow
+- Add more sound design beyond the current intro/music/crash/EMP playback
 - Improve vehicle art further with headlights, taillights, and a more sculpted front profile
 - Add more reactions for disrupted rivals, such as spark-outs or crash spirals after EMP use
 
@@ -184,11 +236,13 @@ These values live in `src/game/config.js` and are the main place to tune feel an
 If continuing this project in another session, mention:
 
 - This is a Vite + Three.js hover-taxi game prototype
-- The city has already been enlarged and district placement now scales from config
-- The HUD includes a lower-left navigator, energy meter, charging ring, EMP inventory, and pause overlay
-- The player car has been updated to an off-white hovering car with wheels, blue roof light, blue hover flames, and boost flames
-- The game includes collidable NPC traffic, rival taxi AI, distance-scaled fares, failed-fare penalties, rooftop energy stations, and EMP pickups
-- The city visuals now rely on emissive procedural windows, neon accents, fog, a sky dome, and lightweight bloom
-- The main gameplay wiring lives in `GameApp`, `MissionSystem`, `PlayerController`, `CityGenerator`, `EnergySystem`, `EmpSystem`, `RivalTaxiManager`, and `UIManager`
+- The city scales from config and now includes rain, searchlights, blimps, and more traffic
+- The HUD now uses a top-right fare/credits card, lower-left systems card, lower-right navigator, upper-left intro dialogue widget, and pause/title overlays
+- The player car has been updated to an off-white hovering car with wheels, underglow, roof light, hover flames, and boost flames
+- The game includes collidable NPC traffic, rival taxi AI, special fares, failed-fare penalties, rooftop energy stations, and EMP pickups
+- Intro narration is data-driven from `src/data/introDialogue.json`
+- Music now plays from a playlist with `[` and `]` track switching and `M` mute
+- Dev URL flags include `credits`, `heat`, `rivals`, `emp`, and `skip-intro`
+- The main gameplay wiring lives in `GameApp`, `MissionSystem`, `PlayerController`, `CityGenerator`, `EnergySystem`, `EmpSystem`, `RivalTaxiManager`, `UIManager`, `MusicManager`, and `IntroDialogueManager`
 
 This should give the next session enough context to continue without re-discovering the current state from scratch.

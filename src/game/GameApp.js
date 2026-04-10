@@ -133,7 +133,7 @@ export class GameApp {
     }
 
     if (!this.paused) {
-      this.city.update(delta);
+      this.city.update(delta, this.player.mesh.position);
       this.player.update(delta, this.energy.getDriveState());
       this.traffic.update(delta);
       this.energy.update(delta, this.player);

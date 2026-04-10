@@ -120,6 +120,7 @@ export class CityGenerator {
     this.districtResources = new Map();
     this.skySearchlights = [];
     this.animatedNeon = [];
+    this.rain = null;
   }
 
   build() {
@@ -212,23 +213,63 @@ export class CityGenerator {
   }
 
   addRain() {
-    const rainCount = 3200;
-    const positions = new Float32Array(rainCount * 3);
-    const span = this.config.worldSize * 0.47;
+    const dropCount = 1800;
+    const span = 260;
+    const minY = this.config.hoverFloor + 2;
+    const maxY = this.config.hoverCeiling + 40;
+    const positions = new Float32Array(dropCount * 6);
+    const anchors = new Float32Array(dropCount * 3);
+    const speeds = new Float32Array(dropCount);
+    const lengths = new Float32Array(dropCount);
 
-    for (let i = 0; i < rainCount; i += 1) {
-      positions[i * 3] = randRange(-span, span);
-      positions[i * 3 + 1] = randRange(10, 220);
-      positions[i * 3 + 2] = randRange(-span, span);
+    for (let i = 0; i < dropCount; i += 1) {
+      const x = randRange(-span, span);
+      const y = randRange(minY, maxY);
+      const z = randRange(-span, span);
+      const speed = randRange(110, 170);
+      const length = randRange(8, 15);
+      const index = i * 6;
+      const anchorIndex = i * 3;
+
+      anchors[anchorIndex] = x;
+      anchors[anchorIndex + 1] = y;
+      anchors[anchorIndex + 2] = z;
+      speeds[i] = speed;
+      lengths[i] = length;
+
+      positions[index] = x;
+      positions[index + 1] = y;
+      positions[index + 2] = z;
+      positions[index + 3] = x + 1.4;
+      positions[index + 4] = y + length;
+      positions[index + 5] = z + 0.8;
     }
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-    const rain = new THREE.Points(
+    const rain = new THREE.LineSegments(
       geometry,
-      new THREE.PointsMaterial({ color: 0x9fd8ff, size: 0.9, transparent: true, opacity: 0.5 }),
+      new THREE.LineBasicMaterial({
+        color: 0x9fd8ff,
+        transparent: true,
+        opacity: 0.34,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false,
+      }),
     );
+    this.rain = {
+      mesh: rain,
+      positions,
+      anchors,
+      speeds,
+      lengths,
+      span,
+      minY,
+      maxY,
+      wind: new THREE.Vector3(12, 0, 7),
+    };
     this.scene.add(rain);
   }
 
@@ -940,12 +981,14 @@ export class CityGenerator {
     return closest.name;
   }
 
-  update(delta) {
+  update(delta, playerPosition = null) {
     const time = performance.now() * 0.001;
     this.animatedNeon.forEach((sign) => {
       const flicker = 0.72 + Math.sin(time * sign.speed + sign.phase) * 0.12 + (Math.sin(time * sign.speed * 2.7 + sign.phase) > 0.94 ? -0.26 : 0);
       sign.material.opacity = Math.max(0.4, flicker);
     });
+
+    this.updateRain(delta, playerPosition);
 
     if (this.skySearchlights.length === 0) return;
 
@@ -962,5 +1005,42 @@ export class CityGenerator {
         searchlight.baseZ + Math.cos(time * searchlight.sweepSpeed + searchlight.phase) * (150 + index * 28),
       );
     });
+  }
+
+  updateRain(delta, playerPosition) {
+    if (!this.rain) return;
+
+    const { positions, anchors, speeds, lengths, span, minY, maxY, wind, mesh } = this.rain;
+    const centerX = playerPosition?.x ?? 0;
+    const centerZ = playerPosition?.z ?? 0;
+
+    for (let i = 0; i < speeds.length; i += 1) {
+      const anchorIndex = i * 3;
+      const index = i * 6;
+
+      anchors[anchorIndex] += wind.x * delta;
+      anchors[anchorIndex + 1] -= speeds[i] * delta;
+      anchors[anchorIndex + 2] += wind.z * delta;
+
+      if (anchors[anchorIndex + 1] < minY) {
+        anchors[anchorIndex] = randRange(centerX - span, centerX + span);
+        anchors[anchorIndex + 1] = randRange(maxY - 30, maxY);
+        anchors[anchorIndex + 2] = randRange(centerZ - span, centerZ + span);
+      } else {
+        if (anchors[anchorIndex] < centerX - span) anchors[anchorIndex] += span * 2;
+        if (anchors[anchorIndex] > centerX + span) anchors[anchorIndex] -= span * 2;
+        if (anchors[anchorIndex + 2] < centerZ - span) anchors[anchorIndex + 2] += span * 2;
+        if (anchors[anchorIndex + 2] > centerZ + span) anchors[anchorIndex + 2] -= span * 2;
+      }
+
+      positions[index] = anchors[anchorIndex];
+      positions[index + 1] = anchors[anchorIndex + 1];
+      positions[index + 2] = anchors[anchorIndex + 2];
+      positions[index + 3] = anchors[anchorIndex] + wind.x * 0.035;
+      positions[index + 4] = anchors[anchorIndex + 1] + lengths[i];
+      positions[index + 5] = anchors[anchorIndex + 2] + wind.z * 0.035;
+    }
+
+    mesh.geometry.attributes.position.needsUpdate = true;
   }
 }

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&display=swap');
+
 :root {
   color-scheme: dark;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -80,19 +82,27 @@ canvas {
 }
 
 .hud__intro-presenter {
-  color: #a8d8ff;
+  color: #b8dfff;
   font-size: 14px;
-  letter-spacing: 0.28em;
+  font-family: 'Orbitron', Inter, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.34em;
   text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(123, 229, 255, 0.18);
 }
 
 .hud__intro-title {
   color: #f4fbff;
   font-size: clamp(32px, 6vw, 68px);
   font-weight: 800;
+  font-family: 'Orbitron', Inter, ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  text-shadow: 0 0 28px rgba(123, 229, 255, 0.34), 0 0 36px rgba(255, 79, 216, 0.18);
+  background: linear-gradient(180deg, #f7fbff 0%, #86d8ff 42%, #58a6ff 68%, #d36eff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 28px rgba(123, 229, 255, 0.28), 0 0 44px rgba(255, 79, 216, 0.16);
 }
 
 .hud__pause {

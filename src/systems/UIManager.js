@@ -11,6 +11,10 @@ export class UIManager {
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud__impact" data-field="impactFlash"></div>
+      <div class="hud__intro-card" data-field="introCard">
+        <div class="hud__intro-presenter" data-field="introPresenter"></div>
+        <div class="hud__intro-title" data-field="introTitle"></div>
+      </div>
       <div class="hud__actions">
         <button class="hud__button" type="button" data-field="musicToggle">Music</button>
       </div>
@@ -91,6 +95,9 @@ export class UIManager {
       pauseOverlay: this.root.querySelector('[data-field="pauseOverlay"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
+      introCard: this.root.querySelector('[data-field="introCard"]'),
+      introPresenter: this.root.querySelector('[data-field="introPresenter"]'),
+      introTitle: this.root.querySelector('[data-field="introTitle"]'),
     };
   }
 
@@ -152,6 +159,14 @@ export class UIManager {
     this.fields.impactFlash.classList.remove('hud__impact--active');
     void this.fields.impactFlash.offsetWidth;
     this.fields.impactFlash.classList.add('hud__impact--active');
+  }
+
+  showIntroCard(presenter, title) {
+    this.fields.introPresenter.textContent = presenter;
+    this.fields.introTitle.textContent = title;
+    this.fields.introCard.classList.remove('hud__intro-card--visible');
+    void this.fields.introCard.offsetWidth;
+    this.fields.introCard.classList.add('hud__intro-card--visible');
   }
 
   renderNavigator(state) {

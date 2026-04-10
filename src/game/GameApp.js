@@ -124,11 +124,14 @@ export class GameApp {
   }
 
   start() {
-    if (this.options.debug?.skipNarration) {
+    if (this.options.debug?.skipIntro) {
       this.music.start();
     } else {
       this.music.start(0.3);
-      this.introDialogue.start(() => this.music.setVolumeScale(1));
+      this.introDialogue.start(() => {
+        this.music.setVolumeScale(1);
+        this.ui.showIntroCard('Todd Goates Presents', 'Cybertaxi');
+      });
     }
     this.animate();
   }

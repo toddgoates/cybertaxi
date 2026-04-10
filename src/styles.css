@@ -56,6 +56,45 @@ canvas {
   animation: hud-impact 0.45s ease-out;
 }
 
+.hud__intro-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  gap: 10px;
+  min-width: min(520px, calc(100vw - 48px));
+  padding: 24px 28px;
+  border-radius: 18px;
+  border: 1px solid rgba(123, 229, 255, 0.24);
+  background: linear-gradient(180deg, rgba(9, 15, 30, 0.82), rgba(7, 10, 20, 0.48));
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 26px rgba(72, 217, 255, 0.08), 0 0 32px rgba(255, 79, 216, 0.1);
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.98);
+}
+
+.hud__intro-card--visible {
+  animation: intro-card 2.8s ease-out forwards;
+}
+
+.hud__intro-presenter {
+  color: #a8d8ff;
+  font-size: 14px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.hud__intro-title {
+  color: #f4fbff;
+  font-size: clamp(32px, 6vw, 68px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 0 28px rgba(123, 229, 255, 0.34), 0 0 36px rgba(255, 79, 216, 0.18);
+}
+
 .hud__pause {
   position: absolute;
   inset: 0;
@@ -524,6 +563,13 @@ canvas {
   0% { opacity: 0; }
   12% { opacity: 1; }
   100% { opacity: 0; }
+}
+
+@keyframes intro-card {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.98); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  48% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.015); }
 }
 
 @keyframes value-pulse {

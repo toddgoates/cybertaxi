@@ -58,6 +58,59 @@ canvas {
   animation: hud-impact 0.45s ease-out;
 }
 
+.hud__dialogue {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 14px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(123, 229, 255, 0.22);
+  background: linear-gradient(180deg, rgba(10, 16, 32, 0.88), rgba(8, 12, 24, 0.62));
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 22px rgba(72, 217, 255, 0.06), 0 0 28px rgba(88, 166, 255, 0.08);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.hud__dialogue--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hud__dialogue-portrait-wrap {
+  width: 84px;
+  height: 84px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(123, 229, 255, 0.24);
+  background: linear-gradient(180deg, rgba(17, 28, 48, 0.96), rgba(8, 12, 24, 0.74));
+}
+
+.hud__dialogue-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hud__dialogue-copy {
+  min-width: 0;
+}
+
+.hud__dialogue-text {
+  color: #e7f6ff;
+  font-size: 15px;
+  line-height: 1.45;
+  white-space: pre-line;
+  text-shadow: 0 0 16px rgba(123, 229, 255, 0.14);
+}
+
 .hud__intro-card {
   position: absolute;
   left: 50%;
@@ -78,7 +131,7 @@ canvas {
 }
 
 .hud__intro-card--visible {
-  animation: intro-card 2.8s ease-out forwards;
+  animation: intro-card 4.2s ease-out forwards;
 }
 
 .hud__intro-presenter {
@@ -577,8 +630,8 @@ canvas {
 
 @keyframes intro-card {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.98); }
-  12% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  48% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  8% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  58% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(1.015); }
 }
 
@@ -622,6 +675,12 @@ canvas {
   .hud__corner {
     right: 12px;
     bottom: 12px;
+  }
+
+  .hud__dialogue {
+    left: 12px;
+    top: 12px;
+    width: min(420px, calc(100vw - 24px));
   }
 
   .hud__bottom {

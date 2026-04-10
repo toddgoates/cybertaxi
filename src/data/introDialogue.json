@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/intro_1.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Pax Concordia.\r\nA city that never stops... and never forgives."
+  },
+  {
+    "id": 2,
+    "audio": "/audio/intro_2.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "People here move fast.\r\nYou have to."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/intro_3.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Me and her... we thought we could beat the system.\r\nWe were wrong."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/intro_4.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Now we owe 10,000 credits.\r\nBy sunrise."
+  },
+  {
+    "id": 5,
+    "audio": "/audio/intro_5.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "It's not just money.\r\nIt's survival."
+  },
+  {
+    "id": 6,
+    "audio": "/audio/intro_6.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "So I hacked an Axiom Mobility taxi.\r\nTurned it into our lifeline."
+  },
+  {
+    "id": 7,
+    "audio": "/audio/intro_7.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "One night to fix everything.\r\nOr lose it all."
+  }
+]

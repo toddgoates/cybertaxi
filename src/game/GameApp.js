@@ -17,6 +17,7 @@ import { EnergySystem } from '../systems/EnergySystem.js';
 import { RivalTaxiManager } from '../systems/rivals/RivalTaxiManager.js';
 import { EmpSystem } from '../systems/EmpSystem.js';
 import { IntroDialogueManager } from '../systems/IntroDialogueManager.js';
+import introDialogue from '../data/introDialogue.json';
 
 export class GameApp {
   constructor(mount, options = {}) {
@@ -42,10 +43,7 @@ export class GameApp {
     this.ui = new UIManager(this.mount);
     this.effects = new EffectsHooks(this.scene);
     this.music = new MusicManager('/audio/midnight_circuits_1.mp3');
-    this.introDialogue = new IntroDialogueManager(
-      Array.from({ length: 7 }, (_, index) => `/audio/intro_${index + 1}.mp3`),
-      300,
-    );
+    this.introDialogue = new IntroDialogueManager(introDialogue, 300);
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
     this.setupLights();
@@ -128,9 +126,13 @@ export class GameApp {
       this.music.start();
     } else {
       this.music.start(0.3);
-      this.introDialogue.start(() => {
-        this.music.setVolumeScale(1);
-        this.ui.showIntroCard('Todd Goates Presents', 'Cybertaxi');
+      this.introDialogue.start({
+        onEntryStart: (entry) => this.ui.showDialogue(entry),
+        onEntryEnd: () => this.ui.hideDialogue(),
+        onComplete: () => {
+          this.music.setVolumeScale(1);
+          this.ui.showIntroCard('Todd Goates Presents', 'Cybertaxi');
+        },
       });
     }
     this.animate();

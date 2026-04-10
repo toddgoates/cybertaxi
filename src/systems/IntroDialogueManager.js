@@ -1,6 +1,6 @@
 export class IntroDialogueManager {
-  constructor(sources, gapMs = 2000) {
-    this.sources = sources;
+  constructor(entries, gapMs = 2000) {
+    this.entries = entries;
     this.gapMs = gapMs;
     this.audio = new Audio();
     this.audio.preload = 'auto';
@@ -17,10 +17,12 @@ export class IntroDialogueManager {
     this.handleEnded = this.handleEnded.bind(this);
   }
 
-  start(onComplete = null) {
-    if (this.started || this.completed || this.sources.length === 0) return;
+  start({ onComplete = null, onEntryStart = null, onEntryEnd = null } = {}) {
+    if (this.started || this.completed || this.entries.length === 0) return;
     this.started = true;
     this.onComplete = onComplete;
+    this.onEntryStart = onEntryStart;
+    this.onEntryEnd = onEntryEnd;
     this.audio.addEventListener('ended', this.handleEnded);
     this.tryStartPlayback();
   }
@@ -29,7 +31,10 @@ export class IntroDialogueManager {
     if (!this.started || this.completed || this.paused) return;
 
     if (!this.audio.src) {
-      this.audio.src = this.sources[this.currentIndex];
+      this.audio.src = this.entries[this.currentIndex].audio;
+      if (this.onEntryStart) {
+        this.onEntryStart(this.entries[this.currentIndex], this.currentIndex);
+      }
     }
 
     this.audio.play()
@@ -46,8 +51,12 @@ export class IntroDialogueManager {
   handleEnded() {
     if (this.completed) return;
 
+    if (this.onEntryEnd) {
+      this.onEntryEnd(this.entries[this.currentIndex], this.currentIndex);
+    }
+
     this.currentIndex += 1;
-    if (this.currentIndex >= this.sources.length) {
+    if (this.currentIndex >= this.entries.length) {
       this.finish();
       return;
     }
@@ -58,7 +67,10 @@ export class IntroDialogueManager {
     this.gapTimer = window.setTimeout(() => {
       this.gapTimer = null;
       this.resumeFromGap = false;
-      this.audio.src = this.sources[this.currentIndex];
+      this.audio.src = this.entries[this.currentIndex].audio;
+      if (this.onEntryStart) {
+        this.onEntryStart(this.entries[this.currentIndex], this.currentIndex);
+      }
       this.tryStartPlayback();
     }, this.gapMs);
   }
@@ -82,7 +94,10 @@ export class IntroDialogueManager {
       this.resumeFromGap = false;
       this.gapTimer = window.setTimeout(() => {
         this.gapTimer = null;
-        this.audio.src = this.sources[this.currentIndex];
+        this.audio.src = this.entries[this.currentIndex].audio;
+        if (this.onEntryStart) {
+          this.onEntryStart(this.entries[this.currentIndex], this.currentIndex);
+        }
         this.tryStartPlayback();
       }, this.gapMs);
       return;

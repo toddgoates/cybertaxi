@@ -11,6 +11,14 @@ export class UIManager {
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud__impact" data-field="impactFlash"></div>
+      <div class="hud__dialogue" data-field="dialogueCard">
+        <div class="hud__dialogue-portrait-wrap">
+          <img class="hud__dialogue-portrait" data-field="dialoguePortrait" alt="Speaker portrait" />
+        </div>
+        <div class="hud__dialogue-copy">
+          <div class="hud__dialogue-text" data-field="dialogueText"></div>
+        </div>
+      </div>
       <div class="hud__intro-card" data-field="introCard">
         <div class="hud__intro-presenter" data-field="introPresenter"></div>
         <div class="hud__intro-title" data-field="introTitle"></div>
@@ -95,6 +103,9 @@ export class UIManager {
       pauseOverlay: this.root.querySelector('[data-field="pauseOverlay"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
+      dialogueCard: this.root.querySelector('[data-field="dialogueCard"]'),
+      dialoguePortrait: this.root.querySelector('[data-field="dialoguePortrait"]'),
+      dialogueText: this.root.querySelector('[data-field="dialogueText"]'),
       introCard: this.root.querySelector('[data-field="introCard"]'),
       introPresenter: this.root.querySelector('[data-field="introPresenter"]'),
       introTitle: this.root.querySelector('[data-field="introTitle"]'),
@@ -167,6 +178,16 @@ export class UIManager {
     this.fields.introCard.classList.remove('hud__intro-card--visible');
     void this.fields.introCard.offsetWidth;
     this.fields.introCard.classList.add('hud__intro-card--visible');
+  }
+
+  showDialogue(entry) {
+    this.fields.dialoguePortrait.src = entry.portrait;
+    this.fields.dialogueText.textContent = entry.transcription.replace(/\r\n/g, '\n');
+    this.fields.dialogueCard.classList.add('hud__dialogue--visible');
+  }
+
+  hideDialogue() {
+    this.fields.dialogueCard.classList.remove('hud__dialogue--visible');
   }
 
   renderNavigator(state) {

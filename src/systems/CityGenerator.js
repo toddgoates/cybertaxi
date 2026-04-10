@@ -270,6 +270,7 @@ export class CityGenerator {
       maxY,
       wind: new THREE.Vector3(12, 0, 7),
     };
+    rain.position.set(0, 0, 0);
     this.scene.add(rain);
   }
 
@@ -1011,8 +1012,8 @@ export class CityGenerator {
     if (!this.rain) return;
 
     const { positions, anchors, speeds, lengths, span, minY, maxY, wind, mesh } = this.rain;
-    const centerX = playerPosition?.x ?? 0;
-    const centerZ = playerPosition?.z ?? 0;
+    mesh.position.x = playerPosition?.x ?? 0;
+    mesh.position.z = playerPosition?.z ?? 0;
 
     for (let i = 0; i < speeds.length; i += 1) {
       const anchorIndex = i * 3;
@@ -1023,14 +1024,14 @@ export class CityGenerator {
       anchors[anchorIndex + 2] += wind.z * delta;
 
       if (anchors[anchorIndex + 1] < minY) {
-        anchors[anchorIndex] = randRange(centerX - span, centerX + span);
+        anchors[anchorIndex] = randRange(-span, span);
         anchors[anchorIndex + 1] = randRange(maxY - 30, maxY);
-        anchors[anchorIndex + 2] = randRange(centerZ - span, centerZ + span);
+        anchors[anchorIndex + 2] = randRange(-span, span);
       } else {
-        if (anchors[anchorIndex] < centerX - span) anchors[anchorIndex] += span * 2;
-        if (anchors[anchorIndex] > centerX + span) anchors[anchorIndex] -= span * 2;
-        if (anchors[anchorIndex + 2] < centerZ - span) anchors[anchorIndex + 2] += span * 2;
-        if (anchors[anchorIndex + 2] > centerZ + span) anchors[anchorIndex + 2] -= span * 2;
+        if (anchors[anchorIndex] < -span) anchors[anchorIndex] += span * 2;
+        if (anchors[anchorIndex] > span) anchors[anchorIndex] -= span * 2;
+        if (anchors[anchorIndex + 2] < -span) anchors[anchorIndex + 2] += span * 2;
+        if (anchors[anchorIndex + 2] > span) anchors[anchorIndex + 2] -= span * 2;
       }
 
       positions[index] = anchors[anchorIndex];

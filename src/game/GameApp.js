@@ -16,6 +16,7 @@ import { MusicManager } from '../systems/MusicManager.js';
 import { EnergySystem } from '../systems/EnergySystem.js';
 import { RivalTaxiManager } from '../systems/rivals/RivalTaxiManager.js';
 import { EmpSystem } from '../systems/EmpSystem.js';
+import { IntroDialogueManager } from '../systems/IntroDialogueManager.js';
 
 export class GameApp {
   constructor(mount, options = {}) {
@@ -41,6 +42,10 @@ export class GameApp {
     this.ui = new UIManager(this.mount);
     this.effects = new EffectsHooks(this.scene);
     this.music = new MusicManager('/audio/midnight_circuits_1.mp3');
+    this.introDialogue = new IntroDialogueManager(
+      Array.from({ length: 7 }, (_, index) => `/audio/intro_${index + 1}.mp3`),
+      300,
+    );
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
     this.setupLights();
@@ -119,7 +124,11 @@ export class GameApp {
   }
 
   start() {
-    this.music.start();
+    if (this.options.debug?.skipNarration) {
+      this.music.start();
+    } else {
+      this.introDialogue.start(() => this.music.start());
+    }
     this.animate();
   }
 
@@ -130,6 +139,7 @@ export class GameApp {
     if (this.input.consumePress('pause')) {
       this.paused = !this.paused;
       this.music.setPaused(this.paused);
+      this.introDialogue.setPaused(this.paused);
     }
 
     if (!this.paused) {

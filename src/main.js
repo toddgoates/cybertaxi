@@ -17,6 +17,7 @@ function parseDevDebugFlags() {
     startingHeat: readInt('heat'),
     startingRivals: readInt('rivals'),
     startingEmpCharges: readInt('emp'),
+    skipNarration: params.get('skip-narration') === '1',
   };
 
   return Object.values(flags).some((value) => value != null) ? flags : null;

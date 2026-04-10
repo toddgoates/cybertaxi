@@ -5,7 +5,6 @@ export class UIManager {
     this.lastPenaltyText = '';
     this.lastCredits = 0;
     this.lastFare = 0;
-    this.displayedFare = 0;
     this.displayedCredits = 0;
     this.feedPulseTimeout = null;
     this.root = document.createElement('div');
@@ -137,9 +136,8 @@ export class UIManager {
     this.root.classList.toggle('hud--fast', state.player.getSpeedRatio() > 0.72);
     this.root.classList.toggle('hud--objective-pulse', Boolean(state.mission.specialFareActive));
     this.root.classList.toggle('hud--low-energy', state.energy.ratio < 0.22);
-    this.displayedFare = this.animateNumber(this.displayedFare, state.mission.currentFare, 0.18);
     this.displayedCredits = this.animateNumber(this.displayedCredits, state.mission.totalCredits, 0.14);
-    this.fields.fare.textContent = `${Math.round(this.displayedFare)} cr`;
+    this.fields.fare.textContent = `${Math.ceil(state.mission.currentFare)} cr`;
     this.fields.penalty.textContent = state.mission.pendingPenaltyText || 'Timer drains fare every second';
     this.fields.objective.textContent = state.mission.objective;
     this.fields.route.textContent = state.mission.routeLabel;
@@ -159,7 +157,6 @@ export class UIManager {
     this.fields.empInventory.classList.toggle('hud__inventory--active', state.emp.charges > 0);
     this.fields.musicToggle.textContent = state.music.muted ? 'Music: off' : 'Music: on';
     this.fields.musicStatus.textContent = state.music.label;
-    this.pulseField(this.fields.fare, state.mission.currentFare !== this.lastFare);
     this.pulseField(this.fields.credits, state.mission.totalCredits !== this.lastCredits);
     if (state.mission.pendingPenaltyText && state.mission.pendingPenaltyText !== this.lastPenaltyText) {
       this.flashImpact();

@@ -8,7 +8,7 @@ export const GAME_CONFIG = {
     baseFareMin: 62,
     baseFareMax: 126,
     distanceFareMultiplier: 0.04,
-    timePenaltyPerSecond: 2.4,
+    timePenaltyPerSecond: 1.5,
     collisionPenalty: 12,
     pickupRadius: 12,
     dropoffRadius: 14,
@@ -52,8 +52,8 @@ export const GAME_CONFIG = {
     damping: 5.2,
   },
   traffic: {
-    obstacleCount: 48,
-    ambientCount: 36,
+    obstacleCount: 56,
+    ambientCount: 54,
   },
   rivals: {
     poolSize: 20,

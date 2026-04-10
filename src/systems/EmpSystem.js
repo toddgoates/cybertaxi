@@ -123,6 +123,7 @@ export class EmpSystem {
     this.pickupSpots = this.createPickupSpots();
     this.pickupActive = false;
     this.pickupTarget = null;
+    this.spawnAnnouncementPending = false;
     this.audioIndex = 0;
     this.zapSounds = Array.from({ length: 3 }, () => {
       const audio = new Audio('/audio/zap.mp3');
@@ -168,6 +169,7 @@ export class EmpSystem {
     this.pickup.position.copy(this.pickupTarget.position);
     this.pickup.visible = true;
     this.pickupActive = true;
+    this.spawnAnnouncementPending = true;
     this.ui.pushFeed('EMP charge detected on the grid', 'good');
   }
 
@@ -243,5 +245,11 @@ export class EmpSystem {
         : null,
       cooldownSeconds: this.pickupActive || this.charges >= this.config.maxCharges ? 0 : Math.ceil(this.spawnTimer),
     };
+  }
+
+  consumeSpawnEvent() {
+    if (!this.spawnAnnouncementPending) return null;
+    this.spawnAnnouncementPending = false;
+    return this.pickupTarget;
   }
 }

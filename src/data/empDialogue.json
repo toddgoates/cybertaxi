@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/item_1.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Heads up-I just dropped you something useful."
+  },
+  {
+    "id": 2,
+    "audio": "/audio/item_2.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You're welcome. Try not to waste it."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/item_3.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Sending you a little advantage."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/item_4.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Got something for you. Use it wisely."
+  },
+  {
+    "id": 5,
+    "audio": "/audio/item_5.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "I hacked you a gift. Don't crash before using it."
+  },
+  {
+    "id": 6,
+    "audio": "/audio/item_6.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You're gonna need this-trust me."
+  },
+  {
+    "id": 7,
+    "audio": "/audio/item_7.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Incoming. Catch it."
+  },
+  {
+    "id": 8,
+    "audio": "/audio/item_8.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Just tipped the odds in your favor."
+  },
+  {
+    "id": 9,
+    "audio": "/audio/item_9.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "I've got your back-always."
+  },
+  {
+    "id": 10,
+    "audio": "/audio/item_10.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "That should help you survive a little longer."
+  }
+]

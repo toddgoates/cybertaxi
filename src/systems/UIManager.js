@@ -11,6 +11,7 @@ export class UIManager {
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud__impact" data-field="impactFlash"></div>
+      <div class="hud__alert" data-field="alertBanner"></div>
       <div class="hud__dialogue" data-field="dialogueCard">
         <div class="hud__dialogue-portrait-wrap">
           <img class="hud__dialogue-portrait" data-field="dialoguePortrait" alt="Speaker portrait" />
@@ -103,6 +104,7 @@ export class UIManager {
       pauseOverlay: this.root.querySelector('[data-field="pauseOverlay"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
+      alertBanner: this.root.querySelector('[data-field="alertBanner"]'),
       dialogueCard: this.root.querySelector('[data-field="dialogueCard"]'),
       dialoguePortrait: this.root.querySelector('[data-field="dialoguePortrait"]'),
       dialogueText: this.root.querySelector('[data-field="dialogueText"]'),
@@ -188,6 +190,13 @@ export class UIManager {
 
   hideDialogue() {
     this.fields.dialogueCard.classList.remove('hud__dialogue--visible');
+  }
+
+  showAlert(message) {
+    this.fields.alertBanner.textContent = message;
+    this.fields.alertBanner.classList.remove('hud__alert--visible');
+    void this.fields.alertBanner.offsetWidth;
+    this.fields.alertBanner.classList.add('hud__alert--visible');
   }
 
   renderNavigator(state) {

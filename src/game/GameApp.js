@@ -17,7 +17,9 @@ import { EnergySystem } from '../systems/EnergySystem.js';
 import { RivalTaxiManager } from '../systems/rivals/RivalTaxiManager.js';
 import { EmpSystem } from '../systems/EmpSystem.js';
 import { IntroDialogueManager } from '../systems/IntroDialogueManager.js';
+import { VoiceoverManager } from '../systems/VoiceoverManager.js';
 import introDialogue from '../data/introDialogue.json';
+import empDialogue from '../data/empDialogue.json';
 
 export class GameApp {
   constructor(mount, options = {}) {
@@ -48,6 +50,7 @@ export class GameApp {
       '/audio/music_3.mp3',
     ]);
     this.introDialogue = new IntroDialogueManager(introDialogue, 300);
+    this.voiceover = new VoiceoverManager();
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
     this.setupLights();
@@ -150,6 +153,7 @@ export class GameApp {
       this.paused = !this.paused;
       this.music.setPaused(this.paused);
       this.introDialogue.setPaused(this.paused);
+      this.voiceover.setPaused(this.paused);
     }
 
     if (!this.paused) {
@@ -161,6 +165,21 @@ export class GameApp {
       const missionState = this.missions.getState();
       this.rivals.update(delta, this.player, missionState);
       this.emp.update(delta, this.player, this.rivals);
+      const empSpawn = this.emp.consumeSpawnEvent();
+      if (empSpawn) {
+        const entry = empDialogue[Math.floor(Math.random() * empDialogue.length)];
+        this.ui.showAlert('An EMP appeared!');
+        this.voiceover.play(entry, {
+          onStart: (dialogueEntry) => {
+            this.music.setVolumeScale(0.22);
+            this.ui.showDialogue(dialogueEntry);
+          },
+          onComplete: () => {
+            this.music.setVolumeScale(1);
+            this.ui.hideDialogue();
+          },
+        });
+      }
       this.effects.update(delta);
 
       const trafficColliders = this.traffic.getCollidableVehicles();

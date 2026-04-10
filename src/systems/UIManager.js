@@ -79,7 +79,7 @@ export class UIManager {
           <div class="hud__pause-subtitle">Press Esc to resume</div>
         </div>
       </div>
-      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | Esc pause | M toggle music</div>
+      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | Esc pause | M toggle music | [ / ] change track</div>
     `;
     mount.appendChild(this.root);
 

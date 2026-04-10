@@ -1,10 +1,12 @@
 const MUSIC_STORAGE_KEY = 'cybertaxi-music-muted';
 
 export class MusicManager {
-  constructor(src) {
+  constructor(sources) {
+    this.sources = Array.isArray(sources) ? sources : [sources];
+    this.currentTrackIndex = 0;
     this.baseVolume = 0.45;
-    this.audio = new Audio(src);
-    this.audio.loop = true;
+    this.audio = new Audio(this.sources[0]);
+    this.audio.loop = false;
     this.audio.volume = this.baseVolume;
     this.audio.preload = 'auto';
     this.muted = window.localStorage.getItem(MUSIC_STORAGE_KEY) === 'true';
@@ -15,6 +17,8 @@ export class MusicManager {
     this.targetVolumeScale = 1;
     this.tryStartPlayback = this.tryStartPlayback.bind(this);
     this.handleKeydown = this.handleKeydown.bind(this);
+    this.handleTrackEnded = this.handleTrackEnded.bind(this);
+    this.audio.addEventListener('ended', this.handleTrackEnded);
   }
 
   start(volumeScale = 1) {
@@ -27,12 +31,27 @@ export class MusicManager {
 
   handleKeydown(event) {
     if (event.repeat) return;
-    if (event.code !== 'KeyM') return;
-    this.toggleMute();
+    if (event.code === 'KeyM') {
+      this.toggleMute();
+      return;
+    }
+
+    if (event.code === 'BracketLeft') {
+      this.playPreviousTrack();
+      return;
+    }
+
+    if (event.code === 'BracketRight') {
+      this.playNextTrack();
+    }
   }
 
   tryStartPlayback() {
     if (this.muted || this.paused) return;
+
+    if (!this.audio.src && this.sources.length > 0) {
+      this.audio.src = this.sources[this.currentTrackIndex];
+    }
 
     this.audio.play()
       .then(() => {
@@ -43,6 +62,30 @@ export class MusicManager {
         this.awaitingInteraction = true;
         this.addInteractionListeners();
       });
+  }
+
+  handleTrackEnded() {
+    if (this.sources.length === 0) return;
+    this.currentTrackIndex = (this.currentTrackIndex + 1) % this.sources.length;
+    this.audio.src = this.sources[this.currentTrackIndex];
+    this.audio.currentTime = 0;
+    this.tryStartPlayback();
+  }
+
+  playTrack(index) {
+    if (this.sources.length === 0) return;
+    this.currentTrackIndex = (index + this.sources.length) % this.sources.length;
+    this.audio.src = this.sources[this.currentTrackIndex];
+    this.audio.currentTime = 0;
+    this.tryStartPlayback();
+  }
+
+  playNextTrack() {
+    this.playTrack(this.currentTrackIndex + 1);
+  }
+
+  playPreviousTrack() {
+    this.playTrack(this.currentTrackIndex - 1);
   }
 
   addInteractionListeners() {

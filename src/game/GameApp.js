@@ -42,7 +42,11 @@ export class GameApp {
     this.input = new InputManager();
     this.ui = new UIManager(this.mount);
     this.effects = new EffectsHooks(this.scene);
-    this.music = new MusicManager('/audio/midnight_circuits_1.mp3');
+    this.music = new MusicManager([
+      '/audio/music_1.mp3',
+      '/audio/music_2.mp3',
+      '/audio/music_3.mp3',
+    ]);
     this.introDialogue = new IntroDialogueManager(introDialogue, 300);
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 

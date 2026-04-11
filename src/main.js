@@ -17,6 +17,7 @@ function parseDevDebugFlags() {
     startingHeat: readInt('heat'),
     startingRivals: readInt('rivals'),
     startingEmpCharges: readInt('emp'),
+    startingSuperBoost: params.get('super-boost') === '1',
     skipIntro: params.get('skip-intro') === '1',
   };
 

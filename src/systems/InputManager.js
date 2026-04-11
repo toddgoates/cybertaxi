@@ -13,6 +13,7 @@ export class InputManager {
       strafeRight: ['KeyE'],
       boost: ['Space'],
       emp: ['KeyL'],
+      superBoost: ['KeyP'],
       pause: ['Escape'],
     };
 

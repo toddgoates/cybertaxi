@@ -19,8 +19,10 @@ export class PlayerController {
     this.strafeVelocity = 0;
     this.hoverTime = 0;
     this.isBoosting = false;
+    this.isSuperBoosting = false;
     this.boostCharge = this.config.boostDuration;
     this.boostCooldownTimer = 0;
+    this.superBoostTimer = 0;
   }
 
   createTaxiMesh() {
@@ -240,14 +242,16 @@ export class PlayerController {
   }
 
   update(delta, driveState = { canBoost: true, movementScale: 1 }) {
+    this.updateSuperBoostState(delta);
     this.updateBoostState(delta, driveState.canBoost);
 
     const forwardInput = (this.input.isDown('forward') ? 1 : 0) - (this.input.isDown('brake') ? 1 : 0);
     const turnInput = this.input.getAxis('left', 'right');
     const verticalInput = this.input.getAxis('descend', 'ascend');
     const strafeInput = this.input.getAxis('strafeLeft', 'strafeRight');
-    const boostMultiplier = this.isBoosting ? this.config.boostSpeedMultiplier : 1;
-    const accelerationMultiplier = (this.isBoosting ? this.config.boostAccelerationMultiplier : 1) * driveState.movementScale;
+    const activeBoost = this.isBoosting || this.isSuperBoosting;
+    const boostMultiplier = activeBoost ? this.config.boostSpeedMultiplier : 1;
+    const accelerationMultiplier = (activeBoost ? this.config.boostAccelerationMultiplier : 1) * driveState.movementScale;
     const maxForwardSpeed = this.config.maxForwardSpeed * boostMultiplier * driveState.movementScale;
 
     if (forwardInput > 0) {
@@ -313,27 +317,38 @@ export class PlayerController {
       glow.scale.y = 0.7 + pulse * 0.12;
     });
 
+    const superBoostVisual = this.isSuperBoostReady();
     this.boostFlames.forEach((flame, index) => {
-      const boostPulse = this.isBoosting ? 1 + Math.sin(this.hoverTime * 24 + index * 0.7) * 0.18 : 0.45;
-      const targetScale = this.isBoosting ? 1.15 : 0.001;
+      const boostPulse = activeBoost ? 1 + Math.sin(this.hoverTime * 24 + index * 0.7) * 0.18 : 0.45;
+      const targetScale = activeBoost ? (superBoostVisual ? 1.35 : 1.15) : 0.001;
       flame.scale.x = THREE.MathUtils.damp(flame.scale.x, targetScale * boostPulse, 10, delta);
       flame.scale.y = THREE.MathUtils.damp(flame.scale.y, targetScale * (1.3 + index * 0.08), 10, delta);
       flame.scale.z = THREE.MathUtils.damp(flame.scale.z, targetScale * boostPulse, 10, delta);
-      flame.material.opacity = THREE.MathUtils.damp(flame.material.opacity, this.isBoosting ? 0.92 : 0, 12, delta);
+      flame.material.opacity = THREE.MathUtils.damp(flame.material.opacity, activeBoost ? 0.92 : 0, 12, delta);
+      flame.material.color.setHex(superBoostVisual ? 0xffd08a : 0xc8f6ff);
+      flame.material.emissive.setHex(superBoostVisual ? 0xff8c2f : 0x39d7ff);
     });
 
     this.boostGlow.forEach((glow, index) => {
-      const pulse = this.isBoosting ? 0.4 + Math.sin(this.hoverTime * 20 + index) * 0.08 : 0.08;
+      const pulse = activeBoost ? (superBoostVisual ? 0.52 : 0.4) + Math.sin(this.hoverTime * 20 + index) * 0.08 : 0.08;
       glow.material.opacity = THREE.MathUtils.damp(glow.material.opacity, pulse, 10, delta);
-      glow.scale.z = THREE.MathUtils.damp(glow.scale.z, this.isBoosting ? 2.8 : 1.6, 8, delta);
+      glow.scale.z = THREE.MathUtils.damp(glow.scale.z, activeBoost ? (superBoostVisual ? 3.3 : 2.8) : 1.6, 8, delta);
+      glow.material.color.setHex(superBoostVisual ? 0xff9e3d : 0x46d7ff);
     });
 
     this.underglow.material.opacity = THREE.MathUtils.damp(
       this.underglow.material.opacity,
-      0.22 + this.getSpeedRatio() * 0.3 + (this.isBoosting ? 0.12 : 0),
+      0.22 + this.getSpeedRatio() * 0.3 + (activeBoost ? 0.12 : 0),
       6,
       delta,
     );
+    this.underglow.material.color.setHex(superBoostVisual ? 0xff9e3d : 0x46d7ff);
+  }
+
+  updateSuperBoostState(delta) {
+    if (this.superBoostTimer > 0) {
+      this.superBoostTimer = Math.max(0, this.superBoostTimer - delta);
+    }
   }
 
   updateBoostState(delta, canBoost) {
@@ -342,6 +357,16 @@ export class PlayerController {
     if (this.boostCooldownTimer > 0) {
       this.boostCooldownTimer = Math.max(0, this.boostCooldownTimer - delta);
     }
+
+    if (this.isSuperBoostReady()) {
+      this.isSuperBoosting = canBoost && wantsBoost && this.forwardSpeed > 0;
+      this.isBoosting = false;
+      this.boostCooldownTimer = 0;
+      this.boostCharge = this.config.boostDuration;
+      return;
+    }
+
+    this.isSuperBoosting = false;
 
     this.isBoosting = canBoost && wantsBoost && this.boostCharge > 0 && this.boostCooldownTimer === 0 && this.forwardSpeed > 0;
 
@@ -365,10 +390,15 @@ export class PlayerController {
   }
 
   getBoostRatio() {
+    if (this.isSuperBoostReady()) return 1;
     return this.boostCharge / this.config.boostDuration;
   }
 
   getBoostStatusText() {
+    if (this.isSuperBoostReady()) {
+      return `Super Boost ${this.superBoostTimer.toFixed(0)}s`;
+    }
+
     if (this.isBoosting) {
       return `Boost engaged ${this.boostCharge.toFixed(1)}s`;
     }
@@ -378,6 +408,17 @@ export class PlayerController {
     }
 
     return 'Boost ready';
+  }
+
+  isSuperBoostReady() {
+    return this.superBoostTimer > 0;
+  }
+
+  activateSuperBoost(duration) {
+    this.superBoostTimer = Math.max(this.superBoostTimer, duration);
+    this.boostCooldownTimer = 0;
+    this.boostCharge = this.config.boostDuration;
+    return true;
   }
 
   bounce(normal, strength = 0.35) {

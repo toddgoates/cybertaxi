@@ -253,9 +253,31 @@ canvas {
   margin-top: 12px;
 }
 
+.hud__inventories {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hud__inventory--super {
+  border-color: rgba(255, 166, 61, 0.24);
+  background: linear-gradient(180deg, rgba(30, 19, 7, 0.92), rgba(8, 12, 24, 0.64));
+  box-shadow: inset 0 0 18px rgba(255, 166, 61, 0.08), 0 0 18px rgba(255, 166, 61, 0.08);
+  color: #ffe0b6;
+}
+
+.hud__inventory--super .hud__inventory-icon {
+  color: #ffb861;
+}
+
 .hud__inventory--active {
   border-color: rgba(99, 255, 131, 0.48);
   box-shadow: inset 0 0 18px rgba(99, 255, 131, 0.12), 0 0 20px rgba(99, 255, 131, 0.16);
+}
+
+.hud__inventory--super.hud__inventory--active {
+  border-color: rgba(255, 166, 61, 0.48);
+  box-shadow: inset 0 0 18px rgba(255, 166, 61, 0.12), 0 0 20px rgba(255, 166, 61, 0.16);
 }
 
 .hud__inventory-icon {
@@ -432,6 +454,12 @@ canvas {
 .meter__fill--boost {
   background: linear-gradient(90deg, #8ef1ff, #12b8ff);
   box-shadow: 0 0 20px rgba(90, 222, 255, 0.55);
+}
+
+.meter--super-boost-active .meter__fill--boost {
+  background: linear-gradient(90deg, #ffd993, #ff9d3d);
+  box-shadow: 0 0 26px rgba(255, 157, 61, 0.72);
+  animation: super-boost-pulse 0.72s ease-in-out infinite;
 }
 
 .meter__fill--energy {
@@ -618,6 +646,12 @@ canvas {
   box-shadow: 0 0 14px rgba(99, 255, 131, 0.95);
 }
 
+.navigator__target--super-boost {
+  color: #ff9d3d;
+  border-width: 2px;
+  box-shadow: 0 0 14px rgba(255, 157, 61, 0.95);
+}
+
 .controls {
   align-self: center;
   padding: 10px 14px;
@@ -692,6 +726,11 @@ canvas {
 @keyframes boost-pulse {
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.22); }
+}
+
+@keyframes super-boost-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.28); }
 }
 
 @keyframes energy-warning {

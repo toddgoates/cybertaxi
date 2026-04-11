@@ -16,10 +16,11 @@ import { MusicManager } from '../systems/MusicManager.js';
 import { EnergySystem } from '../systems/EnergySystem.js';
 import { RivalTaxiManager } from '../systems/rivals/RivalTaxiManager.js';
 import { EmpSystem } from '../systems/EmpSystem.js';
+import { SuperBoostSystem } from '../systems/SuperBoostSystem.js';
 import { IntroDialogueManager } from '../systems/IntroDialogueManager.js';
 import { VoiceoverManager } from '../systems/VoiceoverManager.js';
 import introDialogue from '../data/introDialogue.json';
-import empDialogue from '../data/empDialogue.json';
+import itemDialogue from '../data/itemDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
 
 const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
@@ -71,6 +72,7 @@ export class GameApp {
     this.collisions = new CollisionSystem(this.worldData.colliders, GAME_CONFIG, this.ui, this.effects);
     this.rivals = new RivalTaxiManager(this.scene, GAME_CONFIG, this.worldData, this.ui);
     this.emp = new EmpSystem(this.scene, this.input, this.worldData, GAME_CONFIG, this.ui);
+    this.superBoost = new SuperBoostSystem(this.scene, this.input, this.worldData, GAME_CONFIG, this.ui, this.player);
     this.cameraController = new CameraController(this.camera, this.player.mesh, GAME_CONFIG);
     this.paused = false;
 
@@ -83,7 +85,7 @@ export class GameApp {
   applyDebugFlags() {
     if (!import.meta.env.DEV || !this.options.debug) return;
 
-    const { startingCredits, startingHeat, startingRivals, startingEmpCharges } = this.options.debug;
+    const { startingCredits, startingHeat, startingRivals, startingEmpCharges, startingSuperBoost } = this.options.debug;
     const applied = [];
 
     if (startingCredits != null) {
@@ -106,6 +108,11 @@ export class GameApp {
     if (startingEmpCharges != null) {
       this.emp.setStartingCharges(startingEmpCharges);
       applied.push(`emp=${this.emp.charges}`);
+    }
+
+    if (startingSuperBoost) {
+      this.superBoost.setStartingCharges(1);
+      applied.push('super-boost=1');
     }
 
     if (applied.length > 0) {
@@ -166,6 +173,21 @@ export class GameApp {
     });
   }
 
+  playItemAnnouncement(alertText) {
+    const entry = itemDialogue[Math.floor(Math.random() * itemDialogue.length)];
+    this.ui.showAlert(alertText);
+    this.voiceover.play(entry, {
+      onStart: (dialogueEntry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(dialogueEntry);
+      },
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+      },
+    });
+  }
+
   animate = () => {
     requestAnimationFrame(this.animate);
     const delta = Math.min(this.clock.getDelta(), 0.033);
@@ -174,6 +196,7 @@ export class GameApp {
       this.paused = !this.paused;
       this.music.setPaused(this.paused);
       this.introDialogue.setPaused(this.paused);
+      this.postIntroDialogue.setPaused(this.paused);
       this.voiceover.setPaused(this.paused);
     }
 
@@ -193,20 +216,14 @@ export class GameApp {
       const missionState = this.missions.getState();
       this.rivals.update(delta, this.player, missionState);
       this.emp.update(delta, this.player, this.rivals);
+      this.superBoost.update(delta, this.player);
       const empSpawn = this.emp.consumeSpawnEvent();
       if (empSpawn) {
-        const entry = empDialogue[Math.floor(Math.random() * empDialogue.length)];
-        this.ui.showAlert('An EMP appeared!');
-        this.voiceover.play(entry, {
-          onStart: (dialogueEntry) => {
-            this.music.setVolumeScale(0.22);
-            this.ui.showDialogue(dialogueEntry);
-          },
-          onComplete: () => {
-            this.music.setVolumeScale(1);
-            this.ui.hideDialogue();
-          },
-        });
+        this.playItemAnnouncement('An EMP appeared!');
+      }
+      const superBoostSpawn = this.superBoost.consumeSpawnEvent();
+      if (superBoostSpawn) {
+        this.playItemAnnouncement('A Super Boost appeared!');
       }
       this.effects.update(delta);
 
@@ -235,6 +252,7 @@ export class GameApp {
       music: this.music.getState(),
       rivals: this.rivals.getState(),
       emp: this.emp.getState(),
+      superBoost: this.superBoost.getState(),
       paused: this.paused,
     });
 

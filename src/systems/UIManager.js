@@ -59,13 +59,19 @@ export class UIManager {
           <div class="eyebrow">Thrust</div>
           <div class="meter"><div class="meter__fill" data-field="speedBar"></div></div>
           <div class="subvalue" data-field="speedText"></div>
-          <div class="meter meter--boost"><div class="meter__fill meter__fill--boost" data-field="boostBar"></div></div>
+          <div class="meter meter--boost" data-field="boostMeter"><div class="meter__fill meter__fill--boost" data-field="boostBar"></div></div>
           <div class="subvalue" data-field="boostText"></div>
           <div class="meter meter--energy"><div class="meter__fill meter__fill--energy" data-field="energyBar"></div></div>
           <div class="subvalue" data-field="energyText"></div>
-          <div class="hud__inventory hud__inventory--inline" data-field="empInventory">
-            <span class="hud__inventory-icon">EMP</span>
-            <span class="hud__inventory-value" data-field="empCount">0</span>
+          <div class="hud__inventories">
+            <div class="hud__inventory hud__inventory--inline" data-field="empInventory">
+              <span class="hud__inventory-icon">EMP</span>
+              <span class="hud__inventory-value" data-field="empCount">0</span>
+            </div>
+            <div class="hud__inventory hud__inventory--inline hud__inventory--super" data-field="superBoostInventory">
+              <span class="hud__inventory-icon">SB</span>
+              <span class="hud__inventory-value" data-field="superBoostCount">0</span>
+            </div>
           </div>
           <div class="charge-ring" data-field="chargeRing">
             <div class="charge-ring__disc">
@@ -80,7 +86,7 @@ export class UIManager {
           <div class="hud__pause-subtitle">Press Esc to resume</div>
         </div>
       </div>
-      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | Esc pause | M toggle music | [ / ] change track</div>
+      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | P Super Boost | Esc pause | M toggle music | [ / ] change track</div>
     `;
     mount.appendChild(this.root);
 
@@ -91,6 +97,7 @@ export class UIManager {
       district: this.root.querySelector('[data-field="district"]'),
       speedBar: this.root.querySelector('[data-field="speedBar"]'),
       speedText: this.root.querySelector('[data-field="speedText"]'),
+      boostMeter: this.root.querySelector('[data-field="boostMeter"]'),
       boostBar: this.root.querySelector('[data-field="boostBar"]'),
       boostText: this.root.querySelector('[data-field="boostText"]'),
       energyBar: this.root.querySelector('[data-field="energyBar"]'),
@@ -101,6 +108,8 @@ export class UIManager {
       navStatus: this.root.querySelector('[data-field="navStatus"]'),
       empInventory: this.root.querySelector('[data-field="empInventory"]'),
       empCount: this.root.querySelector('[data-field="empCount"]'),
+      superBoostInventory: this.root.querySelector('[data-field="superBoostInventory"]'),
+      superBoostCount: this.root.querySelector('[data-field="superBoostCount"]'),
       pauseOverlay: this.root.querySelector('[data-field="pauseOverlay"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
@@ -137,6 +146,7 @@ export class UIManager {
     this.fields.speedText.textContent = `${Math.round(Math.abs(state.player.forwardSpeed))} u/s forward thrust`;
     this.fields.boostBar.style.width = `${Math.round(state.player.getBoostRatio() * 100)}%`;
     this.fields.boostText.textContent = state.player.getBoostStatusText();
+    this.fields.boostMeter.classList.toggle('meter--super-boost-active', state.superBoost.active);
     this.fields.energyBar.style.width = `${Math.round(state.energy.ratio * 100)}%`;
     this.fields.energyText.textContent = `${state.energy.currentEnergy}% energy | ${state.energy.status}`;
     const chargePercent = Math.round((state.energy.refuelRatio || 0) * 100);
@@ -145,6 +155,8 @@ export class UIManager {
     this.fields.chargeLabel.textContent = chargePercent > 0 ? `${chargePercent}%` : '';
     this.fields.empCount.textContent = state.emp.charges;
     this.fields.empInventory.classList.toggle('hud__inventory--active', state.emp.charges > 0);
+    this.fields.superBoostCount.textContent = state.superBoost.charges;
+    this.fields.superBoostInventory.classList.toggle('hud__inventory--active', state.superBoost.charges > 0 || state.superBoost.active);
     this.fields.musicToggle.textContent = state.music.muted ? 'Music: off' : 'Music: on';
     this.pulseField(this.fields.credits, state.mission.totalCredits !== this.lastCredits);
     if (state.mission.pendingPenaltyText && state.mission.pendingPenaltyText !== this.lastPenaltyText) {
@@ -222,6 +234,10 @@ export class UIManager {
       targets.push({ ...state.emp.pickupTarget, role: 'emp', active: false });
     }
 
+    if (state.superBoost.pickupTarget) {
+      targets.push({ ...state.superBoost.pickupTarget, role: 'super-boost', active: false });
+    }
+
     state.energy.stations.forEach((station) => targets.push({ ...station, role: 'energy', active: false }));
 
     this.fields.navTargets.innerHTML = targets
@@ -259,7 +275,8 @@ export class UIManager {
       const fareLabel = nearestPickup ? `${nearestPickup.fare} cr${nearestPickup.special ? ' priority' : ''}` : '--';
       const priorityLabel = state.mission.pickupTargets.some((target) => target.special) ? ' | Priority fare live' : '';
       const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
-      this.fields.navStatus.textContent = `${state.mission.pickupTargets.length} fares live${priorityLabel} | Nearest ${distanceLabel} | ${fareLabel}${empLabel} | ${state.energy.status}`;
+      const superBoostLabel = state.superBoost.pickupTarget ? ` | SB ${Math.round(Math.hypot(state.superBoost.pickupTarget.x - playerPosition.x, state.superBoost.pickupTarget.z - playerPosition.z))}m` : '';
+      this.fields.navStatus.textContent = `${state.mission.pickupTargets.length} fares live${priorityLabel} | Nearest ${distanceLabel} | ${fareLabel}${empLabel}${superBoostLabel} | ${state.energy.status}`;
       return;
     }
 
@@ -268,7 +285,17 @@ export class UIManager {
         Math.hypot(state.mission.dropoffTarget.x - playerPosition.x, state.mission.dropoffTarget.z - playerPosition.z),
       );
       const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
-      this.fields.navStatus.textContent = `Drop-off beacon ${distance}m out${empLabel} | ${state.energy.status}`;
+      const superBoostLabel = state.superBoost.pickupTarget ? ` | SB ${Math.round(Math.hypot(state.superBoost.pickupTarget.x - playerPosition.x, state.superBoost.pickupTarget.z - playerPosition.z))}m` : '';
+      this.fields.navStatus.textContent = `Drop-off beacon ${distance}m out${empLabel}${superBoostLabel} | ${state.energy.status}`;
+      return;
+    }
+
+    if (state.superBoost.pickupTarget) {
+      const distance = Math.round(
+        Math.hypot(state.superBoost.pickupTarget.x - playerPosition.x, state.superBoost.pickupTarget.z - playerPosition.z),
+      );
+      const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
+      this.fields.navStatus.textContent = `Super Boost ${distance}m out${empLabel} | ${state.energy.status}`;
       return;
     }
 

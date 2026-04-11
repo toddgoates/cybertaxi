@@ -98,4 +98,11 @@ export const GAME_CONFIG = {
     blastRadius: 360,
     respawnDelayAfterUse: 5,
   },
+  superBoost: {
+    spawnIntervalMinSeconds: 150,
+    spawnIntervalMaxSeconds: 240,
+    pickupRadius: 14,
+    maxCharges: 1,
+    duration: 60,
+  },
 };

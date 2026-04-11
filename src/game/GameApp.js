@@ -21,12 +21,14 @@ import { IntroDialogueManager } from '../systems/IntroDialogueManager.js';
 import { VoiceoverManager } from '../systems/VoiceoverManager.js';
 import introDialogue from '../data/introDialogue.json';
 import itemDialogue from '../data/itemDialogue.json';
+import crashDialogue from '../data/crashDialogue.json';
 import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
 
 const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
 const POST_INTRO_DELAY_AFTER_TITLE_SECONDS = 2.5;
 const RIVAL_DIALOGUE_COOLDOWN_SECONDS = 60;
+const CRASH_DIALOGUE_COOLDOWN_SECONDS = 15;
 
 export class GameApp {
   constructor(mount, options = {}) {
@@ -61,6 +63,7 @@ export class GameApp {
     this.voiceover = new VoiceoverManager();
     this.pendingPostIntroDelay = null;
     this.rivalDialogueCooldown = 0;
+    this.crashDialogueCooldown = 0;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
     this.setupLights();
@@ -207,6 +210,21 @@ export class GameApp {
     });
   }
 
+  playCrashDialogue() {
+    const entry = crashDialogue[Math.floor(Math.random() * crashDialogue.length)];
+    this.crashDialogueCooldown = CRASH_DIALOGUE_COOLDOWN_SECONDS;
+    this.voiceover.play(entry, {
+      onStart: (dialogueEntry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(dialogueEntry);
+      },
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+      },
+    });
+  }
+
   animate = () => {
     requestAnimationFrame(this.animate);
     const delta = Math.min(this.clock.getDelta(), 0.033);
@@ -222,6 +240,7 @@ export class GameApp {
     if (!this.paused) {
       this.music.update(delta);
       this.rivalDialogueCooldown = Math.max(0, this.rivalDialogueCooldown - delta);
+      this.crashDialogueCooldown = Math.max(0, this.crashDialogueCooldown - delta);
       if (this.pendingPostIntroDelay != null) {
         this.pendingPostIntroDelay = Math.max(0, this.pendingPostIntroDelay - delta);
         if (this.pendingPostIntroDelay === 0) {
@@ -264,6 +283,9 @@ export class GameApp {
           this.rivals.onCollision(event.penalty / GAME_CONFIG.mission.collisionPenalty);
         }
       });
+      if (collisionEvents.length > 0 && !this.voiceover.isActive() && this.crashDialogueCooldown === 0) {
+        this.playCrashDialogue();
+      }
 
       this.missions.update(delta, this.player, this.traffic.getVehicles());
       this.cameraController.update(delta, this.player.velocity);

@@ -1,0 +1,182 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/crash_1.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Hey! Watch it!"
+  },
+  {
+    "id": 2,
+    "audio": "/audio/crash_2.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "That looked expensive."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/crash_3.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Careful-you're losing credits."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/crash_4.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You okay? That was rough."
+  },
+  {
+    "id": 5,
+    "audio": "/audio/crash_5.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Try not to hit everything in the city."
+  },
+  {
+    "id": 6,
+    "audio": "/audio/crash_6.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Easy! We need that taxi in one piece."
+  },
+  {
+    "id": 7,
+    "audio": "/audio/crash_7.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You're gonna shake it apart like that."
+  },
+  {
+    "id": 8,
+    "audio": "/audio/crash_8.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Focus. They want you messing up."
+  },
+  {
+    "id": 9,
+    "audio": "/audio/crash_9.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "That's coming out of our total."
+  },
+  {
+    "id": 10,
+    "audio": "/audio/crash_10.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You're better than that-drive like it."
+  },
+  {
+    "id": 11,
+    "audio": "/audio/crash_11.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Yeah... felt that."
+  },
+  {
+    "id": 12,
+    "audio": "/audio/crash_12.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Okay-maybe not my best move."
+  },
+  {
+    "id": 13,
+    "audio": "/audio/crash_13.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "That's gonna cost me."
+  },
+  {
+    "id": 14,
+    "audio": "/audio/crash_14.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Still in control... mostly."
+  },
+  {
+    "id": 15,
+    "audio": "/audio/crash_15.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Could've been worse."
+  },
+  {
+    "id": 16,
+    "audio": "/audio/crash_16.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Alright, focus."
+  },
+  {
+    "id": 17,
+    "audio": "/audio/crash_17.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "They're not getting me that easy."
+  },
+  {
+    "id": 18,
+    "audio": "/audio/crash_18.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Just a scratch."
+  },
+  {
+    "id": 19,
+    "audio": "/audio/crash_19.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "I've had worse."
+  },
+  {
+    "id": 20,
+    "audio": "/audio/crash_20.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Keep it together..."
+  },
+  {
+    "id": 21,
+    "audio": "/audio/crash_21.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Collision detected. Performance degrading."
+  },
+  {
+    "id": 22,
+    "audio": "/audio/crash_22.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Driver instability confirmed."
+  },
+  {
+    "id": 23,
+    "audio": "/audio/crash_23.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Error margin increasing."
+  },
+  {
+    "id": 24,
+    "audio": "/audio/crash_24.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Suboptimal maneuver."
+  },
+  {
+    "id": 25,
+    "audio": "/audio/crash_25.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "You are losing control."
+  },
+  {
+    "id": 26,
+    "audio": "/audio/crash_26.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Impact registered. Advantage: Axiom Mobility."
+  },
+  {
+    "id": 27,
+    "audio": "/audio/crash_27.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Your efficiency is declining."
+  },
+  {
+    "id": 28,
+    "audio": "/audio/crash_28.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Recommend: surrender vehicle."
+  },
+  {
+    "id": 29,
+    "audio": "/audio/crash_29.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Further mistakes anticipated."
+  },
+  {
+    "id": 30,
+    "audio": "/audio/crash_30.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "You are not qualified for this route."
+  }
+]

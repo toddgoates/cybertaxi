@@ -11,16 +11,17 @@ You pilot a futuristic cab through a neon city, choose fares, deliver passengers
 - Third-person hover taxi driving
 - Procedural neon city with different districts
 - Five-choice pickup and drop-off mission loop
-- Milestone-based special fares with blue star pickup markers and short high-value deadlines
+- Milestone-based special fares with blue star pickup markers and high-value payouts
 - Fare timer, distance-scaled pricing, and collision penalties
 - Boost system with recharge
 - Collidable NPC traffic and heavier ambient city air traffic
 - Heat-based rival taxi pursuit system with multiple enemy behaviors
 - EMP pickups and inventory for crowd control
+- Super Boost pickups with one-minute unlimited boost windows
 - Energy system with rooftop recharge stations
 - Crash sparks and crash sound effects on impacts
 - Procedural weather, moving rooftop searchlights, and high-altitude neon blimps
-- Intro narration with portrait/transcript widget and cinematic title card
+- Intro narration, post-intro dialogue, item callouts, rival escalation callouts, crash chatter, and low-energy dialogue with portrait/transcript widgets
 - Playlist music support with mute toggle and keyboard track switching
 - Pause overlay and streamlined HUD with fare/credits, navigator, and lower-left systems card
 
@@ -75,6 +76,14 @@ Music playlist files currently used:
 Intro narration files:
 
 - `public/audio/intro_1.mp3` through `public/audio/intro_7.mp3`
+- `public/audio/post_intro_1.mp3` and `public/audio/post_intro_2.mp3`
+
+Item and alert dialogue files:
+
+- `public/audio/item_1.mp3` through `public/audio/item_10.mp3`
+- `public/audio/escalation_1.mp3` through `public/audio/escalation_20.mp3`
+- `public/audio/crash_1.mp3` through `public/audio/crash_30.mp3`
+- `public/audio/lowfuel_1.mp3` through `public/audio/lowfuel_10.mp3`
 
 Other sound effects currently used:
 
@@ -84,6 +93,8 @@ Other sound effects currently used:
 Image assets currently used:
 
 - `public/images/player.png` for the intro dialogue portrait
+- `public/images/partner.png` for partner dialogue portraits
+- `public/images/taxi.png` for system / Axiom dialogue portraits
 
 The game will try to start music and intro narration automatically when the game begins. Some browsers block autoplay until the first click or key press.
 
@@ -95,6 +106,7 @@ The game will try to start music and intro narration automatically when the game
 - `J` / `K`: rise / descend
 - `Space`: boost
 - `L`: use EMP
+- `P`: use Super Boost
 - `Esc`: pause / resume
 - `M`: toggle music
 - `[` / `]`: previous / next music track
@@ -108,12 +120,14 @@ When running `npm run dev`, you can seed debug state through URL params:
 - `?credits=750`
 - `?heat=4`
 - `?rivals=6`
+- `?energy=35`
 - `?emp=3`
+- `?super-boost=1`
 - `?skip-intro=1`
 
 These can be combined, for example:
 
-`http://localhost:5173/?credits=1000&heat=5&rivals=8&emp=4&skip-intro=1`
+`http://localhost:5173/?credits=1000&heat=5&rivals=8&energy=20&emp=4&super-boost=1&skip-intro=1`
 
 ## Gameplay
 
@@ -123,12 +137,13 @@ These can be combined, for example:
 4. Deliver the passenger before the fare drops too much.
 5. Watch heat rise as you survive, earn, and complete fares.
 6. Collect green EMP charges when they appear and use them if rival taxis start to swarm.
-7. Watch for blue-star special fares that unlock every `350` credits earned.
+7. Collect orange Super Boost pickups when they appear to bank a one-minute unlimited boost item.
+8. Watch for blue-star special fares that unlock every `350` credits earned.
 
 Important rules:
 
 - Your fare value drains over time while a passenger is onboard.
-- Special fares unlock every `350` total credits and pay more, but have a short timed delivery window.
+- Special fares unlock every `350` total credits and pay `300-500` credits.
 - Crashes during a ride reduce the fare further.
 - Crashing while boosting causes a larger penalty.
 - Colliding with buildings, cars, rivals, or blimps throws off sparks and plays a crash sound.
@@ -137,23 +152,26 @@ Important rules:
 - Energy drains over time and faster while boosting.
 - You must stay parked in an energy station for 5 seconds to refill.
 - If energy hits `0` while carrying a passenger, you are charged a `1000` credit penalty.
+- Low-energy dialogue can trigger when energy crosses `20%`, `10%`, and `5%`.
 - Rival taxis escalate with heat and can chase, intercept, block, ram, and swarm.
-- EMP pickups spawn every 2 minutes and can be stored for later use.
+- EMP pickups spawn every 90 seconds and can be stored for later use.
 - A single EMP blast can disable up to 10 nearby rival taxis.
+- Super Boost pickups spawn randomly every few minutes and can be triggered later with `P`.
 - The city includes moving rooftop searchlights, heavier rain, and large collidable neon blimps in the sky.
+- Spoken dialogue ducks the music automatically while audio lines are playing.
 
 ## Project Structure
 
 - `src/main.js`
   - App entry point
 - `src/game/GameApp.js`
-  - Main game bootstrap and frame loop
+  - Main game bootstrap, audio/dialogue coordination, and frame loop
 - `src/game/config.js`
   - Tunable gameplay and world settings
 - `src/systems/CityGenerator.js`
   - District generation, buildings, signs, billboards, and traffic paths
 - `src/systems/PlayerController.js`
-  - Player taxi mesh, movement, hover effects, and boost behavior
+  - Player taxi mesh, movement, hover effects, boost behavior, and Super Boost state
 - `src/systems/TrafficManager.js`
   - NPC traffic spawning and movement
 - `src/systems/rivals/HeatSystem.js`
@@ -172,16 +190,30 @@ Important rules:
   - Energy drain, rooftop recharge stations, and depletion penalties
 - `src/systems/EmpSystem.js`
   - EMP pickup spawning, inventory, activation, and blast effect
+- `src/systems/SuperBoostSystem.js`
+  - Super Boost pickup spawning, inventory, and activation
 - `src/systems/CollisionSystem.js`
   - Building, traffic, rival, and blimp collision handling
 - `src/systems/UIManager.js`
   - HUD layout, intro dialogue widget, title card, pause overlay, and navigator updates
 - `src/systems/IntroDialogueManager.js`
   - JSON-driven intro narration sequencing and pause-aware playback
+- `src/systems/VoiceoverManager.js`
+  - Shared one-off spoken dialogue playback for items, rival spawns, crashes, and low energy
 - `src/systems/MusicManager.js`
   - Playlist music playback, mute state, and keyboard track switching
 - `src/data/introDialogue.json`
   - Intro narration metadata for portraits, transcript lines, and audio files
+- `src/data/postIntroDialogue.json`
+  - Post-intro dialogue metadata
+- `src/data/itemDialogue.json`
+  - Shared item-related voice lines used for EMP and Super Boost spawns
+- `src/data/escalationDialogue.json`
+  - Rival spawn callout dialogue metadata
+- `src/data/crashDialogue.json`
+  - Collision chatter dialogue metadata
+- `src/data/lowFuelDialogue.json`
+  - Low-energy warning dialogue metadata
 - `src/styles.css`
   - HUD and UI styling
 
@@ -191,9 +223,10 @@ Important rules:
 - Most visuals are generated from primitive geometry rather than heavy environment assets.
 - The city look is driven by procedural emissive windows, neon accents, fog, a sky dome, and lightweight bloom rather than heavy dynamic lights.
 - The game is meant to be easy to iterate on through `src/game/config.js` and the systems under `src/systems/`.
+- For a more detailed handoff document, see `project_context.md`.
 
 ## Additional Context
 
 For a more detailed handoff document, see:
 
-`PROJECT_CONTEXT.md`
+`project_context.md`

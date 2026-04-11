@@ -11,6 +11,9 @@ export class EnergySystem {
     this.wasDepleted = false;
     this.activeStation = null;
     this.refuelProgress = 0;
+    this.pendingThresholdAnnouncements = [];
+    this.thresholds = [20, 10, 5];
+    this.triggeredThresholds = new Set();
     this.stationMarkers = this.stations.map((station) => this.createStationMarker(station.position, this.config.stationRadius));
     this.scene.add(...this.stationMarkers);
   }
@@ -39,6 +42,7 @@ export class EnergySystem {
 
   update(delta, player) {
     this.spinStations(delta);
+    const previousEnergy = this.currentEnergy;
 
     const speedRatio = player.getSpeedRatio();
     const drain = this.config.baseDrainPerSecond + speedRatio * this.config.motionDrainPerSecond + (player.isBoosting ? this.config.boostDrainPerSecond : 0);
@@ -73,6 +77,25 @@ export class EnergySystem {
     if (this.currentEnergy > 0) {
       this.wasDepleted = false;
     }
+
+    this.updateThresholdAnnouncements(previousEnergy, this.currentEnergy);
+  }
+
+  updateThresholdAnnouncements(previousEnergy, currentEnergy) {
+    const previousRatio = previousEnergy / this.config.maxEnergy;
+    const currentRatio = currentEnergy / this.config.maxEnergy;
+
+    this.thresholds.forEach((threshold) => {
+      const ratioThreshold = threshold / 100;
+      if (currentRatio > ratioThreshold) {
+        this.triggeredThresholds.delete(threshold);
+      }
+
+      if (previousRatio > ratioThreshold && currentRatio <= ratioThreshold && !this.triggeredThresholds.has(threshold)) {
+        this.triggeredThresholds.add(threshold);
+        this.pendingThresholdAnnouncements.push(threshold);
+      }
+    });
   }
 
   spinStations(delta) {
@@ -118,5 +141,21 @@ export class EnergySystem {
         z: station.position.z,
       })),
     };
+  }
+
+  consumeThresholdAnnouncement() {
+    return this.pendingThresholdAnnouncements.shift() ?? null;
+  }
+
+  setStartingEnergy(amount) {
+    this.currentEnergy = THREE.MathUtils.clamp(Math.round(amount), 1, this.config.maxEnergy);
+    this.wasDepleted = false;
+    this.pendingThresholdAnnouncements = [];
+    this.triggeredThresholds.clear();
+    this.thresholds.forEach((threshold) => {
+      if (this.currentEnergy / this.config.maxEnergy <= threshold / 100) {
+        this.triggeredThresholds.add(threshold);
+      }
+    });
   }
 }

@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/lowfuel_1.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You're running low-keep an eye on your energy."
+  },
+  {
+    "id": 2,
+    "audio": "/audio/lowfuel_2.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Fuel's dropping fast. Find a station."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/lowfuel_3.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You don't have much left-look for a refuel point."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/lowfuel_4.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Energy's almost gone. Get to a station."
+  },
+  {
+    "id": 5,
+    "audio": "/audio/lowfuel_5.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You're cutting it close-nearest station, now."
+  },
+  {
+    "id": 6,
+    "audio": "/audio/lowfuel_6.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Fuel's not looking good..."
+  },
+  {
+    "id": 7,
+    "audio": "/audio/lowfuel_7.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "I'm running on fumes here."
+  },
+  {
+    "id": 8,
+    "audio": "/audio/lowfuel_8.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Need a refuel-fast."
+  },
+  {
+    "id": 9,
+    "audio": "/audio/lowfuel_9.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Not much left in the tank..."
+  },
+  {
+    "id": 10,
+    "audio": "/audio/lowfuel_10.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Alright... gotta find a station."
+  }
+]

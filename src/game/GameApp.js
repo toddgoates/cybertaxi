@@ -22,6 +22,7 @@ import { VoiceoverManager } from '../systems/VoiceoverManager.js';
 import introDialogue from '../data/introDialogue.json';
 import itemDialogue from '../data/itemDialogue.json';
 import crashDialogue from '../data/crashDialogue.json';
+import lowFuelDialogue from '../data/lowFuelDialogue.json';
 import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
 
@@ -64,6 +65,7 @@ export class GameApp {
     this.pendingPostIntroDelay = null;
     this.rivalDialogueCooldown = 0;
     this.crashDialogueCooldown = 0;
+    this.pendingLowFuelAnnouncements = [];
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
     this.setupLights();
@@ -91,7 +93,7 @@ export class GameApp {
   applyDebugFlags() {
     if (!import.meta.env.DEV || !this.options.debug) return;
 
-    const { startingCredits, startingHeat, startingRivals, startingEmpCharges, startingSuperBoost } = this.options.debug;
+    const { startingCredits, startingHeat, startingRivals, startingEnergy, startingEmpCharges, startingSuperBoost } = this.options.debug;
     const applied = [];
 
     if (startingCredits != null) {
@@ -114,6 +116,11 @@ export class GameApp {
     if (startingEmpCharges != null) {
       this.emp.setStartingCharges(startingEmpCharges);
       applied.push(`emp=${this.emp.charges}`);
+    }
+
+    if (startingEnergy != null) {
+      this.energy.setStartingEnergy(startingEnergy);
+      applied.push(`energy=${this.energy.currentEnergy}`);
     }
 
     if (startingSuperBoost) {
@@ -225,6 +232,20 @@ export class GameApp {
     });
   }
 
+  playLowFuelDialogue() {
+    const entry = lowFuelDialogue[Math.floor(Math.random() * lowFuelDialogue.length)];
+    this.voiceover.play(entry, {
+      onStart: (dialogueEntry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(dialogueEntry);
+      },
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+      },
+    });
+  }
+
   animate = () => {
     requestAnimationFrame(this.animate);
     const delta = Math.min(this.clock.getDelta(), 0.033);
@@ -252,6 +273,10 @@ export class GameApp {
       this.player.update(delta, this.energy.getDriveState());
       this.traffic.update(delta);
       this.energy.update(delta, this.player);
+      let lowFuelThreshold;
+      while ((lowFuelThreshold = this.energy.consumeThresholdAnnouncement()) != null) {
+        this.pendingLowFuelAnnouncements.push(lowFuelThreshold);
+      }
       const missionState = this.missions.getState();
       this.rivals.update(delta, this.player, missionState);
       this.emp.update(delta, this.player, this.rivals);
@@ -285,6 +310,10 @@ export class GameApp {
       });
       if (collisionEvents.length > 0 && !this.voiceover.isActive() && this.crashDialogueCooldown === 0) {
         this.playCrashDialogue();
+      }
+      if (!this.voiceover.isActive() && this.pendingLowFuelAnnouncements.length > 0) {
+        this.pendingLowFuelAnnouncements.shift();
+        this.playLowFuelDialogue();
       }
 
       this.missions.update(delta, this.player, this.traffic.getVehicles());

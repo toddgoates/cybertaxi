@@ -61,6 +61,10 @@ export class VoiceoverManager {
     this.tryStartPlayback();
   }
 
+  isActive() {
+    return this.currentEntry !== null;
+  }
+
   addInteractionListeners() {
     window.addEventListener('pointerdown', this.tryStartPlayback, { once: true });
     window.addEventListener('keydown', this.tryStartPlayback, { once: true });

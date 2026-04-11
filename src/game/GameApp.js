@@ -21,10 +21,12 @@ import { IntroDialogueManager } from '../systems/IntroDialogueManager.js';
 import { VoiceoverManager } from '../systems/VoiceoverManager.js';
 import introDialogue from '../data/introDialogue.json';
 import itemDialogue from '../data/itemDialogue.json';
+import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
 
 const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
 const POST_INTRO_DELAY_AFTER_TITLE_SECONDS = 2.5;
+const RIVAL_DIALOGUE_COOLDOWN_SECONDS = 60;
 
 export class GameApp {
   constructor(mount, options = {}) {
@@ -58,6 +60,7 @@ export class GameApp {
     this.postIntroDialogue = new IntroDialogueManager(postIntroDialogue, 250);
     this.voiceover = new VoiceoverManager();
     this.pendingPostIntroDelay = null;
+    this.rivalDialogueCooldown = 0;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
     this.setupLights();
@@ -188,6 +191,22 @@ export class GameApp {
     });
   }
 
+  playEscalationAnnouncement() {
+    const entry = escalationDialogue[Math.floor(Math.random() * escalationDialogue.length)];
+    this.ui.showAlert('A new Axiom Mobility taxi has been spotted!');
+    this.rivalDialogueCooldown = RIVAL_DIALOGUE_COOLDOWN_SECONDS;
+    this.voiceover.play(entry, {
+      onStart: (dialogueEntry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(dialogueEntry);
+      },
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+      },
+    });
+  }
+
   animate = () => {
     requestAnimationFrame(this.animate);
     const delta = Math.min(this.clock.getDelta(), 0.033);
@@ -202,6 +221,7 @@ export class GameApp {
 
     if (!this.paused) {
       this.music.update(delta);
+      this.rivalDialogueCooldown = Math.max(0, this.rivalDialogueCooldown - delta);
       if (this.pendingPostIntroDelay != null) {
         this.pendingPostIntroDelay = Math.max(0, this.pendingPostIntroDelay - delta);
         if (this.pendingPostIntroDelay === 0) {
@@ -224,6 +244,13 @@ export class GameApp {
       const superBoostSpawn = this.superBoost.consumeSpawnEvent();
       if (superBoostSpawn) {
         this.playItemAnnouncement('A Super Boost appeared!');
+      }
+      if (this.rivals.consumeSpawnAnnouncement()) {
+        if (!this.voiceover.isActive() && this.rivalDialogueCooldown === 0) {
+          this.playEscalationAnnouncement();
+        } else {
+          this.ui.showAlert('A new Axiom Mobility taxi has been spotted!');
+        }
       }
       this.effects.update(delta);
 

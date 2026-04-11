@@ -81,6 +81,7 @@ export class RivalTaxiManager {
     this.spawnCooldown = 2;
     this.spawnSuppressionTimer = 0;
     this.activeVehicles = [];
+    this.pendingSpawnAnnouncements = 0;
     this.managerState = {
       forward: new THREE.Vector3(0, 0, -1),
       right: new THREE.Vector3(1, 0, 0),
@@ -151,6 +152,7 @@ export class RivalTaxiManager {
         initialVelocity: spawnVelocity,
         swarmSlot: activeCount % 4,
       });
+      this.pendingSpawnAnnouncements += 1;
     }
   }
 
@@ -198,6 +200,7 @@ export class RivalTaxiManager {
       initialVelocity: spawnVelocity,
       swarmSlot: activeCount % 4,
     });
+    this.pendingSpawnAnnouncements += 1;
 
     this.spawnCooldown = profile.spawnInterval * THREE.MathUtils.lerp(0.8, 1.15, Math.random());
   }
@@ -272,6 +275,12 @@ export class RivalTaxiManager {
       ...this.heatSystem.getState(),
       activeRivals: this.activeVehicles.length,
     };
+  }
+
+  consumeSpawnAnnouncement() {
+    if (this.pendingSpawnAnnouncements <= 0) return false;
+    this.pendingSpawnAnnouncements -= 1;
+    return true;
   }
 
   getActiveAgents() {

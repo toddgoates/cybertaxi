@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/escalation_1.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Axiom just escalated. You've got company."
+  },
+  {
+    "id": 2,
+    "audio": "/audio/escalation_2.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "More of them just came online. Be careful."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/escalation_3.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "They're not backing off-they're doubling down."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/escalation_4.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "I'm seeing more units on your tail."
+  },
+  {
+    "id": 5,
+    "audio": "/audio/escalation_5.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Um... babe? You're not alone out there."
+  },
+  {
+    "id": 6,
+    "audio": "/audio/escalation_6.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Axiom's deploying reinforcements."
+  },
+  {
+    "id": 7,
+    "audio": "/audio/escalation_7.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "They're getting aggressive. Stay sharp."
+  },
+  {
+    "id": 8,
+    "audio": "/audio/escalation_8.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You just became a bigger problem for them."
+  },
+  {
+    "id": 9,
+    "audio": "/audio/escalation_9.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "This just got a lot harder."
+  },
+  {
+    "id": 10,
+    "audio": "/audio/escalation_10.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "They really don't want you getting out of this city."
+  },
+  {
+    "id": 11,
+    "audio": "/audio/escalation_11.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Additional units deployed."
+  },
+  {
+    "id": 12,
+    "audio": "/audio/escalation_12.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Target acquisition expanding."
+  },
+  {
+    "id": 13,
+    "audio": "/audio/escalation_13.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "You are now outmatched."
+  },
+  {
+    "id": 14,
+    "audio": "/audio/escalation_14.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Containment protocol escalating."
+  },
+  {
+    "id": 15,
+    "audio": "/audio/escalation_15.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Reinforcements inbound."
+  },
+  {
+    "id": 16,
+    "audio": "/audio/escalation_16.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Your escape window is closing."
+  },
+  {
+    "id": 17,
+    "audio": "/audio/escalation_17.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "This route is no longer available to you."
+  },
+  {
+    "id": 18,
+    "audio": "/audio/escalation_18.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Axiom Mobility does not tolerate asset theft."
+  },
+  {
+    "id": 19,
+    "audio": "/audio/escalation_19.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "You will be intercepted."
+  },
+  {
+    "id": 20,
+    "audio": "/audio/escalation_20.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Termination of this run is inevitable."
+  }
+]

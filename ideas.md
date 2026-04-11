@@ -6,6 +6,7 @@
 - [x] Finish player/partner/taxi messages for crashes
 - [x] Dialog from partner right after title disappears "Axiom Mobility is going to be pretty pissed we're doing this. I'll try and round up some items to fight back against them."
 - [x] Add a super boost item that gives you unlimited boost for 1 minute
+- [] Make the intro dialog un-interruptable
 - [] Lightning after 1000 credits if you fly to high, corresponding messages from player/partner, severe penalty
 - [x] Messages from player/partner when energy is low
 - [] Bank to deposit credits (ie save game) - write to local storage, if credits greater than 0 resume game with that number of credits no intro dialog

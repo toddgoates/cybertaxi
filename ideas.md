@@ -1,7 +1,7 @@
 # Ideas
 
 - [x] Larger priority fares
-- [] Priority fares don't count down so fast. Have them count down at normal speed. They are just worth much more and don't spawn as often.
+- [x] Priority fares don't count down so fast. Have them count down at normal speed. They are just worth much more and don't spawn as often.
 - [] Finish player/partner/taxi messages for crashes and spawning
 - [x] Dialog from partner right after title disappears "Axiom Mobility is going to be pretty pissed we're doing this. I'll try and round up some items to fight back against them."
 - [x] Add a super boost item that gives you unlimited boost for 1 minute

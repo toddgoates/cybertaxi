@@ -144,7 +144,6 @@ export class MissionSystem {
       dropoffDistrict: dropoff,
       quotedFare: special ? specialFare : quotedFare,
       special,
-      timeLimitSeconds: special ? randomInt(this.config.specialFareMinSeconds, this.config.specialFareMaxSeconds) : null,
     };
   }
 
@@ -222,13 +221,7 @@ export class MissionSystem {
     this.dropoffDistrict = offer.dropoffDistrict;
     this.originalFare = offer.quotedFare;
     this.currentFare = offer.quotedFare;
-    this.activeSpecialFare = offer.special
-      ? {
-          timeLimitSeconds: offer.timeLimitSeconds,
-          timeRemaining: offer.timeLimitSeconds,
-          penaltyLoss: 0,
-        }
-      : null;
+    this.activeSpecialFare = offer.special ? { penaltyLoss: 0 } : null;
     this.phase = 'dropoff';
     this.pendingPenaltyText = '';
     this.currentRunHadIncident = false;
@@ -240,12 +233,10 @@ export class MissionSystem {
     this.dropoffZone.visible = true;
     this.dropoffZone.position.copy(offer.dropoffDistrict.position);
     this.objective = offer.special ? `Priority fare to ${this.dropoffDistrict.name}` : `Deliver passenger to ${this.dropoffDistrict.name}`;
-    this.routeLabel = offer.special
-      ? `${formatDistrictTrip(this.pickupDistrict.name, this.dropoffDistrict.name)} | ${offer.timeLimitSeconds}s priority window`
-      : formatDistrictTrip(this.pickupDistrict.name, this.dropoffDistrict.name);
+    this.routeLabel = formatDistrictTrip(this.pickupDistrict.name, this.dropoffDistrict.name);
     this.ui.pushFeed(
       offer.special
-        ? `Priority fare onboard. ${offer.timeLimitSeconds}s to earn up to ${this.originalFare} credits`
+        ? `Priority fare onboard. Fare locked at ${this.originalFare} credits`
         : `Passenger onboard. Fare locked at ${this.originalFare} credits`,
       'info',
     );
@@ -266,14 +257,7 @@ export class MissionSystem {
     }
 
     if (this.phase === 'dropoff') {
-      if (this.activeSpecialFare) {
-        this.activeSpecialFare.timeRemaining = Math.max(0, this.activeSpecialFare.timeRemaining - delta);
-        const timedFare = this.originalFare * (this.activeSpecialFare.timeRemaining / this.activeSpecialFare.timeLimitSeconds);
-        this.currentFare = Math.max(0, timedFare - this.activeSpecialFare.penaltyLoss);
-        this.routeLabel = `${formatDistrictTrip(this.pickupDistrict.name, this.dropoffDistrict.name)} | ${Math.ceil(this.activeSpecialFare.timeRemaining)}s priority window`;
-      } else {
-        this.currentFare = Math.max(0, this.currentFare - this.config.timePenaltyPerSecond * delta);
-      }
+      this.currentFare = Math.max(0, this.currentFare - this.config.timePenaltyPerSecond * delta);
 
       if (this.currentFare === 0) {
         const compensation = Math.round(this.originalFare * 0.5);
@@ -346,7 +330,6 @@ export class MissionSystem {
       routeLabel: this.routeLabel,
       phase: this.phase,
       specialFareActive: Boolean(this.activeSpecialFare),
-      specialFareTimeRemaining: this.activeSpecialFare ? Math.ceil(this.activeSpecialFare.timeRemaining) : null,
       pendingPenaltyText: this.pendingPenaltyText,
       pickupTargets: this.pickupOffers.map((offer) => ({
         name: offer.pickupDistrict.name,

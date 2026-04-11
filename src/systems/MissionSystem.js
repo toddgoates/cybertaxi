@@ -135,13 +135,14 @@ export class MissionSystem {
     const baseFare = randomInt(this.config.baseFareMin, this.config.baseFareMax);
     const distanceBonus = Math.round(tripDistance * this.config.distanceFareMultiplier);
     const quotedFare = baseFare + distanceBonus;
+    const specialFare = randomInt(this.config.specialFareMinCredits, this.config.specialFareMaxCredits);
 
     return {
       pickupId: pickup.id,
       pickupDistrict: pickup.district,
       pickupPosition: pickup.position.clone(),
       dropoffDistrict: dropoff,
-      quotedFare: special ? Math.round(quotedFare * this.config.specialFarePayoutMultiplier) : quotedFare,
+      quotedFare: special ? specialFare : quotedFare,
       special,
       timeLimitSeconds: special ? randomInt(this.config.specialFareMinSeconds, this.config.specialFareMaxSeconds) : null,
     };

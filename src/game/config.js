@@ -15,7 +15,8 @@ export const GAME_CONFIG = {
     specialFareThreshold: 350,
     specialFareMinSeconds: 15,
     specialFareMaxSeconds: 20,
-    specialFarePayoutMultiplier: 1.85,
+    specialFareMinCredits: 300,
+    specialFareMaxCredits: 500,
   },
   energy: {
     maxEnergy: 100,

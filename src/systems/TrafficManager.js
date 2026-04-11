@@ -123,12 +123,15 @@ export class TrafficManager {
     this.scene = scene;
     this.config = config.traffic;
     this.vehicles = [];
+    this.collidableVehicles = [];
 
     const collidablePaths = flightPaths.slice();
     const ambientPaths = flightPaths.slice().reverse();
 
     for (let i = 0; i < this.config.obstacleCount; i += 1) {
-      this.vehicles.push(this.spawnVehicle(collidablePaths[i % collidablePaths.length], true, i));
+      const vehicle = this.spawnVehicle(collidablePaths[i % collidablePaths.length], true, i);
+      this.vehicles.push(vehicle);
+      this.collidableVehicles.push(vehicle);
     }
 
     for (let i = 0; i < this.config.ambientCount; i += 1) {
@@ -160,28 +163,31 @@ export class TrafficManager {
       radius: collidable ? 3.8 : 3,
       pathName: pathData.district,
       bobOffset: Math.random() * Math.PI * 2,
+      baseY: mesh.position.y,
     };
   }
 
   update(delta) {
+    const time = performance.now() * 0.002;
     this.vehicles.forEach((vehicle) => {
       const targetIndex = (vehicle.currentIndex + 1) % vehicle.path.length;
       const target = vehicle.path[targetIndex];
-      const direction = target.clone().sub(vehicle.mesh.position);
-      const distance = direction.length();
+      _trafficDirection.copy(target).sub(vehicle.mesh.position);
+      const distance = _trafficDirection.length();
 
       if (distance < 5) {
         vehicle.currentIndex = targetIndex;
         return;
       }
 
-      direction.normalize();
-      vehicle.mesh.position.addScaledVector(direction, vehicle.speed * delta);
-      vehicle.mesh.quaternion.slerp(
-        new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction.clone().setY(0).normalize()),
-        0.08,
-      );
-      vehicle.mesh.position.y += Math.sin(performance.now() * 0.002 + vehicle.bobOffset) * 0.05;
+      _trafficDirection.normalize();
+      vehicle.mesh.position.addScaledVector(_trafficDirection, vehicle.speed * delta);
+      _trafficPlanarDirection.copy(_trafficDirection).setY(0);
+      if (_trafficPlanarDirection.lengthSq() > 0.0001) {
+        _trafficPlanarDirection.normalize();
+        vehicle.mesh.quaternion.slerp(_trafficTargetQuaternion.setFromUnitVectors(_trafficForward, _trafficPlanarDirection), 0.08);
+      }
+      vehicle.mesh.position.y = vehicle.baseY + Math.sin(time + vehicle.bobOffset) * 0.05;
     });
   }
 
@@ -190,6 +196,11 @@ export class TrafficManager {
   }
 
   getCollidableVehicles() {
-    return this.vehicles.filter((vehicle) => vehicle.collidable);
+    return this.collidableVehicles;
   }
 }
+
+const _trafficDirection = new THREE.Vector3();
+const _trafficPlanarDirection = new THREE.Vector3();
+const _trafficForward = new THREE.Vector3(0, 0, -1);
+const _trafficTargetQuaternion = new THREE.Quaternion();

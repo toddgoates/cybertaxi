@@ -17,17 +17,20 @@ export class InputManager {
       pause: ['Escape'],
     };
 
-    window.addEventListener('keydown', (event) => {
+    this.handleKeyDown = (event) => {
       if (!this.keys.has(event.code)) {
         this.pressed.add(event.code);
       }
       this.keys.add(event.code);
-    });
-    window.addEventListener('keyup', (event) => this.keys.delete(event.code));
-    window.addEventListener('blur', () => {
+    };
+    this.handleKeyUp = (event) => this.keys.delete(event.code);
+    this.handleBlur = () => {
       this.keys.clear();
       this.pressed.clear();
-    });
+    };
+    window.addEventListener('keydown', this.handleKeyDown);
+    window.addEventListener('keyup', this.handleKeyUp);
+    window.addEventListener('blur', this.handleBlur);
   }
 
   isDown(action) {
@@ -46,5 +49,11 @@ export class InputManager {
     if (!pressedCode) return false;
     this.pressed.delete(pressedCode);
     return true;
+  }
+
+  destroy() {
+    window.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('keyup', this.handleKeyUp);
+    window.removeEventListener('blur', this.handleBlur);
   }
 }

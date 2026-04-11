@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 
 const SPARK_COLORS = [0xfff4a3, 0xffd15c, 0xffa13b, 0xff7a2f];
-
-function randomSparkColor() {
-  return new THREE.Color(SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)]);
-}
+const SPARK_COUNT = 16;
+const SPARK_POOL_SIZE = 12;
+const SPARK_COLOR_COMPONENTS = SPARK_COLORS.map((hex) => new THREE.Color(hex).toArray());
 
 export class EffectsHooks {
   constructor(scene) {
     this.scene = scene;
-    this.sparkBursts = [];
+    this.sparkBursts = Array.from({ length: SPARK_POOL_SIZE }, () => this.createSparkBurst());
+    this.nextSparkBurstIndex = 0;
     this.collisionAudioIndex = 0;
     this.collisionSounds = Array.from({ length: 4 }, () => {
       const audio = new Audio('/audio/crash.mp3');
@@ -17,6 +17,40 @@ export class EffectsHooks {
       audio.volume = 0.42;
       return audio;
     });
+  }
+
+  createSparkBurst() {
+    const positions = new Float32Array(SPARK_COUNT * 3);
+    const colors = new Float32Array(SPARK_COUNT * 3);
+    const velocities = Array.from({ length: SPARK_COUNT }, () => new THREE.Vector3());
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+      size: 1.6,
+      transparent: true,
+      opacity: 0,
+      vertexColors: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+      sizeAttenuation: true,
+    });
+
+    const points = new THREE.Points(geometry, material);
+    points.visible = false;
+    this.scene.add(points);
+
+    return {
+      points,
+      positions,
+      colors,
+      velocities,
+      life: 0,
+      duration: 0.45,
+      active: false,
+    };
   }
 
   onPickup() {
@@ -30,55 +64,46 @@ export class EffectsHooks {
   onCollision(position, normal = new THREE.Vector3(0, 1, 0)) {
     this.playCollisionSound();
 
-    const sparkCount = 16;
-    const positions = new Float32Array(sparkCount * 3);
-    const colors = new Float32Array(sparkCount * 3);
-    const velocities = [];
-    const geometry = new THREE.BufferGeometry();
-    const material = new THREE.PointsMaterial({
-      size: 1.6,
-      transparent: true,
-      opacity: 0.95,
-      vertexColors: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      toneMapped: false,
-      sizeAttenuation: true,
-    });
+    const burst = this.sparkBursts[this.nextSparkBurstIndex];
+    this.nextSparkBurstIndex = (this.nextSparkBurstIndex + 1) % this.sparkBursts.length;
+    burst.active = true;
+    burst.life = burst.duration;
+    burst.points.visible = true;
+    burst.points.material.opacity = 0.95;
 
-    const basePosition = position.clone().add(normal.clone().multiplyScalar(1.8));
-    const up = new THREE.Vector3(0, 1, 0);
-    const outward = normal.clone().setY(Math.max(normal.y, 0)).normalize();
+    _sparkBasePosition.copy(position).addScaledVector(normal, 1.8);
+    _sparkOutward.copy(normal).setY(Math.max(normal.y, 0));
+    if (_sparkOutward.lengthSq() === 0) {
+      _sparkOutward.set(0, 1, 0);
+    } else {
+      _sparkOutward.normalize();
+    }
 
-    for (let i = 0; i < sparkCount; i += 1) {
+    for (let i = 0; i < SPARK_COUNT; i += 1) {
       const index = i * 3;
-      positions[index] = basePosition.x;
-      positions[index + 1] = basePosition.y;
-      positions[index + 2] = basePosition.z;
+      burst.positions[index] = _sparkBasePosition.x;
+      burst.positions[index + 1] = _sparkBasePosition.y;
+      burst.positions[index + 2] = _sparkBasePosition.z;
 
-      const color = randomSparkColor();
-      colors[index] = color.r;
-      colors[index + 1] = color.g;
-      colors[index + 2] = color.b;
+      const color = SPARK_COLOR_COMPONENTS[Math.floor(Math.random() * SPARK_COLOR_COMPONENTS.length)];
+      burst.colors[index] = color[0];
+      burst.colors[index + 1] = color[1];
+      burst.colors[index + 2] = color[2];
 
-      const velocity = outward.clone().multiplyScalar(10 + Math.random() * 12);
-      velocity.add(new THREE.Vector3(
+      const velocity = burst.velocities[i];
+      velocity.copy(_sparkOutward).multiplyScalar(10 + Math.random() * 12);
+      velocity.add(_sparkJitter.set(
         (Math.random() - 0.5) * 8,
         5 + Math.random() * 8,
         (Math.random() - 0.5) * 8,
       ));
       if (velocity.lengthSq() === 0) {
-        velocity.copy(up).multiplyScalar(10);
+        velocity.copy(_sparkUp).multiplyScalar(10);
       }
-      velocities.push(velocity);
     }
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    const points = new THREE.Points(geometry, material);
-    this.scene.add(points);
-    this.sparkBursts.push({ points, velocities, life: 0.45, duration: 0.45 });
+    burst.points.geometry.attributes.position.needsUpdate = true;
+    burst.points.geometry.attributes.color.needsUpdate = true;
   }
 
   playCollisionSound() {
@@ -89,8 +114,9 @@ export class EffectsHooks {
   }
 
   update(delta) {
-    for (let i = this.sparkBursts.length - 1; i >= 0; i -= 1) {
+    for (let i = 0; i < this.sparkBursts.length; i += 1) {
       const burst = this.sparkBursts[i];
+      if (!burst.active) continue;
       burst.life -= delta;
 
       const positionAttribute = burst.points.geometry.getAttribute('position');
@@ -110,10 +136,33 @@ export class EffectsHooks {
 
       if (burst.life > 0) continue;
 
+      burst.active = false;
+      burst.points.visible = false;
+    }
+  }
+
+  getActiveCount() {
+    let count = 0;
+    for (let i = 0; i < this.sparkBursts.length; i += 1) {
+      if (this.sparkBursts[i].active) count += 1;
+    }
+    return count;
+  }
+
+  destroy() {
+    this.collisionSounds.forEach((audio) => {
+      audio.pause();
+      audio.src = '';
+    });
+    this.sparkBursts.forEach((burst) => {
       this.scene.remove(burst.points);
       burst.points.geometry.dispose();
       burst.points.material.dispose();
-      this.sparkBursts.splice(i, 1);
-    }
+    });
   }
 }
+
+const _sparkBasePosition = new THREE.Vector3();
+const _sparkOutward = new THREE.Vector3();
+const _sparkJitter = new THREE.Vector3();
+const _sparkUp = new THREE.Vector3(0, 1, 0);

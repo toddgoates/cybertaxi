@@ -280,10 +280,10 @@ export class PlayerController {
 
     this.mesh.rotation.y -= turnInput * this.config.turnSpeed * delta * Math.max(0.4, Math.abs(this.forwardSpeed) / this.config.maxForwardSpeed + 0.35);
 
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.mesh.quaternion);
-    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.mesh.quaternion);
-    this.velocity.copy(forward.multiplyScalar(this.forwardSpeed));
-    this.velocity.add(right.multiplyScalar(this.strafeVelocity));
+    _playerForward.set(0, 0, -1).applyQuaternion(this.mesh.quaternion);
+    _playerRight.set(1, 0, 0).applyQuaternion(this.mesh.quaternion);
+    this.velocity.copy(_playerForward).multiplyScalar(this.forwardSpeed);
+    this.velocity.addScaledVector(_playerRight, this.strafeVelocity);
     this.velocity.y = this.verticalVelocity;
 
     this.mesh.position.addScaledVector(this.velocity, delta);
@@ -422,12 +422,16 @@ export class PlayerController {
   }
 
   bounce(normal, strength = 0.35) {
-    const lateral = new THREE.Vector3(this.velocity.x, 0, this.velocity.z);
-    lateral.reflect(normal).multiplyScalar(strength);
+    _playerLateral.set(this.velocity.x, 0, this.velocity.z);
+    _playerLateral.reflect(normal).multiplyScalar(strength);
     this.forwardSpeed *= -0.2;
     this.strafeVelocity *= -0.3;
     this.mesh.position.addScaledVector(normal, 1.6);
-    this.velocity.x = lateral.x;
-    this.velocity.z = lateral.z;
+    this.velocity.x = _playerLateral.x;
+    this.velocity.z = _playerLateral.z;
   }
 }
+
+const _playerForward = new THREE.Vector3();
+const _playerRight = new THREE.Vector3();
+const _playerLateral = new THREE.Vector3();

@@ -7,6 +7,7 @@ export class UIManager {
     this.lastFare = 0;
     this.displayedCredits = 0;
     this.feedPulseTimeout = null;
+    this.navigatorMarkers = [];
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
@@ -240,28 +241,29 @@ export class UIManager {
 
     state.energy.stations.forEach((station) => targets.push({ ...station, role: 'energy', active: false }));
 
-    this.fields.navTargets.innerHTML = targets
-      .map((target) => {
-        const dx = target.x - playerPosition.x;
-        const dz = target.z - playerPosition.z;
-        const localX = dx * cos - dz * sin;
-        const localZ = dx * sin + dz * cos;
-        const distance = Math.hypot(dx, dz);
-        const clampedDistance = Math.min(distance, range);
-        const scale = distance > 0 ? clampedDistance / distance : 0;
-        const x = localX * scale * (radius / range);
-        const y = localZ * scale * (radius / range);
-        const classes = ['navigator__target', `navigator__target--${target.role}`];
+    targets.forEach((target, index) => {
+      const marker = this.getNavigatorMarker(index);
+      const dx = target.x - playerPosition.x;
+      const dz = target.z - playerPosition.z;
+      const localX = dx * cos - dz * sin;
+      const localZ = dx * sin + dz * cos;
+      const distance = Math.hypot(dx, dz);
+      const clampedDistance = Math.min(distance, range);
+      const scale = distance > 0 ? clampedDistance / distance : 0;
+      const x = localX * scale * (radius / range);
+      const y = localZ * scale * (radius / range);
+      marker.className = `navigator__target navigator__target--${target.role}${target.active ? ' navigator__target--active' : ''}${distance > range ? ' navigator__target--edge' : ''}`;
+      marker.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px))`;
+      marker.style.setProperty('--distance-ratio', Math.min(distance / range, 1).toFixed(2));
+      const fareLabel = target.fare ? ` | ${target.fare} cr` : '';
+      const specialLabel = target.special ? ' | Priority fare' : '';
+      marker.title = `${target.name} ${Math.round(distance)}m${fareLabel}${specialLabel}`;
+      marker.hidden = false;
+    });
 
-        if (target.active) classes.push('navigator__target--active');
-        if (distance > range) classes.push('navigator__target--edge');
-
-        const fareLabel = target.fare ? ` | ${target.fare} cr` : '';
-        const specialLabel = target.special ? ' | Priority fare' : '';
-        const distanceRatio = Math.min(distance / range, 1).toFixed(2);
-        return `<div class="${classes.join(' ')}" style="transform: translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)); --distance-ratio:${distanceRatio};" title="${target.name} ${Math.round(distance)}m${fareLabel}${specialLabel}"></div>`;
-      })
-      .join('');
+    for (let i = targets.length; i < this.navigatorMarkers.length; i += 1) {
+      this.navigatorMarkers[i].hidden = true;
+    }
 
     if (state.mission.phase === 'pickup') {
       const nearestPickup = state.mission.pickupTargets.reduce((nearest, target) => {
@@ -308,5 +310,21 @@ export class UIManager {
     }
 
     this.fields.navStatus.textContent = state.energy.status;
+  }
+
+  getNavigatorMarker(index) {
+    if (!this.navigatorMarkers[index]) {
+      const marker = document.createElement('div');
+      marker.className = 'navigator__target';
+      this.fields.navTargets.appendChild(marker);
+      this.navigatorMarkers[index] = marker;
+    }
+
+    return this.navigatorMarkers[index];
+  }
+
+  destroy() {
+    clearTimeout(this.feedPulseTimeout);
+    this.root.remove();
   }
 }

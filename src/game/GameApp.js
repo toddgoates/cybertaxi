@@ -19,6 +19,7 @@ import { EmpSystem } from '../systems/EmpSystem.js';
 import { SuperBoostSystem } from '../systems/SuperBoostSystem.js';
 import { IntroDialogueManager } from '../systems/IntroDialogueManager.js';
 import { VoiceoverManager } from '../systems/VoiceoverManager.js';
+import { PerformanceOverlay } from '../systems/PerformanceOverlay.js';
 import introDialogue from '../data/introDialogue.json';
 import itemDialogue from '../data/itemDialogue.json';
 import crashDialogue from '../data/crashDialogue.json';
@@ -66,6 +67,7 @@ export class GameApp {
     this.rivalDialogueCooldown = 0;
     this.crashDialogueCooldown = 0;
     this.pendingLowFuelAnnouncements = [];
+    this.perfOverlay = this.options.debug?.showPerfOverlay ? new PerformanceOverlay(this.mount) : null;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
     this.setupLights();
@@ -88,6 +90,8 @@ export class GameApp {
 
     this.resizeHandler = () => this.onResize();
     window.addEventListener('resize', this.resizeHandler);
+    this.beforeUnloadHandler = () => this.destroy();
+    window.addEventListener('beforeunload', this.beforeUnloadHandler);
   }
 
   applyDebugFlags() {
@@ -334,6 +338,20 @@ export class GameApp {
       paused: this.paused,
     });
 
+    if (this.perfOverlay) {
+      this.perfOverlay.update(delta, {
+        sceneChildren: this.scene.children.length,
+        geometries: this.renderer.info.memory.geometries,
+        textures: this.renderer.info.memory.textures,
+        drawCalls: this.renderer.info.render.calls,
+        triangles: this.renderer.info.render.triangles,
+        traffic: this.traffic.getVehicles().length,
+        rivals: this.rivals.getState().activeRivals,
+        effects: this.effects.getActiveCount(),
+        voiceActive: this.voiceover.isActive(),
+      });
+    }
+
     this.composer.render();
   };
 
@@ -342,5 +360,22 @@ export class GameApp {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.composer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    window.removeEventListener('resize', this.resizeHandler);
+    window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+    this.input.destroy();
+    this.ui.destroy();
+    this.effects.destroy();
+    this.music.destroy();
+    this.introDialogue.destroy();
+    this.postIntroDialogue.destroy();
+    this.voiceover.destroy();
+    this.perfOverlay?.destroy();
+    this.composer.dispose();
+    this.renderer.dispose();
   }
 }

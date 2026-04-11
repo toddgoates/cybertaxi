@@ -140,4 +140,12 @@ export class MusicManager {
       label: this.muted ? 'Music muted' : this.paused ? 'Music paused' : this.awaitingInteraction ? 'Music ready on input' : 'Music playing',
     };
   }
+
+  destroy() {
+    window.removeEventListener('keydown', this.handleKeydown);
+    this.removeInteractionListeners();
+    this.audio.removeEventListener('ended', this.handleTrackEnded);
+    this.audio.pause();
+    this.audio.src = '';
+  }
 }

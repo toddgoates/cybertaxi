@@ -74,4 +74,11 @@ export class VoiceoverManager {
     window.removeEventListener('pointerdown', this.tryStartPlayback);
     window.removeEventListener('keydown', this.tryStartPlayback);
   }
+
+  destroy() {
+    this.removeInteractionListeners();
+    this.audio.removeEventListener('ended', this.handleEnded);
+    this.audio.pause();
+    this.audio.src = '';
+  }
 }

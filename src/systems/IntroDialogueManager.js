@@ -125,4 +125,15 @@ export class IntroDialogueManager {
       this.onComplete();
     }
   }
+
+  destroy() {
+    if (this.gapTimer) {
+      window.clearTimeout(this.gapTimer);
+      this.gapTimer = null;
+    }
+    this.removeInteractionListeners();
+    this.audio.removeEventListener('ended', this.handleEnded);
+    this.audio.pause();
+    this.audio.src = '';
+  }
 }

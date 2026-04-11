@@ -20,6 +20,10 @@ import { IntroDialogueManager } from '../systems/IntroDialogueManager.js';
 import { VoiceoverManager } from '../systems/VoiceoverManager.js';
 import introDialogue from '../data/introDialogue.json';
 import empDialogue from '../data/empDialogue.json';
+import postIntroDialogue from '../data/postIntroDialogue.json';
+
+const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
+const POST_INTRO_DELAY_AFTER_TITLE_SECONDS = 2.5;
 
 export class GameApp {
   constructor(mount, options = {}) {
@@ -50,7 +54,9 @@ export class GameApp {
       '/audio/music_3.mp3',
     ]);
     this.introDialogue = new IntroDialogueManager(introDialogue, 300);
+    this.postIntroDialogue = new IntroDialogueManager(postIntroDialogue, 250);
     this.voiceover = new VoiceoverManager();
+    this.pendingPostIntroDelay = null;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
     this.setupLights();
@@ -139,10 +145,25 @@ export class GameApp {
         onComplete: () => {
           this.music.setVolumeScale(1);
           this.ui.showIntroCard('Todd Goates Presents', 'Cybertaxi');
+          this.pendingPostIntroDelay = INTRO_TITLE_CARD_DURATION_SECONDS + POST_INTRO_DELAY_AFTER_TITLE_SECONDS;
         },
       });
     }
     this.animate();
+  }
+
+  startPostIntroDialogue() {
+    this.postIntroDialogue.start({
+      onEntryStart: (entry) => {
+        this.music.setVolumeScale(0.24);
+        this.ui.showDialogue(entry);
+      },
+      onEntryEnd: () => this.ui.hideDialogue(),
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+      },
+    });
   }
 
   animate = () => {
@@ -158,6 +179,13 @@ export class GameApp {
 
     if (!this.paused) {
       this.music.update(delta);
+      if (this.pendingPostIntroDelay != null) {
+        this.pendingPostIntroDelay = Math.max(0, this.pendingPostIntroDelay - delta);
+        if (this.pendingPostIntroDelay === 0) {
+          this.pendingPostIntroDelay = null;
+          this.startPostIntroDialogue();
+        }
+      }
       this.city.update(delta, this.player.mesh.position);
       this.player.update(delta, this.energy.getDriveState());
       this.traffic.update(delta);

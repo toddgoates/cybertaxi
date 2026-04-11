@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/post_intro_1.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Axiom Mobility's not gonna like this. I'll round up whatever I can to help you out."
+  },
+  {
+    "id": 2,
+    "audio": "/audio/post_intro_2.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Thanks, love. We're in this together."
+  }
+]

@@ -91,7 +91,7 @@ export const GAME_CONFIG = {
     },
   },
   emp: {
-    spawnIntervalSeconds: 120,
+    spawnIntervalSeconds: 90,
     pickupRadius: 14,
     maxCharges: 5,
     maxTargetsPerBlast: 10,

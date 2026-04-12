@@ -193,9 +193,20 @@ export class RivalTaxiAgent {
   }
 
   computeDesiredVelocity(context) {
-    const { player, mission, managerState } = context;
+    const { player, mission, managerState, energy } = context;
     const playerPosition = player.mesh.position;
     const playerVelocity = player.velocity;
+
+    if (energy?.refueling && energy.activeStation) {
+      _retreatOffset.copy(this.position).sub(playerPosition).setY(0);
+      if (_retreatOffset.lengthSq() < 1) {
+        _retreatOffset.set(managerState.right.x || 1, 0, managerState.right.z || 0);
+      }
+      _retreatOffset.normalize().multiplyScalar(energy.activeStation.radius + 42 + this.swarmSlot * 5);
+      _retreatTarget.set(playerPosition.x, playerPosition.y, playerPosition.z).add(_retreatOffset);
+      _retreatTarget.y = THREE.MathUtils.clamp(playerPosition.y + 10 + (this.swarmSlot % 2 === 0 ? 6 : -4), context.world.hoverFloor + 10, context.world.hoverCeiling - 12);
+      return arrive(this.position, _retreatTarget, this.maxSpeed * 0.94, 24, _desiredVelocity);
+    }
 
     if (this.behavior === 'interceptor') {
       const leadTime = THREE.MathUtils.lerp(0.55, 1.4, this.aggression);
@@ -273,3 +284,5 @@ const _zoneOffset = new THREE.Vector3();
 const _swarmAnchor = new THREE.Vector3();
 const _swarmLateral = new THREE.Vector3();
 const _swarmDepth = new THREE.Vector3();
+const _retreatTarget = new THREE.Vector3();
+const _retreatOffset = new THREE.Vector3();

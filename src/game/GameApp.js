@@ -67,6 +67,7 @@ export class GameApp {
     this.rivalDialogueCooldown = 0;
     this.crashDialogueCooldown = 0;
     this.pendingLowFuelAnnouncements = [];
+    this.runtimeDialogueUnlocked = false;
     this.perfOverlay = this.options.debug?.showPerfOverlay ? new PerformanceOverlay(this.mount) : null;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
@@ -161,6 +162,7 @@ export class GameApp {
   start() {
     if (this.options.debug?.skipIntro) {
       this.music.start();
+      this.runtimeDialogueUnlocked = true;
     } else {
       this.music.start(0.3);
       this.introDialogue.start({
@@ -186,6 +188,7 @@ export class GameApp {
       onComplete: () => {
         this.music.setVolumeScale(1);
         this.ui.hideDialogue();
+        this.runtimeDialogueUnlocked = true;
       },
     });
   }
@@ -277,27 +280,37 @@ export class GameApp {
       this.player.update(delta, this.energy.getDriveState());
       this.traffic.update(delta);
       this.energy.update(delta, this.player);
-      let lowFuelThreshold;
-      while ((lowFuelThreshold = this.energy.consumeThresholdAnnouncement()) != null) {
-        this.pendingLowFuelAnnouncements.push(lowFuelThreshold);
+      this.latestEnergyState = this.energy.getState();
+      if (this.runtimeDialogueUnlocked) {
+        let lowFuelThreshold;
+        while ((lowFuelThreshold = this.energy.consumeThresholdAnnouncement()) != null) {
+          this.pendingLowFuelAnnouncements.push(lowFuelThreshold);
+        }
+      } else {
+        while (this.energy.consumeThresholdAnnouncement() != null) {
+          // Drop threshold announcements during the opening narrative.
+        }
       }
       const missionState = this.missions.getState();
-      this.rivals.update(delta, this.player, missionState);
+      this.rivals.update(delta, this.player, missionState, this.latestEnergyState);
       this.emp.update(delta, this.player, this.rivals);
       this.superBoost.update(delta, this.player);
       const empSpawn = this.emp.consumeSpawnEvent();
-      if (empSpawn) {
-        this.playItemAnnouncement('An EMP appeared!');
-      }
       const superBoostSpawn = this.superBoost.consumeSpawnEvent();
-      if (superBoostSpawn) {
-        this.playItemAnnouncement('A Super Boost appeared!');
-      }
-      if (this.rivals.consumeSpawnAnnouncement()) {
-        if (!this.voiceover.isActive() && this.rivalDialogueCooldown === 0) {
-          this.playEscalationAnnouncement();
-        } else {
-          this.ui.showAlert('A new Axiom Mobility taxi has been spotted!');
+      const rivalSpawnAnnouncement = this.rivals.consumeSpawnAnnouncement();
+      if (this.runtimeDialogueUnlocked) {
+        if (empSpawn) {
+          this.playItemAnnouncement('An EMP appeared!');
+        }
+        if (superBoostSpawn) {
+          this.playItemAnnouncement('A Super Boost appeared!');
+        }
+        if (rivalSpawnAnnouncement) {
+          if (!this.voiceover.isActive() && this.rivalDialogueCooldown === 0) {
+            this.playEscalationAnnouncement();
+          } else {
+            this.ui.showAlert('A new Axiom Mobility taxi has been spotted!');
+          }
         }
       }
       this.effects.update(delta);
@@ -312,10 +325,10 @@ export class GameApp {
           this.rivals.onCollision(event.penalty / GAME_CONFIG.mission.collisionPenalty);
         }
       });
-      if (collisionEvents.length > 0 && !this.voiceover.isActive() && this.crashDialogueCooldown === 0) {
+      if (this.runtimeDialogueUnlocked && collisionEvents.length > 0 && !this.voiceover.isActive() && this.crashDialogueCooldown === 0) {
         this.playCrashDialogue();
       }
-      if (!this.voiceover.isActive() && this.pendingLowFuelAnnouncements.length > 0) {
+      if (this.runtimeDialogueUnlocked && !this.voiceover.isActive() && this.pendingLowFuelAnnouncements.length > 0) {
         this.pendingLowFuelAnnouncements.shift();
         this.playLowFuelDialogue();
       }
@@ -329,7 +342,7 @@ export class GameApp {
     this.ui.render({
       player: this.player,
       mission: nextMissionState,
-      energy: this.energy.getState(),
+      energy: this.latestEnergyState ?? this.energy.getState(),
       district: this.worldData.getDistrictName(this.player.mesh.position),
       music: this.music.getState(),
       rivals: this.rivals.getState(),

@@ -135,6 +135,16 @@ export class EnergySystem {
       ratio,
       status,
       refuelRatio: this.refuelProgress / this.config.refuelSeconds,
+      refueling: Boolean(this.activeStation && this.currentEnergy < this.config.maxEnergy),
+      activeStation: this.activeStation
+        ? {
+            name: this.activeStation.name,
+            x: this.activeStation.position.x,
+            y: this.activeStation.position.y,
+            z: this.activeStation.position.z,
+            radius: this.config.stationRadius,
+          }
+        : null,
       stations: this.stations.map((station) => ({
         name: station.name,
         x: station.position.x,

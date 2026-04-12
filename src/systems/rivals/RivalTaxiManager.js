@@ -108,7 +108,7 @@ export class RivalTaxiManager {
     return { heat: this.heatSystem.getState().tier, rivals: this.activeVehicles.length };
   }
 
-  update(delta, player, missionState) {
+  update(delta, player, missionState, energyState = null) {
     this.heatSystem.update(delta, player, missionState);
     const heatState = this.heatSystem.getState();
     const profile = getHeatProfile(heatState.tier);
@@ -118,7 +118,7 @@ export class RivalTaxiManager {
     this.updateBasisVectors(player);
     this.recycleFarAgents(player.mesh.position, profile.desiredCount);
     this.spawnIfNeeded(player, missionState, heatState, profile);
-    this.updateAgents(delta, player, missionState);
+    this.updateAgents(delta, player, missionState, energyState);
     this.announceHeatTier();
   }
 
@@ -217,12 +217,13 @@ export class RivalTaxiManager {
     return profile.behaviors[Math.floor(Math.random() * profile.behaviors.length)];
   }
 
-  updateAgents(delta, player, missionState) {
+  updateAgents(delta, player, missionState, energyState) {
     const activeAgents = this.getActiveAgents();
     activeAgents.forEach((agent) => {
       agent.update(delta, {
         player,
         mission: missionState,
+        energy: energyState,
         neighbors: activeAgents,
         world: this.worldConfig,
         managerState: this.managerState,

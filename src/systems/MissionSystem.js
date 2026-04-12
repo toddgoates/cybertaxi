@@ -85,14 +85,54 @@ export class MissionSystem {
   }
 
   createPickupSpots() {
+    const clearance = this.config.pickupRadius + 4;
     return this.worldData.districtAnchors.flatMap((district) => {
       return PICKUP_OFFSETS.map((offset, index) => ({
         district,
         name: district.name,
         id: `${district.name}-${index}`,
-        position: district.position.clone().add(offset),
+        position: this.resolvePickupPosition(district.position, offset, clearance),
       }));
     });
+  }
+
+  resolvePickupPosition(anchor, offset, clearance) {
+    _pickupPosition.copy(anchor).add(offset);
+
+    for (let iteration = 0; iteration < 6; iteration += 1) {
+      const collider = this.findOverlappingPickupCollider(_pickupPosition, clearance);
+      if (!collider) break;
+
+      _colliderCenter.set(
+        (collider.min.x + collider.max.x) * 0.5,
+        _pickupPosition.y,
+        (collider.min.z + collider.max.z) * 0.5,
+      );
+      _pushDirection.copy(_pickupPosition).sub(_colliderCenter).setY(0);
+      if (_pushDirection.lengthSq() < 0.001) {
+        _pushDirection.copy(offset).setY(0);
+      }
+      if (_pushDirection.lengthSq() < 0.001) {
+        _pushDirection.set(1, 0, 0);
+      }
+      _pushDirection.normalize();
+
+      const pushDistanceX = Math.max(0, collider.max.x - _pickupPosition.x + clearance, _pickupPosition.x - collider.min.x + clearance);
+      const pushDistanceZ = Math.max(0, collider.max.z - _pickupPosition.z + clearance, _pickupPosition.z - collider.min.z + clearance);
+      _pickupPosition.addScaledVector(_pushDirection, Math.max(pushDistanceX, pushDistanceZ, clearance * 0.6));
+    }
+
+    return _pickupPosition.clone();
+  }
+
+  findOverlappingPickupCollider(position, clearance) {
+    return this.worldData.colliders.find((collider) => {
+      if (collider.type !== 'building') return false;
+      return position.x > collider.min.x - clearance
+        && position.x < collider.max.x + clearance
+        && position.z > collider.min.z - clearance
+        && position.z < collider.max.z + clearance;
+    }) ?? null;
   }
 
   createZone(color, radius) {
@@ -351,3 +391,7 @@ export class MissionSystem {
     };
   }
 }
+
+const _pickupPosition = new THREE.Vector3();
+const _colliderCenter = new THREE.Vector3();
+const _pushDirection = new THREE.Vector3();

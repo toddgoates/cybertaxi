@@ -10,5 +10,23 @@
     "audio": "/audio/post_intro_2.mp3",
     "portrait": "/images/player.png",
     "transcription": "Thanks, love. We're in this together."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/post_intro_3.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You figure out how to drive that thing yet? And the navigator?"
+  },
+  {
+    "id": 4,
+    "audio": "/audio/post_intro_4.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Yeah, I think so. Blue's passengers, pink's their drop-off, and yellow's refuel stations."
+  },
+  {
+    "id": 5,
+    "audio": "/audio/post_intro_5.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Exactly. And if I find anything useful, I'll tag it on your map."
   }
 ]

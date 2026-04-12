@@ -7,7 +7,9 @@
 - [x] Dialog from partner right after title disappears "Axiom Mobility is going to be pretty pissed we're doing this. I'll try and round up some items to fight back against them."
 - [x] Add a super boost item that gives you unlimited boost for 1 minute
 - [x] Make the intro dialog un-interruptable
-- [] Have rivals back off when you fueling
+- [x] Have rivals back off when you fueling
+- [x] Additional post intro dialog - blue means pickup, pink drop off, yellow gas stations, if I find anything to help you I'll put it on the map
+- [] Fake passengers that rob you - look like real passengers but with one subtle difference on pickup icon
 - [] Lightning after 1000 credits if you fly to high, corresponding messages from player/partner, severe penalty
 - [x] Messages from player/partner when energy is low
 - [] Bank to deposit credits (ie save game) - write to local storage, if credits greater than 0 resume game with that number of credits no intro dialog

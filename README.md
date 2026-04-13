@@ -26,6 +26,7 @@ You pilot a futuristic cab through a neon city, choose fares, deliver passengers
 - Playlist music support with mute toggle and keyboard track switching
 - Pause overlay and streamlined HUD with fare/credits, navigator, and lower-left systems card
 - Optional dev performance overlay for long-session monitoring
+- Contest widget script included in the app shell
 
 ## Tech Stack
 
@@ -152,6 +153,7 @@ Important rules:
 - Special fares unlock every `350` total credits and pay `300-500` credits.
 - After `4500` credits, one of the five live pickup offers can be a fake passenger that steals `500-750` credits.
 - Fake passengers look like normal pickups but have a subtle yellow flicker on the in-world beacon.
+- Passenger pickup spots are pushed clear of building colliders so they stay near buildings without intersecting them.
 - Crashes during a ride reduce the fare further.
 - Crashing while boosting causes a larger penalty.
 - Colliding with buildings, cars, rivals, or blimps throws off sparks and plays a crash sound.
@@ -187,7 +189,7 @@ Important rules:
 - `src/systems/rivals/HeatSystem.js`
   - Rival escalation and heat tracking
 - `src/systems/rivals/RivalTaxiManager.js`
-  - Rival taxi pooling, spawning, roles, and update coordination
+  - Rival taxi pooling, spawning, roles, update coordination, and refuel backoff support
 - `src/systems/rivals/RivalTaxiAgent.js`
   - Individual rival taxi steering and behavior state
 - `src/systems/rivals/SpawnSystem.js`
@@ -233,6 +235,17 @@ Important rules:
 - `src/styles.css`
   - HUD and UI styling
 
+## Performance Debugging
+
+- Add `?perf=1` to the URL to show a lightweight runtime overlay
+- The overlay reports:
+  - scene children
+  - geometry count
+  - texture count
+  - draw calls
+  - triangle count
+  - active traffic / rivals / effects
+
 ## Notes
 
 - This project currently has no backend or persistence.
@@ -240,6 +253,7 @@ Important rules:
 - The city look is driven by procedural emissive windows, neon accents, fog, a sky dome, and lightweight bloom rather than heavy dynamic lights.
 - The game is meant to be easy to iterate on through `src/game/config.js` and the systems under `src/systems/`.
 - A lightweight long-session performance overlay is available with `?perf=1`.
+- `index.html` includes the Vibe Jam contest widget script.
 - For a more detailed handoff document, see `project_context.md`.
 
 ## Additional Context

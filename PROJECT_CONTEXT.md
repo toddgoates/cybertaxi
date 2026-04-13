@@ -26,6 +26,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - The player controls a hovering taxi in a third-person view.
 - A mission loop presents five pickup choices, then locks one fare after selection and sends the player to a drop-off district.
 - Every `350` total credits earned, the next mission batch includes a special priority fare with a blue-star pickup marker and a `300-500` credit payout.
+- After `4500` credits, one of the five live pickup offers can be a fake passenger that steals `500-750` credits.
 - The active fare decreases over time during the drop-off phase.
 - Priority fares now decay at the same rate as normal fares; they are just worth much more.
 - Fares scale with trip distance so longer trips start with higher quoted values.
@@ -34,6 +35,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - The player manages an energy meter that drains over time and faster while boosting.
 - Low-energy dialogue can trigger when energy crosses `20%`, `10%`, and `5%`.
 - Rival taxis escalate via a heat system and can chase, intercept, block, ram, and swarm.
+- Rival taxis back off while the player is actively refueling, then resume pursuit after the player leaves the station.
 - EMP pickups spawn on the map, can be stored, and can disable nearby rival taxis.
 - Super Boost pickups spawn on the map, can be stored, and provide a one-minute unlimited boost window when triggered.
 - The city includes animated rain, moving rooftop searchlights, and large collidable neon blimps.
@@ -56,6 +58,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - EMP pickup system with inventory, activation, and disruption effect
 - Super Boost pickup system with inventory and one-minute unlimited boost activation
 - Pause state with overlay and audio pause support
+- Fake passenger robbery flow with first-time and repeat dialogue responses
 
 ### HUD and presentation
 
@@ -67,6 +70,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - Simplified HUD layout after removing the older dispatch and objective widgets
 - Navigator shows the active mission target relative to the player
 - Navigator also shows yellow energy station dots, green EMP pickup markers, blue-star special fare markers, and orange Super Boost markers
+- Fake passenger pickup beacons use a subtle yellow flicker while still looking mostly like normal passenger markers
 - Energy meter and charging progress ring for rooftop refueling
 - Boost meter changes to an orange highlighted state while Super Boost is active
 - Keyboard-driven music controls with mute and track switching
@@ -80,11 +84,13 @@ The project is still a lightweight, code-driven game with no backend and no save
 - Background music now plays from a playlist instead of a single looping file
 - Crash sound plays on collision and EMP uses its own zap sound
 - Item, rival spawn, crash, and low-energy chatter all route through `VoiceoverManager`
+- Fake passenger robbery dialogue also routes through the dialogue widget and music ducking path
 - Item dialogue is shared for EMP and Super Boost spawn announcements
 - Rival spawn dialogue has a `60` second cooldown
 - Crash dialogue has a `15` second cooldown
 - Low-energy dialogue has no cooldown and is threshold-driven
 - `skip-intro=1` can bypass the intro sequence in dev or regular local use
+- Gameplay voice lines are suppressed until the intro and post-intro sequences are finished
 
 ### Vehicle and feedback changes
 
@@ -107,6 +113,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - Added rooftop searchlights and large sky blimps as additional set dressing and obstacles
 - District ground overlap was corrected to stop border flicker between district color zones
 - Added orange Super Boost pickups and orange navigator markers for them
+- Pickup spots are adjusted away from building colliders so they do not overlap structures
 
 ### Balancing and progression-related changes
 
@@ -116,6 +123,15 @@ The project is still a lightweight, code-driven game with no backend and no save
 - Time-based fare decay was slowed to `1.5` credits per second
 - Special fare unlock threshold was lowered from `500` to `350`
 - EMP spawn interval was reduced to `90` seconds
+
+### Performance and stability changes
+
+- Added a lightweight dev performance overlay enabled via `?perf=1`
+- Reworked navigator marker rendering to reuse DOM nodes instead of rebuilding with `innerHTML` every frame
+- Reworked collision spark effects to use a fixed reusable pool instead of creating and disposing point clouds per impact
+- Reduced per-frame `Vector3` / `Quaternion` churn in traffic, player, and collision systems
+- Fixed traffic hover bob so it no longer accumulates vertical drift over time
+- Added explicit destroy/cleanup helpers for input, UI, audio, intro systems, effects, and renderer ownership paths
 
 ## Important Files
 
@@ -129,6 +145,10 @@ The project is still a lightweight, code-driven game with no backend and no save
   - Intro narration metadata for portraits, transcripts, and audio files
 - `src/data/postIntroDialogue.json`
   - Post-intro dialogue metadata
+- `src/data/fakePassengerIntroDialogue.json`
+  - First fake-passenger robbery dialogue sequence
+- `src/data/fakePassengerDialogue.json`
+  - Repeat fake-passenger robbery dialogue pool
 - `src/data/itemDialogue.json`
   - Shared item voiceover metadata for EMP and Super Boost spawns
 - `src/data/escalationDialogue.json`
@@ -144,11 +164,11 @@ The project is still a lightweight, code-driven game with no backend and no save
 - `src/systems/CameraController.js`
   - Third-person follow camera
 - `src/systems/TrafficManager.js`
-  - Ambient and collidable traffic spawning and movement
+  - Ambient and collidable traffic spawning and movement with reduced per-frame allocation churn
 - `src/systems/rivals/HeatSystem.js`
   - Heat accumulation and decay that drives rival escalation
 - `src/systems/rivals/RivalTaxiManager.js`
-  - Pooled rival taxi orchestration, spawn pacing, debug seeding, spawn announcements, and disruption handling
+  - Pooled rival taxi orchestration, spawn pacing, debug seeding, spawn announcements, refuel backoff, and disruption handling
 - `src/systems/rivals/RivalTaxiAgent.js`
   - Individual rival taxi mesh, behavior selection, and steering update
 - `src/systems/rivals/SpawnSystem.js`
@@ -156,7 +176,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - `src/systems/rivals/SteeringBehaviors.js`
   - Shared steering helpers used by rival agents
 - `src/systems/MissionSystem.js`
-  - Mission selection, live pickup zones, special fare logic, distance-scaled fare logic, and payout handling
+  - Mission selection, live pickup zones, special fare logic, fake passengers, distance-scaled fare logic, and payout handling
 - `src/systems/EnergySystem.js`
   - Energy drain, rooftop station placement/interaction, depletion penalties, and low-energy threshold announcements
 - `src/systems/EmpSystem.js`
@@ -164,15 +184,17 @@ The project is still a lightweight, code-driven game with no backend and no save
 - `src/systems/SuperBoostSystem.js`
   - Super Boost pickup spawning, inventory, activation, and navigator target exposure
 - `src/systems/CollisionSystem.js`
-  - Player collisions against buildings, traffic, rivals, and blimps
+  - Player collisions against buildings, traffic, rivals, and blimps with reduced temporary allocation churn
 - `src/systems/EffectsHooks.js`
-  - Collision spark particles and crash sound support
+  - Pooled collision spark particles and crash sound support
 - `src/systems/UIManager.js`
   - HUD structure and rendering, including dialogue card, title card, navigator logic, systems card, and pause overlay
 - `src/systems/IntroDialogueManager.js`
   - JSON-driven intro narration sequencing with pause-aware playback
 - `src/systems/VoiceoverManager.js`
   - Shared one-off spoken dialogue playback for gameplay-triggered voice lines
+- `src/systems/PerformanceOverlay.js`
+  - Optional dev-only runtime overlay for scene/memory/render/effect counts
 - `src/systems/MusicManager.js`
   - Playlist-based background music playback, autoplay fallback, mute state, and track switching
 - `src/styles.css`
@@ -191,6 +213,7 @@ At the time of writing:
 - Regular fare decay is `1.5` credits per second
 - Special fare unlock threshold is `350` credits
 - Special fare payout range is `300-500` credits
+- Fake passengers begin appearing at `4500` credits
 - Energy stations require `5` seconds parked in-zone to refill
 - EMP pickups spawn every `90` seconds
 - EMP can remove up to `10` nearby rival taxis per use
@@ -209,6 +232,7 @@ When running locally, the game currently supports:
 - `emp=<number>`
 - `super-boost=1`
 - `skip-intro=1`
+- `perf=1`
 
 Example:
 
@@ -225,8 +249,7 @@ Current runtime asset locations:
 - Intro dialogue:
   - `public/audio/intro_1.mp3` through `public/audio/intro_7.mp3`
 - Post-intro dialogue:
-  - `public/audio/post_intro_1.mp3`
-  - `public/audio/post_intro_2.mp3`
+  - `public/audio/post_intro_1.mp3` through `public/audio/post_intro_5.mp3`
 - Item dialogue:
   - `public/audio/item_1.mp3` through `public/audio/item_10.mp3`
 - Rival escalation dialogue:
@@ -235,6 +258,10 @@ Current runtime asset locations:
   - `public/audio/crash_1.mp3` through `public/audio/crash_30.mp3`
 - Low-energy dialogue:
   - `public/audio/lowfuel_1.mp3` through `public/audio/lowfuel_10.mp3`
+- Fake-passenger intro dialogue:
+  - `public/audio/fake_passenger_intro_1.mp3` through `public/audio/fake_passenger_intro_3.mp3`
+- Fake-passenger repeat dialogue:
+  - `public/audio/fake_passenger_1.mp3` through `public/audio/fake_passenger_10.mp3`
 - Sound effects:
   - `public/audio/crash.mp3`
   - `public/audio/zap.mp3`
@@ -252,11 +279,13 @@ Current runtime asset locations:
 - Searchlights are chosen from tall rooftops that are not already used as energy stations.
 - EMP pickups are represented both in-world and in UI state as navigator targets.
 - Super Boost pickups are represented both in-world and in UI state as orange navigator targets.
+- Passenger pickup candidates are clearance-checked against building colliders before use.
 - Rival taxis are pooled and updated centrally to stay browser-friendly.
 - City richness is driven mostly by emissive materials, procedural textures, and lightweight post-processing rather than runtime lights.
 - The navigator is not a full map. It is a radar/compass-style relative indicator rendered in HTML/CSS.
 - Music and intro narration both use browser `Audio` elements with autoplay fallback via user interaction.
 - Gameplay voice lines also use browser `Audio` elements through `VoiceoverManager`, which coordinates dialogue widget use and music ducking.
+- The app shell includes the external Vibe Jam contest widget script in `index.html`.
 - Rain is rendered as a player-centered streak volume so coverage remains consistent across the whole city.
 
 ## Known Limitations
@@ -290,8 +319,9 @@ If continuing this project in another session, mention:
 - The game includes collidable NPC traffic, rival taxi AI, special fares, failed-fare penalties, rooftop energy stations, EMP pickups, and Super Boost pickups
 - Intro narration is data-driven from `src/data/introDialogue.json`
 - Additional gameplay voiceover data lives in `itemDialogue.json`, `escalationDialogue.json`, `crashDialogue.json`, and `lowFuelDialogue.json`
+- Fake passenger dialogue data lives in `fakePassengerIntroDialogue.json` and `fakePassengerDialogue.json`
 - Music now plays from a playlist with `[` and `]` track switching and `M` mute
-- Dev URL flags include `credits`, `heat`, `rivals`, `energy`, `emp`, `super-boost`, and `skip-intro`
-- The main gameplay wiring lives in `GameApp`, `MissionSystem`, `PlayerController`, `CityGenerator`, `EnergySystem`, `EmpSystem`, `SuperBoostSystem`, `RivalTaxiManager`, `UIManager`, `MusicManager`, `VoiceoverManager`, and `IntroDialogueManager`
+- Dev URL flags include `credits`, `heat`, `rivals`, `energy`, `emp`, `super-boost`, `skip-intro`, and `perf`
+- The main gameplay wiring lives in `GameApp`, `MissionSystem`, `PlayerController`, `CityGenerator`, `EnergySystem`, `EmpSystem`, `SuperBoostSystem`, `RivalTaxiManager`, `UIManager`, `MusicManager`, `VoiceoverManager`, `IntroDialogueManager`, and `PerformanceOverlay`
 
 This should give the next session enough context to continue without re-discovering the current state from scratch.

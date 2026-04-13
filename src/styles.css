@@ -319,7 +319,7 @@ canvas {
 .hud__corner {
   position: absolute;
   right: 16px;
-  bottom: 16px;
+  bottom: 36px;
 }
 
 .hud__top,
@@ -332,7 +332,7 @@ canvas {
 .hud__bottom {
   position: absolute;
   left: 16px;
-  bottom: 16px;
+  bottom: 36px;
   grid-template-columns: minmax(0, 360px);
   align-items: end;
 }
@@ -761,7 +761,7 @@ canvas {
 
   .hud__corner {
     right: 12px;
-    bottom: 12px;
+    bottom: 32px;
   }
 
   .hud__dialogue {
@@ -777,7 +777,7 @@ canvas {
 
   .hud__bottom {
     left: 12px;
-    bottom: 12px;
+    bottom: 32px;
   }
 
   .hud__actions {

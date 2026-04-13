@@ -17,6 +17,9 @@ export const GAME_CONFIG = {
     specialFareMaxSeconds: 20,
     specialFareMinCredits: 300,
     specialFareMaxCredits: 500,
+    fakePassengerThresholdCredits: 4500,
+    fakePassengerMinRobberyCredits: 500,
+    fakePassengerMaxRobberyCredits: 750,
   },
   energy: {
     maxEnergy: 100,

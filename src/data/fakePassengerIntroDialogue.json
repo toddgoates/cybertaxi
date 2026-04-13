@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/fake_passenger_intro_1.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "What the-? I just got robbed!"
+  },
+  {
+    "id": 2,
+    "audio": "/audio/fake_passenger_intro_2.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Are you serious?!"
+  },
+  {
+    "id": 3,
+    "audio": "/audio/fake_passenger_intro_3.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Axiom Mobility has recruited local assets to assist in your interception."
+  }
+]

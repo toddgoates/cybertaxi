@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/fake_passenger_1.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Not again-seriously?!"
+  },
+  {
+    "id": 2,
+    "audio": "/audio/fake_passenger_2.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "That wasn't a real passenger..."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/fake_passenger_3.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "I just got played."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/fake_passenger_4.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Okay... now I'm checking everyone."
+  },
+  {
+    "id": 5,
+    "audio": "/audio/fake_passenger_5.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "That's getting old real fast."
+  },
+  {
+    "id": 6,
+    "audio": "/audio/fake_passenger_6.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Axiom's getting desperate."
+  },
+  {
+    "id": 7,
+    "audio": "/audio/fake_passenger_7.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Yeah... that one was on me."
+  },
+  {
+    "id": 8,
+    "audio": "/audio/fake_passenger_8.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Should've seen that coming."
+  },
+  {
+    "id": 9,
+    "audio": "/audio/fake_passenger_9.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "This city just keeps getting better."
+  },
+  {
+    "id": 10,
+    "audio": "/audio/fake_passenger_10.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Alright... no more easy pickups."
+  }
+]

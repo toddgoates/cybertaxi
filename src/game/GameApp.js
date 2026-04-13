@@ -23,6 +23,8 @@ import { PerformanceOverlay } from '../systems/PerformanceOverlay.js';
 import introDialogue from '../data/introDialogue.json';
 import itemDialogue from '../data/itemDialogue.json';
 import crashDialogue from '../data/crashDialogue.json';
+import fakePassengerIntroDialogue from '../data/fakePassengerIntroDialogue.json';
+import fakePassengerDialogue from '../data/fakePassengerDialogue.json';
 import lowFuelDialogue from '../data/lowFuelDialogue.json';
 import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
@@ -62,12 +64,15 @@ export class GameApp {
     ]);
     this.introDialogue = new IntroDialogueManager(introDialogue, 300);
     this.postIntroDialogue = new IntroDialogueManager(postIntroDialogue, 250);
+    this.fakePassengerIntroDialogue = new IntroDialogueManager(fakePassengerIntroDialogue, 250);
     this.voiceover = new VoiceoverManager();
     this.pendingPostIntroDelay = null;
     this.rivalDialogueCooldown = 0;
     this.crashDialogueCooldown = 0;
     this.pendingLowFuelAnnouncements = [];
     this.runtimeDialogueUnlocked = false;
+    this.fakePassengerIntroSeen = false;
+    this.fakePassengerIntroActive = false;
     this.perfOverlay = this.options.debug?.showPerfOverlay ? new PerformanceOverlay(this.mount) : null;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
@@ -79,6 +84,7 @@ export class GameApp {
     this.player = new PlayerController(this.scene, this.input, GAME_CONFIG, this.worldData.spawnPoint);
     this.traffic = new TrafficManager(this.scene, GAME_CONFIG, this.worldData.flightPaths);
     this.missions = new MissionSystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.effects);
+    this.missions.setFakePassengerHandler(({ robberyAmount }) => this.onFakePassengerRobbed(robberyAmount));
     this.energy = new EnergySystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.missions);
     this.collisions = new CollisionSystem(this.worldData.colliders, GAME_CONFIG, this.ui, this.effects);
     this.rivals = new RivalTaxiManager(this.scene, GAME_CONFIG, this.worldData, this.ui);
@@ -208,6 +214,49 @@ export class GameApp {
     });
   }
 
+  onFakePassengerRobbed() {
+    this.ui.showAlert('You were robbed by a fake passenger!');
+
+    if (!this.runtimeDialogueUnlocked) return;
+
+    if (!this.fakePassengerIntroSeen) {
+      this.fakePassengerIntroSeen = true;
+      this.fakePassengerIntroActive = true;
+      this.voiceover.stop();
+      this.fakePassengerIntroDialogue.start({
+        onEntryStart: (entry) => {
+          this.music.setVolumeScale(0.22);
+          this.ui.showDialogue(entry);
+        },
+        onEntryEnd: () => this.ui.hideDialogue(),
+        onComplete: () => {
+          this.music.setVolumeScale(1);
+          this.ui.hideDialogue();
+          this.fakePassengerIntroActive = false;
+        },
+      });
+      return;
+    }
+
+    if (!this.isGameplayDialogueBusy()) {
+      const entry = fakePassengerDialogue[Math.floor(Math.random() * fakePassengerDialogue.length)];
+      this.voiceover.play(entry, {
+        onStart: (dialogueEntry) => {
+          this.music.setVolumeScale(0.22);
+          this.ui.showDialogue(dialogueEntry);
+        },
+        onComplete: () => {
+          this.music.setVolumeScale(1);
+          this.ui.hideDialogue();
+        },
+      });
+    }
+  }
+
+  isGameplayDialogueBusy() {
+    return this.fakePassengerIntroActive || this.voiceover.isActive();
+  }
+
   playEscalationAnnouncement() {
     const entry = escalationDialogue[Math.floor(Math.random() * escalationDialogue.length)];
     this.ui.showAlert('A new Axiom Mobility taxi has been spotted!');
@@ -262,6 +311,7 @@ export class GameApp {
       this.music.setPaused(this.paused);
       this.introDialogue.setPaused(this.paused);
       this.postIntroDialogue.setPaused(this.paused);
+      this.fakePassengerIntroDialogue.setPaused(this.paused);
       this.voiceover.setPaused(this.paused);
     }
 
@@ -300,13 +350,21 @@ export class GameApp {
       const rivalSpawnAnnouncement = this.rivals.consumeSpawnAnnouncement();
       if (this.runtimeDialogueUnlocked) {
         if (empSpawn) {
-          this.playItemAnnouncement('An EMP appeared!');
+          if (!this.isGameplayDialogueBusy()) {
+            this.playItemAnnouncement('An EMP appeared!');
+          } else {
+            this.ui.showAlert('An EMP appeared!');
+          }
         }
         if (superBoostSpawn) {
-          this.playItemAnnouncement('A Super Boost appeared!');
+          if (!this.isGameplayDialogueBusy()) {
+            this.playItemAnnouncement('A Super Boost appeared!');
+          } else {
+            this.ui.showAlert('A Super Boost appeared!');
+          }
         }
         if (rivalSpawnAnnouncement) {
-          if (!this.voiceover.isActive() && this.rivalDialogueCooldown === 0) {
+          if (!this.isGameplayDialogueBusy() && this.rivalDialogueCooldown === 0) {
             this.playEscalationAnnouncement();
           } else {
             this.ui.showAlert('A new Axiom Mobility taxi has been spotted!');
@@ -325,10 +383,10 @@ export class GameApp {
           this.rivals.onCollision(event.penalty / GAME_CONFIG.mission.collisionPenalty);
         }
       });
-      if (this.runtimeDialogueUnlocked && collisionEvents.length > 0 && !this.voiceover.isActive() && this.crashDialogueCooldown === 0) {
+      if (this.runtimeDialogueUnlocked && collisionEvents.length > 0 && !this.isGameplayDialogueBusy() && this.crashDialogueCooldown === 0) {
         this.playCrashDialogue();
       }
-      if (this.runtimeDialogueUnlocked && !this.voiceover.isActive() && this.pendingLowFuelAnnouncements.length > 0) {
+      if (this.runtimeDialogueUnlocked && !this.isGameplayDialogueBusy() && this.pendingLowFuelAnnouncements.length > 0) {
         this.pendingLowFuelAnnouncements.shift();
         this.playLowFuelDialogue();
       }
@@ -386,6 +444,7 @@ export class GameApp {
     this.music.destroy();
     this.introDialogue.destroy();
     this.postIntroDialogue.destroy();
+    this.fakePassengerIntroDialogue.destroy();
     this.voiceover.destroy();
     this.perfOverlay?.destroy();
     this.composer.dispose();

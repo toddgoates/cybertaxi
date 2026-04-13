@@ -64,11 +64,11 @@ canvas {
   top: 28px;
   padding: 12px 20px;
   border-radius: 999px;
-  border: 1px solid rgba(99, 255, 131, 0.32);
-  background: linear-gradient(180deg, rgba(10, 30, 24, 0.94), rgba(8, 12, 24, 0.76));
-  box-shadow: inset 0 0 20px rgba(99, 255, 131, 0.08), 0 0 26px rgba(99, 255, 131, 0.14);
-  color: #eaffef;
-  font-size: 15px;
+  border: 1px solid rgba(123, 229, 255, 0.24);
+  background: rgba(8, 12, 24, 0.76);
+  box-shadow: inset 0 0 18px rgba(72, 217, 255, 0.06), 0 0 20px rgba(88, 166, 255, 0.08);
+  color: #ffffff;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -710,11 +710,11 @@ canvas {
 }
 
 @keyframes hud-alert {
-  0% { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(0.98); box-shadow: inset 0 0 20px rgba(99, 255, 131, 0.08), 0 0 18px rgba(99, 255, 131, 0.1); }
-  12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); box-shadow: inset 0 0 24px rgba(99, 255, 131, 0.12), 0 0 26px rgba(99, 255, 131, 0.18); }
-  32% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.015); box-shadow: inset 0 0 26px rgba(99, 255, 131, 0.18), 0 0 34px rgba(99, 255, 131, 0.28); }
-  58% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); box-shadow: inset 0 0 22px rgba(99, 255, 131, 0.12), 0 0 26px rgba(99, 255, 131, 0.18); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-4px) scale(1.01); box-shadow: inset 0 0 18px rgba(99, 255, 131, 0.06), 0 0 16px rgba(99, 255, 131, 0.08); }
+  0% { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(0.98); box-shadow: inset 0 0 18px rgba(72, 217, 255, 0.06), 0 0 16px rgba(88, 166, 255, 0.08); }
+  12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); box-shadow: inset 0 0 20px rgba(72, 217, 255, 0.08), 0 0 22px rgba(88, 166, 255, 0.12); }
+  32% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.015); box-shadow: inset 0 0 22px rgba(72, 217, 255, 0.1), 0 0 28px rgba(88, 166, 255, 0.16); }
+  58% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); box-shadow: inset 0 0 20px rgba(72, 217, 255, 0.08), 0 0 22px rgba(88, 166, 255, 0.12); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-4px) scale(1.01); box-shadow: inset 0 0 16px rgba(72, 217, 255, 0.05), 0 0 14px rgba(88, 166, 255, 0.06); }
 }
 
 @keyframes value-pulse {

@@ -12,6 +12,7 @@ You pilot a futuristic cab through a neon city, choose fares, deliver passengers
 - Procedural neon city with different districts
 - Five-choice pickup and drop-off mission loop
 - Milestone-based special fares with blue star pickup markers and high-value payouts
+- Fake passenger ambushes after high-credit runs
 - Fare timer, distance-scaled pricing, and collision penalties
 - Boost system with recharge
 - Collidable NPC traffic and heavier ambient city air traffic
@@ -21,9 +22,10 @@ You pilot a futuristic cab through a neon city, choose fares, deliver passengers
 - Energy system with rooftop recharge stations
 - Crash sparks and crash sound effects on impacts
 - Procedural weather, moving rooftop searchlights, and high-altitude neon blimps
-- Intro narration, post-intro dialogue, item callouts, rival escalation callouts, crash chatter, and low-energy dialogue with portrait/transcript widgets
+- Intro narration, post-intro dialogue, item callouts, rival escalation callouts, crash chatter, fake passenger chatter, and low-energy dialogue with portrait/transcript widgets
 - Playlist music support with mute toggle and keyboard track switching
 - Pause overlay and streamlined HUD with fare/credits, navigator, and lower-left systems card
+- Optional dev performance overlay for long-session monitoring
 
 ## Tech Stack
 
@@ -76,7 +78,7 @@ Music playlist files currently used:
 Intro narration files:
 
 - `public/audio/intro_1.mp3` through `public/audio/intro_7.mp3`
-- `public/audio/post_intro_1.mp3` and `public/audio/post_intro_2.mp3`
+- `public/audio/post_intro_1.mp3` through `public/audio/post_intro_5.mp3`
 
 Item and alert dialogue files:
 
@@ -84,6 +86,8 @@ Item and alert dialogue files:
 - `public/audio/escalation_1.mp3` through `public/audio/escalation_20.mp3`
 - `public/audio/crash_1.mp3` through `public/audio/crash_30.mp3`
 - `public/audio/lowfuel_1.mp3` through `public/audio/lowfuel_10.mp3`
+- `public/audio/fake_passenger_intro_1.mp3` through `public/audio/fake_passenger_intro_3.mp3`
+- `public/audio/fake_passenger_1.mp3` through `public/audio/fake_passenger_10.mp3`
 
 Other sound effects currently used:
 
@@ -124,10 +128,11 @@ When running `npm run dev`, you can seed debug state through URL params:
 - `?emp=3`
 - `?super-boost=1`
 - `?skip-intro=1`
+- `?perf=1`
 
 These can be combined, for example:
 
-`http://localhost:5173/?credits=1000&heat=5&rivals=8&energy=20&emp=4&super-boost=1&skip-intro=1`
+`http://localhost:5173/?credits=1000&heat=5&rivals=8&energy=20&emp=4&super-boost=1&skip-intro=1&perf=1`
 
 ## Gameplay
 
@@ -139,11 +144,14 @@ These can be combined, for example:
 6. Collect green EMP charges when they appear and use them if rival taxis start to swarm.
 7. Collect orange Super Boost pickups when they appear to bank a one-minute unlimited boost item.
 8. Watch for blue-star special fares that unlock every `350` credits earned.
+9. After `4500` credits, watch out for fake passengers mixed into the normal pickup set.
 
 Important rules:
 
 - Your fare value drains over time while a passenger is onboard.
 - Special fares unlock every `350` total credits and pay `300-500` credits.
+- After `4500` credits, one of the five live pickup offers can be a fake passenger that steals `500-750` credits.
+- Fake passengers look like normal pickups but have a subtle yellow flicker on the in-world beacon.
 - Crashes during a ride reduce the fare further.
 - Crashing while boosting causes a larger penalty.
 - Colliding with buildings, cars, rivals, or blimps throws off sparks and plays a crash sound.
@@ -154,18 +162,20 @@ Important rules:
 - If energy hits `0` while carrying a passenger, you are charged a `1000` credit penalty.
 - Low-energy dialogue can trigger when energy crosses `20%`, `10%`, and `5%`.
 - Rival taxis escalate with heat and can chase, intercept, block, ram, and swarm.
+- Rival taxis back off while you are actively refueling at a station, then resume normal pursuit after you leave.
 - EMP pickups spawn every 90 seconds and can be stored for later use.
 - A single EMP blast can disable up to 10 nearby rival taxis.
 - Super Boost pickups spawn randomly every few minutes and can be triggered later with `P`.
 - The city includes moving rooftop searchlights, heavier rain, and large collidable neon blimps in the sky.
 - Spoken dialogue ducks the music automatically while audio lines are playing.
+- Gameplay voice lines are suppressed until the intro and post-intro sequences are fully finished.
 
 ## Project Structure
 
 - `src/main.js`
   - App entry point
 - `src/game/GameApp.js`
-  - Main game bootstrap, audio/dialogue coordination, and frame loop
+  - Main game bootstrap, audio/dialogue coordination, runtime dialogue gating, and frame loop
 - `src/game/config.js`
   - Tunable gameplay and world settings
 - `src/systems/CityGenerator.js`
@@ -185,9 +195,9 @@ Important rules:
 - `src/systems/rivals/SteeringBehaviors.js`
   - Lightweight seek, pursue, separation, and avoidance helpers
 - `src/systems/MissionSystem.js`
-  - Fare generation, five-choice pickup logic, special fare milestones, drop-off flow, and payout handling
+  - Fare generation, five-choice pickup logic, special fare milestones, fake passengers, drop-off flow, and payout handling
 - `src/systems/EnergySystem.js`
-  - Energy drain, rooftop recharge stations, and depletion penalties
+  - Energy drain, rooftop recharge stations, depletion penalties, and refuel state exposure
 - `src/systems/EmpSystem.js`
   - EMP pickup spawning, inventory, activation, and blast effect
 - `src/systems/SuperBoostSystem.js`
@@ -200,6 +210,8 @@ Important rules:
   - JSON-driven intro narration sequencing and pause-aware playback
 - `src/systems/VoiceoverManager.js`
   - Shared one-off spoken dialogue playback for items, rival spawns, crashes, and low energy
+- `src/systems/PerformanceOverlay.js`
+  - Optional dev overlay for scene/memory/draw-call/runtime counts
 - `src/systems/MusicManager.js`
   - Playlist music playback, mute state, and keyboard track switching
 - `src/data/introDialogue.json`
@@ -214,6 +226,10 @@ Important rules:
   - Collision chatter dialogue metadata
 - `src/data/lowFuelDialogue.json`
   - Low-energy warning dialogue metadata
+- `src/data/fakePassengerIntroDialogue.json`
+  - First fake-passenger event dialogue sequence
+- `src/data/fakePassengerDialogue.json`
+  - Repeat fake-passenger dialogue pool
 - `src/styles.css`
   - HUD and UI styling
 
@@ -223,6 +239,7 @@ Important rules:
 - Most visuals are generated from primitive geometry rather than heavy environment assets.
 - The city look is driven by procedural emissive windows, neon accents, fog, a sky dome, and lightweight bloom rather than heavy dynamic lights.
 - The game is meant to be easy to iterate on through `src/game/config.js` and the systems under `src/systems/`.
+- A lightweight long-session performance overlay is available with `?perf=1`.
 - For a more detailed handoff document, see `project_context.md`.
 
 ## Additional Context

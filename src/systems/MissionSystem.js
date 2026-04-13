@@ -50,6 +50,10 @@ function randomInt(min, max) {
   return THREE.MathUtils.randInt(min, max);
 }
 
+function pickOne(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 export class MissionSystem {
   constructor(scene, worldData, config, ui, effects) {
     this.scene = scene;
@@ -81,7 +85,12 @@ export class MissionSystem {
     this.pendingPenaltyText = '';
     this.objective = '';
     this.routeLabel = '';
+    this.fakePassengerHandler = null;
     this.startNextFare();
+  }
+
+  setFakePassengerHandler(handler) {
+    this.fakePassengerHandler = handler;
   }
 
   createPickupSpots() {
@@ -184,6 +193,8 @@ export class MissionSystem {
       dropoffDistrict: dropoff,
       quotedFare: special ? specialFare : quotedFare,
       special,
+      fake: false,
+      robberyAmount: 0,
     };
   }
 
@@ -227,6 +238,16 @@ export class MissionSystem {
       this.ui.pushFeed('Priority fare beacon is live', 'info');
     }
 
+    if (this.totalCredits >= this.config.fakePassengerThresholdCredits && this.pickupOffers.length > 0) {
+      const candidateIndexes = this.pickupOffers
+        .map((offer, index) => ({ offer, index }))
+        .filter(({ offer }) => !offer.special);
+      const fakeIndexPool = candidateIndexes.length > 0 ? candidateIndexes : this.pickupOffers.map((offer, index) => ({ offer, index }));
+      const { offer } = pickOne(fakeIndexPool);
+      offer.fake = true;
+      offer.robberyAmount = randomInt(this.config.fakePassengerMinRobberyCredits, this.config.fakePassengerMaxRobberyCredits);
+    }
+
     this.pickupDistrict = null;
     this.dropoffDistrict = null;
     this.originalFare = 0;
@@ -257,6 +278,11 @@ export class MissionSystem {
     const offer = this.pickupOffers[offerIndex];
     if (!offer) return;
 
+    if (offer.fake) {
+      this.handleFakePassenger(offer);
+      return;
+    }
+
     this.pickupDistrict = offer.pickupDistrict;
     this.dropoffDistrict = offer.dropoffDistrict;
     this.originalFare = offer.quotedFare;
@@ -283,6 +309,16 @@ export class MissionSystem {
     this.effects.onPickup();
   }
 
+  handleFakePassenger(offer) {
+    const robberyAmount = offer.robberyAmount || randomInt(this.config.fakePassengerMinRobberyCredits, this.config.fakePassengerMaxRobberyCredits);
+    this.totalCredits = Math.max(0, this.totalCredits - robberyAmount);
+    this.pendingPenaltyText = `-${robberyAmount} credits from fake passenger`;
+    this.ui.pushFeed('You were robbed by a fake passenger!', 'bad');
+    this.ui.pushFeed(`Lost ${robberyAmount} credits`, 'bad');
+    this.fakePassengerHandler?.({ robberyAmount });
+    this.startNextFare(offer.pickupPosition);
+  }
+
   update(delta, player) {
     this.spinZones(delta);
 
@@ -303,6 +339,14 @@ export class MissionSystem {
         const compensation = Math.round(this.originalFare * 0.5);
         this.totalCredits -= compensation;
         this.pendingPenaltyText = `Passenger refund -${compensation} credits`;
+        const cancelMessage = this.currentRunHadIncident
+          ? 'The passenger cancelled the ride! Too bumpy!'
+          : 'The passenger cancelled the ride! Too long!';
+        this.ui.showAlert(cancelMessage);
+        this.ui.pushFeed(
+          cancelMessage,
+          'bad',
+        );
         this.ui.pushFeed(`Fare failed. Passenger charged you ${compensation} credits`, 'bad');
         this.startNextFare(player.mesh.position);
         return;
@@ -329,12 +373,20 @@ export class MissionSystem {
   }
 
   spinZones(delta) {
+    const time = performance.now() * 0.004;
     this.pickupZones.forEach((zone, index) => {
       zone.rotation.y += delta * (0.75 + index * 0.06);
-      zone.children[1].position.y = 4 + Math.sin(performance.now() * 0.004 + index) * 0.8;
+      zone.children[1].position.y = 4 + Math.sin(time + index) * 0.8;
+      const offer = this.pickupOffers[index];
+      if (offer?.fake) {
+        const baseColor = offer.special ? 0x58a6ff : zone.userData.baseColor;
+        const flickerColor = offer.special ? 0xffc45c : 0xffe45c;
+        const flicker = Math.sin(time * 3.7 + index * 1.4) > 0.985;
+        this.setZoneColor(zone, flicker ? flickerColor : baseColor);
+      }
     });
     this.dropoffZone.rotation.y -= delta * 0.9;
-    this.dropoffZone.children[1].position.y = 4 + Math.cos(performance.now() * 0.004) * 0.8;
+    this.dropoffZone.children[1].position.y = 4 + Math.cos(time) * 0.8;
   }
 
   applyCollisionPenalty(amount, source) {

@@ -9,7 +9,7 @@
 - [x] Make the intro dialog un-interruptable
 - [x] Have rivals back off when you fueling
 - [x] Additional post intro dialog - blue means pickup, pink drop off, yellow gas stations, if I find anything to help you I'll put it on the map
-- [] Fake passengers that rob you - look like real passengers but with one subtle difference on pickup icon
+- [x] Fake passengers that rob you - look like real passengers but with one subtle difference on pickup icon
 - [] Lightning after 1000 credits if you fly to high, corresponding messages from player/partner, severe penalty
 - [x] Messages from player/partner when energy is low
 - [] Bank to deposit credits (ie save game) - write to local storage, if credits greater than 0 resume game with that number of credits no intro dialog

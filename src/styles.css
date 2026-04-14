@@ -78,8 +78,27 @@ canvas {
   transform: translateX(-50%) translateY(-8px) scale(0.98);
 }
 
+.hud__alert::before,
+.hud__alert::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 1px solid rgba(123, 229, 255, 0.22);
+  opacity: 0;
+  pointer-events: none;
+}
+
 .hud__alert--visible {
   animation: hud-alert 2.2s ease-out forwards;
+}
+
+.hud__alert--visible::before {
+  animation: hud-alert-echo 0.55s ease-out;
+}
+
+.hud__alert--visible::after {
+  animation: hud-alert-echo 0.55s ease-out 0.08s;
 }
 
 .hud__dialogue {
@@ -748,6 +767,11 @@ canvas {
   32% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.015); box-shadow: inset 0 0 22px rgba(72, 217, 255, 0.1), 0 0 28px rgba(88, 166, 255, 0.16); }
   58% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); box-shadow: inset 0 0 20px rgba(72, 217, 255, 0.08), 0 0 22px rgba(88, 166, 255, 0.12); }
   100% { opacity: 0; transform: translateX(-50%) translateY(-4px) scale(1.01); box-shadow: inset 0 0 16px rgba(72, 217, 255, 0.05), 0 0 14px rgba(88, 166, 255, 0.06); }
+}
+
+@keyframes hud-alert-echo {
+  0% { opacity: 0.65; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.12); }
 }
 
 @keyframes value-pulse {

@@ -256,7 +256,7 @@ export class GameApp {
 
   playEscalationAnnouncement() {
     const entry = escalationDialogue[Math.floor(Math.random() * escalationDialogue.length)];
-    this.ui.showAlert('A new Axiom Mobility taxi has been spotted!');
+    this.ui.showAlert('A new Axiom Mobility taxi is tracking you!');
     this.rivalDialogueCooldown = RIVAL_DIALOGUE_COOLDOWN_SECONDS;
     this.voiceover.play(entry, {
       onStart: (dialogueEntry) => {
@@ -364,7 +364,7 @@ export class GameApp {
           if (!this.isGameplayDialogueBusy() && this.rivalDialogueCooldown === 0) {
             this.playEscalationAnnouncement();
           } else {
-            this.ui.showAlert('A new Axiom Mobility taxi has been spotted!');
+            this.ui.showAlert('A new Axiom Mobility taxi is tracking you!');
           }
         }
       }

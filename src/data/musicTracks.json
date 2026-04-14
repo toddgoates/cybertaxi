@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/music_1.mp3",
+    "title": "Midnight Circuits"
+  },
+  {
+    "id": 2,
+    "audio": "/audio/music_2.mp3",
+    "title": "Pressure Loop"
+  },
+  {
+    "id": 3,
+    "audio": "/audio/music_3.mp3",
+    "title": "Neon Dawn"
+  },
+  {
+    "id": 4,
+    "audio": "/audio/music_4.mp3",
+    "title": "Maniacal"
+  }
+]

@@ -74,6 +74,14 @@ export class UIManager {
               <span class="hud__inventory-value" data-field="superBoostCount">0</span>
             </div>
           </div>
+          <div class="panel__divider panel__divider--compact"></div>
+          <div class="hud__music-nowplaying">
+            <div class="hud__music-title-row">
+              <span class="hud__music-icon" aria-hidden="true">♪</span>
+              <div class="hud__music-title" data-field="musicTitle">No track loaded</div>
+            </div>
+            <div class="subvalue" data-field="musicInlineStatus">Music muted</div>
+          </div>
           <div class="charge-ring" data-field="chargeRing">
             <div class="charge-ring__disc">
             <div class="charge-ring__label" data-field="chargeLabel"></div>
@@ -111,6 +119,8 @@ export class UIManager {
       empCount: this.root.querySelector('[data-field="empCount"]'),
       superBoostInventory: this.root.querySelector('[data-field="superBoostInventory"]'),
       superBoostCount: this.root.querySelector('[data-field="superBoostCount"]'),
+      musicTitle: this.root.querySelector('[data-field="musicTitle"]'),
+      musicInlineStatus: this.root.querySelector('[data-field="musicInlineStatus"]'),
       pauseOverlay: this.root.querySelector('[data-field="pauseOverlay"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
@@ -159,6 +169,10 @@ export class UIManager {
     this.fields.superBoostCount.textContent = state.superBoost.charges;
     this.fields.superBoostInventory.classList.toggle('hud__inventory--active', state.superBoost.charges > 0 || state.superBoost.active);
     this.fields.musicToggle.textContent = state.music.muted ? 'Music: off' : 'Music: on';
+    this.fields.musicTitle.textContent = state.music.currentTrackTitle;
+    this.fields.musicInlineStatus.textContent = state.music.muted
+      ? `Track ${state.music.currentTrackId} - muted`
+      : `Track ${state.music.currentTrackId}`;
     this.pulseField(this.fields.credits, state.mission.totalCredits !== this.lastCredits);
     if (state.mission.pendingPenaltyText && state.mission.pendingPenaltyText !== this.lastPenaltyText) {
       this.flashImpact();

@@ -1,11 +1,11 @@
 const MUSIC_STORAGE_KEY = 'cybertaxi-music-muted';
 
 export class MusicManager {
-  constructor(sources) {
-    this.sources = Array.isArray(sources) ? sources : [sources];
+  constructor(entries) {
+    this.entries = Array.isArray(entries) ? entries : [entries];
     this.currentTrackIndex = 0;
     this.baseVolume = 0.45;
-    this.audio = new Audio(this.sources[0]);
+    this.audio = new Audio(this.entries[0]?.audio ?? '');
     this.audio.loop = false;
     this.audio.volume = this.baseVolume;
     this.audio.preload = 'auto';
@@ -49,8 +49,8 @@ export class MusicManager {
   tryStartPlayback() {
     if (this.muted || this.paused) return;
 
-    if (!this.audio.src && this.sources.length > 0) {
-      this.audio.src = this.sources[this.currentTrackIndex];
+    if (!this.audio.src && this.entries.length > 0) {
+      this.audio.src = this.entries[this.currentTrackIndex].audio;
     }
 
     this.audio.play()
@@ -65,17 +65,17 @@ export class MusicManager {
   }
 
   handleTrackEnded() {
-    if (this.sources.length === 0) return;
-    this.currentTrackIndex = (this.currentTrackIndex + 1) % this.sources.length;
-    this.audio.src = this.sources[this.currentTrackIndex];
+    if (this.entries.length === 0) return;
+    this.currentTrackIndex = (this.currentTrackIndex + 1) % this.entries.length;
+    this.audio.src = this.entries[this.currentTrackIndex].audio;
     this.audio.currentTime = 0;
     this.tryStartPlayback();
   }
 
   playTrack(index) {
-    if (this.sources.length === 0) return;
-    this.currentTrackIndex = (index + this.sources.length) % this.sources.length;
-    this.audio.src = this.sources[this.currentTrackIndex];
+    if (this.entries.length === 0) return;
+    this.currentTrackIndex = (index + this.entries.length) % this.entries.length;
+    this.audio.src = this.entries[this.currentTrackIndex].audio;
     this.audio.currentTime = 0;
     this.tryStartPlayback();
   }
@@ -135,8 +135,11 @@ export class MusicManager {
   }
 
   getState() {
+    const currentTrack = this.entries[this.currentTrackIndex] ?? null;
     return {
       muted: this.muted,
+       currentTrackTitle: currentTrack?.title ?? 'No track loaded',
+       currentTrackId: currentTrack?.id ?? null,
       label: this.muted ? 'Music muted' : this.paused ? 'Music paused' : this.awaitingInteraction ? 'Music ready on input' : 'Music playing',
     };
   }

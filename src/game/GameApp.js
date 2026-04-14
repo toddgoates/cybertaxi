@@ -28,6 +28,7 @@ import fakePassengerDialogue from '../data/fakePassengerDialogue.json';
 import lowFuelDialogue from '../data/lowFuelDialogue.json';
 import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
+import musicTracks from '../data/musicTracks.json';
 
 const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
 const POST_INTRO_DELAY_AFTER_TITLE_SECONDS = 2.5;
@@ -57,11 +58,7 @@ export class GameApp {
     this.input = new InputManager();
     this.ui = new UIManager(this.mount);
     this.effects = new EffectsHooks(this.scene);
-    this.music = new MusicManager([
-      '/audio/music_1.mp3',
-      '/audio/music_2.mp3',
-      '/audio/music_3.mp3',
-    ]);
+    this.music = new MusicManager(musicTracks);
     this.introDialogue = new IntroDialogueManager(introDialogue, 300);
     this.postIntroDialogue = new IntroDialogueManager(postIntroDialogue, 250);
     this.fakePassengerIntroDialogue = new IntroDialogueManager(fakePassengerIntroDialogue, 250);

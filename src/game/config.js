@@ -60,8 +60,9 @@ export const GAME_CONFIG = {
     ambientCount: 54,
   },
   rivals: {
-    poolSize: 20,
+    poolSize: 52,
     despawnDistance: 900,
+    endgameCreditsThreshold: 10000,
     heat: {
       maxHeat: 10,
       timeGainPerSecond: 0.013,

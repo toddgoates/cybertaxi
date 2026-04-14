@@ -4,10 +4,23 @@ import { RivalTaxiAgent } from './RivalTaxiAgent.js';
 import { SpawnSystem } from './SpawnSystem.js';
 
 function getHeatProfile(heat) {
+  if (heat >= 10) {
+    return {
+      desiredCount: 50,
+      spawnInterval: 1.15,
+      aggression: 0.98,
+      speed: 122,
+      force: 72,
+      collisionPenalty: 30,
+      collisionStrength: 0.56,
+      behaviors: ['swarm', 'rammer', 'interceptor', 'blocker', 'chaser'],
+    };
+  }
+
   if (heat >= 9) {
     return {
-      desiredCount: 18,
-      spawnInterval: 1.15,
+      desiredCount: 20,
+      spawnInterval: 1.3,
       aggression: 0.96,
       speed: 118,
       force: 68,
@@ -82,6 +95,8 @@ export class RivalTaxiManager {
     this.spawnSuppressionTimer = 0;
     this.activeVehicles = [];
     this.pendingSpawnAnnouncements = 0;
+    this.currentDisplayTier = 0;
+    this.lastAnnouncedTier = 0;
     this.managerState = {
       forward: new THREE.Vector3(0, 0, -1),
       right: new THREE.Vector3(1, 0, 0),
@@ -98,6 +113,8 @@ export class RivalTaxiManager {
     );
 
     this.heatSystem.setHeat(heat);
+    this.currentDisplayTier = this.getEffectiveTier(this.heatSystem.getState().tier, missionState);
+    this.lastAnnouncedTier = this.currentDisplayTier;
     this.spawnCooldown = 0;
 
     if (desiredRivals != null && desiredRivals > 0) {
@@ -105,13 +122,14 @@ export class RivalTaxiManager {
     }
 
     this.activeVehicles = this.getActiveAgents().map((agent) => agent.getVehicle());
-    return { heat: this.heatSystem.getState().tier, rivals: this.activeVehicles.length };
+    return { heat: this.currentDisplayTier, rivals: this.activeVehicles.length };
   }
 
   update(delta, player, missionState, energyState = null) {
     this.heatSystem.update(delta, player, missionState);
     const heatState = this.heatSystem.getState();
-    const profile = getHeatProfile(heatState.tier);
+    this.currentDisplayTier = this.getEffectiveTier(heatState.tier, missionState);
+    const profile = getHeatProfile(this.currentDisplayTier);
     this.spawnCooldown = Math.max(0, this.spawnCooldown - delta);
     this.spawnSuppressionTimer = Math.max(0, this.spawnSuppressionTimer - delta);
 
@@ -119,7 +137,15 @@ export class RivalTaxiManager {
     this.recycleFarAgents(player.mesh.position, profile.desiredCount);
     this.spawnIfNeeded(player, missionState, heatState, profile);
     this.updateAgents(delta, player, missionState, energyState);
-    this.announceHeatTier();
+    this.announceHeatTier(this.currentDisplayTier);
+  }
+
+  getEffectiveTier(baseTier, missionState) {
+    if (missionState.totalCredits >= this.config.endgameCreditsThreshold) {
+      return 10;
+    }
+
+    return Math.min(baseTier, 9);
   }
 
   updateBasisVectors(player) {
@@ -234,16 +260,19 @@ export class RivalTaxiManager {
     this.activeVehicles = activeAgents.map((agent) => agent.getVehicle());
   }
 
-  announceHeatTier() {
-    const tierChange = this.heatSystem.consumeTierChange();
-    if (!tierChange || tierChange.currentTier === 0) return;
+  announceHeatTier(currentTier) {
+    this.heatSystem.consumeTierChange();
+    if (currentTier === this.lastAnnouncedTier || currentTier === 0) return;
 
-    const message = tierChange.currentTier >= 7
-      ? `Heat ${tierChange.currentTier}. Rival taxis are swarming your lane.`
-      : tierChange.currentTier >= 4
-        ? `Heat ${tierChange.currentTier}. Rival taxis are escalating.`
-        : `Heat ${tierChange.currentTier}. Rival taxis are on your tail.`;
-    this.ui.pushFeed(message, tierChange.currentTier >= 7 ? 'bad' : 'info');
+    const message = currentTier >= 10
+      ? 'Heat 10. Axiom Mobility is flooding the grid.'
+      : currentTier >= 7
+        ? `Heat ${currentTier}. Rival taxis are swarming your lane.`
+        : currentTier >= 4
+          ? `Heat ${currentTier}. Rival taxis are escalating.`
+          : `Heat ${currentTier}. Rival taxis are on your tail.`;
+    this.lastAnnouncedTier = currentTier;
+    this.ui.pushFeed(message, currentTier >= 7 ? 'bad' : 'info');
   }
 
   onCollision(severity = 1) {
@@ -272,8 +301,11 @@ export class RivalTaxiManager {
   }
 
   getState() {
+    const heatState = this.heatSystem.getState();
     return {
-      ...this.heatSystem.getState(),
+      ...heatState,
+      tier: this.currentDisplayTier,
+      intensity: this.currentDisplayTier / Math.max(this.config.heat.maxHeat, 10),
       activeRivals: this.activeVehicles.length,
     };
   }

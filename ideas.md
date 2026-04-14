@@ -12,7 +12,8 @@
 - [x] Fake passengers that rob you - look like real passengers but with one subtle difference on pickup icon
 - [x] Add vibejam tracking JS snippet
 - [x] Set up hosting and deployment script
-- [] Lightning after 1000 credits if you fly to high, corresponding messages from player/partner, severe penalty
+- [] Lightning after 1000 credits if you fly to high, corresponding messages from player/partner, severe penalty. Some dialog leading up to it. It comes and goes from that point on.
+- [x] Add icons
 - [x] Messages from player/partner when energy is low
 - [x] Add music player
 - [] Bank to deposit credits (ie save game) - write to local storage, if credits greater than 0 resume game with that number of credits no intro dialog

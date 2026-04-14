@@ -125,10 +125,17 @@ export class EmpSystem {
     this.pickupTarget = null;
     this.spawnAnnouncementPending = false;
     this.audioIndex = 0;
+    this.pickupAudioIndex = 0;
     this.zapSounds = Array.from({ length: 3 }, () => {
       const audio = new Audio('/audio/zap.mp3');
       audio.preload = 'auto';
       audio.volume = 0.48;
+      return audio;
+    });
+    this.pickupSounds = Array.from({ length: 3 }, () => {
+      const audio = new Audio('/audio/emp-equip.mp3');
+      audio.preload = 'auto';
+      audio.volume = 0.52;
       return audio;
     });
   }
@@ -182,6 +189,7 @@ export class EmpSystem {
 
     if (player.mesh.position.distanceTo(this.pickup.position) < this.config.pickupRadius) {
       this.charges = Math.min(this.config.maxCharges, this.charges + 1);
+      this.playPickupSound();
       this.pickup.visible = false;
       this.pickupActive = false;
       this.pickupTarget = null;
@@ -209,6 +217,13 @@ export class EmpSystem {
   playZapSound() {
     const audio = this.zapSounds[this.audioIndex];
     this.audioIndex = (this.audioIndex + 1) % this.zapSounds.length;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
+
+  playPickupSound() {
+    const audio = this.pickupSounds[this.pickupAudioIndex];
+    this.pickupAudioIndex = (this.pickupAudioIndex + 1) % this.pickupSounds.length;
     audio.currentTime = 0;
     audio.play().catch(() => {});
   }

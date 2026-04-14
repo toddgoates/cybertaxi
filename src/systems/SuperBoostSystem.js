@@ -64,6 +64,20 @@ export class SuperBoostSystem {
     this.pickupTarget = null;
     this.spawnAnnouncementPending = false;
     this.spawnTimer = this.scheduleNextSpawn();
+    this.pickupAudioIndex = 0;
+    this.activateAudioIndex = 0;
+    this.pickupSounds = Array.from({ length: 3 }, () => {
+      const audio = new Audio('/audio/boost-equip.mp3');
+      audio.preload = 'auto';
+      audio.volume = 0.56;
+      return audio;
+    });
+    this.activateSounds = Array.from({ length: 3 }, () => {
+      const audio = new Audio('/audio/boost.mp3');
+      audio.preload = 'auto';
+      audio.volume = 0.6;
+      return audio;
+    });
   }
 
   createPickupSpots() {
@@ -119,6 +133,7 @@ export class SuperBoostSystem {
 
     if (player.mesh.position.distanceTo(this.pickup.position) < this.config.pickupRadius) {
       this.charges = Math.min(this.config.maxCharges, this.charges + 1);
+      this.playPickupSound();
       this.pickup.visible = false;
       this.pickupActive = false;
       this.pickupTarget = null;
@@ -135,6 +150,7 @@ export class SuperBoostSystem {
 
     this.charges -= 1;
     this.player.activateSuperBoost(this.config.duration);
+    this.playActivateSound();
     this.ui.pushFeed('Super Boost engaged', 'good');
     return { used: true };
   }
@@ -143,6 +159,20 @@ export class SuperBoostSystem {
     if (!this.spawnAnnouncementPending) return null;
     this.spawnAnnouncementPending = false;
     return this.pickupTarget;
+  }
+
+  playPickupSound() {
+    const audio = this.pickupSounds[this.pickupAudioIndex];
+    this.pickupAudioIndex = (this.pickupAudioIndex + 1) % this.pickupSounds.length;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
+
+  playActivateSound() {
+    const audio = this.activateSounds[this.activateAudioIndex];
+    this.activateAudioIndex = (this.activateAudioIndex + 1) % this.activateSounds.length;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
   }
 
   getState() {

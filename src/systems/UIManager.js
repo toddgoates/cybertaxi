@@ -8,6 +8,7 @@ export class UIManager {
     this.displayedCredits = 0;
     this.feedPulseTimeout = null;
     this.navigatorMarkers = [];
+    this.notificationsSuppressed = false;
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
@@ -95,6 +96,10 @@ export class UIManager {
           <div class="hud__pause-subtitle">Press Esc to resume</div>
         </div>
       </div>
+      <div class="hud__win" data-field="winOverlay">
+        <div class="hud__win-title">You won!</div>
+        <img class="hud__win-image" src="/images/winner.png" alt="Winner artwork" />
+      </div>
       <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | P Super Boost | Esc pause | M toggle music | [ / ] change track</div>
     `;
     mount.appendChild(this.root);
@@ -122,6 +127,7 @@ export class UIManager {
       musicTitle: this.root.querySelector('[data-field="musicTitle"]'),
       musicInlineStatus: this.root.querySelector('[data-field="musicInlineStatus"]'),
       pauseOverlay: this.root.querySelector('[data-field="pauseOverlay"]'),
+      winOverlay: this.root.querySelector('[data-field="winOverlay"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
       alertBanner: this.root.querySelector('[data-field="alertBanner"]'),
@@ -139,6 +145,7 @@ export class UIManager {
   }
 
   pushFeed(message, tone = 'info') {
+    if (this.notificationsSuppressed) return;
     this.feed.unshift({ message, tone, id: `${Date.now()}-${Math.random()}` });
     this.feed = this.feed.slice(0, 5);
   }
@@ -220,10 +227,30 @@ export class UIManager {
   }
 
   showAlert(message) {
+    if (this.notificationsSuppressed) return;
+    this.fields.alertBanner.classList.remove('hud__alert--persistent');
     this.fields.alertBanner.textContent = message;
     this.fields.alertBanner.classList.remove('hud__alert--visible');
     void this.fields.alertBanner.offsetWidth;
     this.fields.alertBanner.classList.add('hud__alert--visible');
+  }
+
+  showPersistentAlert(message) {
+    this.fields.alertBanner.classList.remove('hud__alert--visible');
+    this.fields.alertBanner.textContent = message;
+    this.fields.alertBanner.classList.add('hud__alert--persistent');
+  }
+
+  clearPersistentAlert() {
+    this.fields.alertBanner.classList.remove('hud__alert--persistent');
+  }
+
+  setNotificationsSuppressed(suppressed) {
+    this.notificationsSuppressed = suppressed;
+  }
+
+  showWinScreen() {
+    this.fields.winOverlay.classList.add('hud__win--visible');
   }
 
   renderNavigator(state) {
@@ -251,6 +278,10 @@ export class UIManager {
 
     if (state.superBoost.pickupTarget) {
       targets.push({ ...state.superBoost.pickupTarget, role: 'super-boost', active: false });
+    }
+
+    if (state.endgame?.extractionTarget) {
+      targets.push({ ...state.endgame.extractionTarget, role: 'escape', active: true });
     }
 
     state.energy.stations.forEach((station) => targets.push({ ...station, role: 'energy', active: false }));
@@ -303,6 +334,14 @@ export class UIManager {
       const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
       const superBoostLabel = state.superBoost.pickupTarget ? ` | SB ${Math.round(Math.hypot(state.superBoost.pickupTarget.x - playerPosition.x, state.superBoost.pickupTarget.z - playerPosition.z))}m` : '';
       this.fields.navStatus.textContent = `Drop-off beacon ${distance}m out${empLabel}${superBoostLabel} | ${state.energy.status}`;
+      return;
+    }
+
+    if (state.endgame?.extractionTarget) {
+      const distance = Math.round(
+        Math.hypot(state.endgame.extractionTarget.x - playerPosition.x, state.endgame.extractionTarget.z - playerPosition.z),
+      );
+      this.fields.navStatus.textContent = `Destination ${distance}m out | ${state.energy.status}`;
       return;
     }
 

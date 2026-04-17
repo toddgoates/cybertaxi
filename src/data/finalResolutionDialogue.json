@@ -1,0 +1,14 @@
+[
+  {
+    "id": 17,
+    "audio": "/audio/final_17.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "They're dropping out-what did you do?!"
+  },
+  {
+    "id": 18,
+    "audio": "/audio/final_18.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Shutting them down one by one."
+  }
+]

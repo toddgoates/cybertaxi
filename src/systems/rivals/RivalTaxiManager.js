@@ -97,6 +97,8 @@ export class RivalTaxiManager {
     this.pendingSpawnAnnouncements = 0;
     this.currentDisplayTier = 0;
     this.lastAnnouncedTier = 0;
+    this.shutdownActive = false;
+    this.shutdownTimer = 0;
     this.managerState = {
       forward: new THREE.Vector3(0, 0, -1),
       right: new THREE.Vector3(1, 0, 0),
@@ -126,6 +128,11 @@ export class RivalTaxiManager {
   }
 
   update(delta, player, missionState, energyState = null) {
+    if (this.shutdownActive) {
+      this.updateShutdown(delta, player, missionState, energyState);
+      return;
+    }
+
     this.heatSystem.update(delta, player, missionState);
     const heatState = this.heatSystem.getState();
     this.currentDisplayTier = this.getEffectiveTier(heatState.tier, missionState);
@@ -140,8 +147,43 @@ export class RivalTaxiManager {
     this.announceHeatTier(this.currentDisplayTier);
   }
 
+  updateShutdown(delta, player, missionState, energyState) {
+    this.heatSystem.setHeat(0);
+    this.currentDisplayTier = 0;
+    this.lastAnnouncedTier = 0;
+    this.pendingSpawnAnnouncements = 0;
+    this.spawnCooldown = 999;
+    this.spawnSuppressionTimer = Math.max(this.spawnSuppressionTimer, 999);
+    this.updateBasisVectors(player);
+    this.shutdownTimer = Math.max(0, this.shutdownTimer - delta);
+    if (this.shutdownTimer === 0) {
+      this.deactivateOneRival(player.mesh.position);
+      this.shutdownTimer = 1.1;
+    }
+    this.updateAgents(delta, player, missionState, energyState);
+  }
+
+  deactivateOneRival(playerPosition) {
+    const activeAgents = this.getActiveAgents();
+    if (activeAgents.length === 0) return;
+
+    activeAgents
+      .sort((a, b) => b.position.distanceToSquared(playerPosition) - a.position.distanceToSquared(playerPosition))[0]
+      .deactivate();
+    this.activeVehicles = this.getActiveAgents().map((agent) => agent.getVehicle());
+  }
+
+  startShutdown() {
+    this.shutdownActive = true;
+    this.shutdownTimer = 0.4;
+    this.heatSystem.setHeat(0);
+    this.currentDisplayTier = 0;
+    this.lastAnnouncedTier = 0;
+    this.pendingSpawnAnnouncements = 0;
+  }
+
   getEffectiveTier(baseTier, missionState) {
-    if (missionState.totalCredits >= this.config.endgameCreditsThreshold) {
+    if (missionState.endgameUnlocked && missionState.totalCredits >= this.config.endgameCreditsThreshold) {
       return 10;
     }
 
@@ -307,6 +349,7 @@ export class RivalTaxiManager {
       tier: this.currentDisplayTier,
       intensity: this.currentDisplayTier / Math.max(this.config.heat.maxHeat, 10),
       activeRivals: this.activeVehicles.length,
+      shutdownActive: this.shutdownActive,
     };
   }
 

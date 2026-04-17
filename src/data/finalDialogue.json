@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/final_1.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "That's it... 10,000 credits secured. Where do we meet?"
+  },
+  {
+    "id": 2,
+    "audio": "/audio/final_2.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Hold on... I'm seeing a spike in Axiom traffic."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/final_3.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "They're all heading straight for you."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/final_4.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "All Axiom units have been dispatched. Your destruction is guaranteed."
+  }
+]

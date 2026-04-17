@@ -62,6 +62,7 @@ export class SuperBoostSystem {
     this.pickupSpots = this.createPickupSpots();
     this.pickupActive = false;
     this.pickupTarget = null;
+    this.disabled = false;
     this.spawnAnnouncementPending = false;
     this.spawnTimer = this.scheduleNextSpawn();
     this.pickupAudioIndex = 0;
@@ -108,6 +109,7 @@ export class SuperBoostSystem {
   }
 
   updateSpawn(delta, player) {
+    if (this.disabled) return;
     if (this.pickupActive || this.charges >= this.config.maxCharges) return;
 
     this.spawnTimer = Math.max(0, this.spawnTimer - delta);
@@ -173,6 +175,15 @@ export class SuperBoostSystem {
     this.activateAudioIndex = (this.activateAudioIndex + 1) % this.activateSounds.length;
     audio.currentTime = 0;
     audio.play().catch(() => {});
+  }
+
+  disable() {
+    this.disabled = true;
+    this.pickup.visible = false;
+    this.pickupActive = false;
+    this.pickupTarget = null;
+    this.spawnAnnouncementPending = false;
+    this.spawnTimer = Number.POSITIVE_INFINITY;
   }
 
   getState() {

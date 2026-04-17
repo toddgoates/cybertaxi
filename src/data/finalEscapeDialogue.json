@@ -1,0 +1,32 @@
+[
+  {
+    "id": 20,
+    "audio": "/audio/final_20.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "...It's over. We actually made it."
+  },
+  {
+    "id": 21,
+    "audio": "/audio/final_21.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Told you we would."
+  },
+  {
+    "id": 22,
+    "audio": "/audio/final_22.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Where are you?"
+  },
+  {
+    "id": 23,
+    "audio": "/audio/final_23.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "I'll send you the location. Come find me."
+  },
+  {
+    "id": 24,
+    "audio": "/audio/final_24.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "On my way."
+  }
+]

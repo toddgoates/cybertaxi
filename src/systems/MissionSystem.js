@@ -86,11 +86,22 @@ export class MissionSystem {
     this.objective = '';
     this.routeLabel = '';
     this.fakePassengerHandler = null;
+    this.finaleHandler = null;
+    this.endgameTriggered = false;
+    this.endgameUnlocked = false;
     this.startNextFare();
   }
 
   setFakePassengerHandler(handler) {
     this.fakePassengerHandler = handler;
+  }
+
+  setFinaleHandler(handler) {
+    this.finaleHandler = handler;
+  }
+
+  unlockEndgame() {
+    this.endgameUnlocked = true;
   }
 
   createPickupSpots() {
@@ -219,6 +230,20 @@ export class MissionSystem {
   }
 
   startNextFare(playerPosition = null) {
+    if (this.endgameTriggered) {
+      this.pickupOffers = [];
+      this.pickupZones.forEach((zone) => {
+        zone.visible = false;
+        zone.userData.labelSprite.visible = false;
+        this.setZoneColor(zone, zone.userData.baseColor);
+      });
+      this.dropoffZone.visible = false;
+      this.phase = 'endgame';
+      this.objective = 'Survive the Axiom response';
+      this.routeLabel = 'No new fares available';
+      return;
+    }
+
     const districts = [...this.worldData.districtAnchors];
     const currentDistrictName = playerPosition ? this.worldData.getDistrictName(playerPosition) : null;
     const pickupCandidates = currentDistrictName
@@ -367,9 +392,34 @@ export class MissionSystem {
             'good',
           );
           this.effects.onDropoff();
+          if (!this.endgameTriggered && this.totalCredits >= this.config.finalCreditsThreshold) {
+            this.triggerEndgame();
+            return;
+          }
           this.startNextFare(player.mesh.position);
       }
     }
+  }
+
+  triggerEndgame() {
+    this.endgameTriggered = true;
+    this.phase = 'endgame';
+    this.pickupOffers = [];
+    this.pickupDistrict = null;
+    this.dropoffDistrict = null;
+    this.currentFare = 0;
+    this.originalFare = 0;
+    this.activeSpecialFare = null;
+    this.pendingPenaltyText = '';
+    this.objective = 'Survive the Axiom response';
+    this.routeLabel = 'No new fares available';
+    this.pickupZones.forEach((zone) => {
+      zone.visible = false;
+      zone.userData.labelSprite.visible = false;
+      this.setZoneColor(zone, zone.userData.baseColor);
+    });
+    this.dropoffZone.visible = false;
+    this.finaleHandler?.();
   }
 
   spinZones(delta) {
@@ -422,6 +472,8 @@ export class MissionSystem {
       routeLabel: this.routeLabel,
       phase: this.phase,
       specialFareActive: Boolean(this.activeSpecialFare),
+      endgameTriggered: this.endgameTriggered,
+      endgameUnlocked: this.endgameUnlocked,
       pendingPenaltyText: this.pendingPenaltyText,
       pickupTargets: this.pickupOffers.map((offer) => ({
         name: offer.pickupDistrict.name,

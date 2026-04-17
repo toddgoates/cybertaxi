@@ -12,6 +12,7 @@ export const GAME_CONFIG = {
     collisionPenalty: 12,
     pickupRadius: 12,
     dropoffRadius: 14,
+    finalCreditsThreshold: 10000,
     specialFareThreshold: 350,
     specialFareMinSeconds: 15,
     specialFareMaxSeconds: 20,

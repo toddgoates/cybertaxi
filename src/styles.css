@@ -93,6 +93,16 @@ canvas {
   animation: hud-alert 2.2s ease-out forwards;
 }
 
+.hud__alert--persistent {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.hud__alert--persistent::before,
+.hud__alert--persistent::after {
+  opacity: 0;
+}
+
 .hud__alert--visible::before {
   animation: hud-alert-echo 0.55s ease-out;
 }
@@ -213,6 +223,39 @@ canvas {
 
 .hud__pause--visible {
   display: flex;
+}
+
+.hud__win {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 24px;
+  background: #000000;
+  z-index: 25;
+}
+
+.hud__win--visible {
+  display: flex;
+}
+
+.hud__win-title {
+  font-family: 'Orbitron', Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(42px, 8vw, 96px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.18);
+}
+
+.hud__win-image {
+  width: min(620px, calc(100vw - 48px));
+  max-height: min(72vh, 720px);
+  object-fit: contain;
+  display: block;
 }
 
 .hud__pause-card {
@@ -702,6 +745,12 @@ canvas {
   color: #ff9d3d;
   border-width: 2px;
   box-shadow: 0 0 14px rgba(255, 157, 61, 0.95);
+}
+
+.navigator__target--escape {
+  color: #ffffff;
+  border-width: 2px;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.95);
 }
 
 .controls {

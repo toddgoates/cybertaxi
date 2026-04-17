@@ -1,0 +1,74 @@
+[
+  {
+    "id": 5,
+    "audio": "/audio/final_5.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Yeah... that's a lot of them."
+  },
+  {
+    "id": 6,
+    "audio": "/audio/final_6.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "No way through-just stay alive."
+  },
+  {
+    "id": 7,
+    "audio": "/audio/final_7.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Just keep moving. Don't let them box you in!"
+  },
+  {
+    "id": 8,
+    "audio": "/audio/final_8.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "They're everywhere!"
+  },
+  {
+    "id": 9,
+    "audio": "/audio/final_9.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "I'm trying to find you a way out-just hold on!"
+  },
+  {
+    "id": 10,
+    "audio": "/audio/final_10.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Escape is no longer possible."
+  },
+  {
+    "id": 11,
+    "audio": "/audio/final_11.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Not happening. Not tonight."
+  },
+  {
+    "id": 12,
+    "audio": "/audio/final_12.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You're still ahead of them-barely."
+  },
+  {
+    "id": 13,
+    "audio": "/audio/final_13.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Wait... I think I can use your exploit."
+  },
+  {
+    "id": 14,
+    "audio": "/audio/final_14.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "You're gonna hack them?"
+  },
+  {
+    "id": 15,
+    "audio": "/audio/final_15.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "I'm already in. Just keep them busy!"
+  },
+  {
+    "id": 16,
+    "audio": "/audio/final_16.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Got it... pushing the override now!"
+  }
+]

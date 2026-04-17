@@ -20,6 +20,7 @@ function parseDevDebugFlags() {
     startingEmpCharges: readInt('emp'),
     startingSuperBoost: params.get('super-boost') === '1',
     skipIntro: params.get('skip-intro') === '1',
+    showWinner: params.get('winner') === '1',
     showPerfOverlay: params.get('perf') === '1',
   };
 

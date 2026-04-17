@@ -123,6 +123,7 @@ export class EmpSystem {
     this.pickupSpots = this.createPickupSpots();
     this.pickupActive = false;
     this.pickupTarget = null;
+    this.disabled = false;
     this.spawnAnnouncementPending = false;
     this.audioIndex = 0;
     this.pickupAudioIndex = 0;
@@ -164,6 +165,7 @@ export class EmpSystem {
   }
 
   updateSpawn(delta, player) {
+    if (this.disabled) return;
     if (this.pickupActive || this.charges >= this.config.maxCharges) return;
 
     this.spawnTimer = Math.max(0, this.spawnTimer - delta);
@@ -266,5 +268,14 @@ export class EmpSystem {
     if (!this.spawnAnnouncementPending) return null;
     this.spawnAnnouncementPending = false;
     return this.pickupTarget;
+  }
+
+  disable() {
+    this.disabled = true;
+    this.pickup.visible = false;
+    this.pickupActive = false;
+    this.pickupTarget = null;
+    this.spawnAnnouncementPending = false;
+    this.spawnTimer = Number.POSITIVE_INFINITY;
   }
 }

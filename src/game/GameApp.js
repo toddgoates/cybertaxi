@@ -25,6 +25,11 @@ import itemDialogue from '../data/itemDialogue.json';
 import crashDialogue from '../data/crashDialogue.json';
 import fakePassengerIntroDialogue from '../data/fakePassengerIntroDialogue.json';
 import fakePassengerDialogue from '../data/fakePassengerDialogue.json';
+import finalDialogue from '../data/finalDialogue.json';
+import finalFiveDialogue from '../data/finalFiveDialogue.json';
+import finalEscapeDialogue from '../data/finalEscapeDialogue.json';
+import finalResolutionDialogue from '../data/finalResolutionDialogue.json';
+import finalSurvivalDialogue from '../data/finalSurvivalDialogue.json';
 import lowFuelDialogue from '../data/lowFuelDialogue.json';
 import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
@@ -34,6 +39,43 @@ const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
 const POST_INTRO_DELAY_AFTER_TITLE_SECONDS = 2.5;
 const RIVAL_DIALOGUE_COOLDOWN_SECONDS = 60;
 const CRASH_DIALOGUE_COOLDOWN_SECONDS = 15;
+const ENDGAME_SURVIVAL_SECONDS = 60;
+
+function createExtractionMarker() {
+  const group = new THREE.Group();
+
+  const ring = new THREE.Mesh(
+    new THREE.CylinderGeometry(18, 18, 1.6, 32, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.92,
+      transparent: true,
+      opacity: 0.34,
+      side: THREE.DoubleSide,
+    }),
+  );
+  ring.position.y = 0.8;
+  group.add(ring);
+
+  const core = new THREE.Mesh(
+    new THREE.CylinderGeometry(4.5, 5.8, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }),
+  );
+  core.position.y = 8;
+  group.add(core);
+
+  const halo = new THREE.Mesh(
+    new THREE.TorusGeometry(10.5, 0.5, 10, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.78, toneMapped: false }),
+  );
+  halo.rotation.x = Math.PI / 2;
+  halo.position.y = 5.4;
+  group.add(halo);
+
+  group.visible = false;
+  return group;
+}
 
 export class GameApp {
   constructor(mount, options = {}) {
@@ -62,6 +104,10 @@ export class GameApp {
     this.introDialogue = new IntroDialogueManager(introDialogue, 300);
     this.postIntroDialogue = new IntroDialogueManager(postIntroDialogue, 250);
     this.fakePassengerIntroDialogue = new IntroDialogueManager(fakePassengerIntroDialogue, 250);
+    this.finalDialogue = new IntroDialogueManager(finalDialogue, 250);
+    this.finalSurvivalDialogue = new IntroDialogueManager(finalSurvivalDialogue, 1400);
+    this.finalEscapeDialogue = new IntroDialogueManager(finalEscapeDialogue, 250);
+    this.finalResolutionDialogue = new IntroDialogueManager(finalResolutionDialogue, 250);
     this.voiceover = new VoiceoverManager();
     this.pendingPostIntroDelay = null;
     this.rivalDialogueCooldown = 0;
@@ -70,6 +116,20 @@ export class GameApp {
     this.runtimeDialogueUnlocked = false;
     this.fakePassengerIntroSeen = false;
     this.fakePassengerIntroActive = false;
+    this.finalDialogueActive = false;
+    this.survivalModeActive = false;
+    this.survivalDialogueActive = false;
+    this.survivalTimer = 0;
+    this.endgameResolutionActive = false;
+    this.endgameShutdownStarted = false;
+    this.finalFiveDialogueQueued = false;
+    this.finalFiveDialoguePlayed = false;
+    this.finalFiveDialogueFinished = false;
+    this.finalEscapeDialogueActive = false;
+    this.finalEscapeDialogueStarted = false;
+    this.extractionActive = false;
+    this.extractionTarget = null;
+    this.won = false;
     this.perfOverlay = this.options.debug?.showPerfOverlay ? new PerformanceOverlay(this.mount) : null;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
@@ -77,11 +137,14 @@ export class GameApp {
 
     this.city = new CityGenerator(this.scene, GAME_CONFIG);
     this.worldData = this.city.build();
+    this.extractionMarker = createExtractionMarker();
+    this.scene.add(this.extractionMarker);
 
     this.player = new PlayerController(this.scene, this.input, GAME_CONFIG, this.worldData.spawnPoint);
     this.traffic = new TrafficManager(this.scene, GAME_CONFIG, this.worldData.flightPaths);
     this.missions = new MissionSystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.effects);
     this.missions.setFakePassengerHandler(({ robberyAmount }) => this.onFakePassengerRobbed(robberyAmount));
+    this.missions.setFinaleHandler(() => this.onFinaleTriggered());
     this.energy = new EnergySystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.missions);
     this.collisions = new CollisionSystem(this.worldData.colliders, GAME_CONFIG, this.ui, this.effects);
     this.rivals = new RivalTaxiManager(this.scene, GAME_CONFIG, this.worldData, this.ui);
@@ -101,7 +164,7 @@ export class GameApp {
   applyDebugFlags() {
     if (!import.meta.env.DEV || !this.options.debug) return;
 
-    const { startingCredits, startingHeat, startingRivals, startingEnergy, startingEmpCharges, startingSuperBoost } = this.options.debug;
+    const { startingCredits, startingHeat, startingRivals, startingEnergy, startingEmpCharges, startingSuperBoost, showWinner } = this.options.debug;
     const applied = [];
 
     if (startingCredits != null) {
@@ -136,6 +199,11 @@ export class GameApp {
       applied.push('super-boost=1');
     }
 
+    if (showWinner) {
+      this.triggerWin();
+      applied.push('winner=1');
+    }
+
     if (applied.length > 0) {
       this.ui.pushFeed(`DEV flags active: ${applied.join(' | ')}`, 'info');
     }
@@ -163,6 +231,11 @@ export class GameApp {
   }
 
   start() {
+    if (this.won) {
+      this.animate();
+      return;
+    }
+
     if (this.options.debug?.skipIntro) {
       this.music.start();
       this.runtimeDialogueUnlocked = true;
@@ -251,7 +324,165 @@ export class GameApp {
   }
 
   isGameplayDialogueBusy() {
-    return this.fakePassengerIntroActive || this.voiceover.isActive();
+    return this.fakePassengerIntroActive || this.finalDialogueActive || this.survivalDialogueActive || this.endgameResolutionActive || this.finalEscapeDialogueActive || this.voiceover.isActive();
+  }
+
+  onFinaleTriggered() {
+    this.finalDialogueActive = true;
+    this.runtimeDialogueUnlocked = false;
+    this.emp.disable();
+    this.superBoost.disable();
+    this.voiceover.stop();
+    this.ui.showAlert('10,000 credits secured!');
+    this.finalDialogue.start({
+      onEntryStart: (entry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(entry);
+      },
+      onEntryEnd: () => this.ui.hideDialogue(),
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+        this.finalDialogueActive = false;
+        this.missions.unlockEndgame();
+        this.runtimeDialogueUnlocked = true;
+      },
+    });
+  }
+
+  startSurvivalMode() {
+    this.survivalModeActive = true;
+    this.survivalTimer = ENDGAME_SURVIVAL_SECONDS;
+    this.runtimeDialogueUnlocked = false;
+    this.ui.showAlert('Survive');
+    this.ui.setNotificationsSuppressed(true);
+    this.voiceover.stop();
+    this.survivalDialogueActive = true;
+    this.finalSurvivalDialogue.start({
+      onEntryStart: (entry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(entry);
+      },
+      onEntryEnd: () => this.ui.hideDialogue(),
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+        this.survivalDialogueActive = false;
+      },
+    });
+  }
+
+  endSurvivalMode() {
+    this.survivalModeActive = false;
+    this.survivalTimer = 0;
+    this.ui.clearPersistentAlert();
+    this.ui.setNotificationsSuppressed(false);
+    this.runtimeDialogueUnlocked = true;
+  }
+
+  startEndgameShutdown() {
+    if (this.endgameShutdownStarted) return;
+    this.endgameShutdownStarted = true;
+    this.endgameResolutionActive = true;
+    this.runtimeDialogueUnlocked = false;
+    this.ui.clearPersistentAlert();
+    this.ui.setNotificationsSuppressed(true);
+    this.rivals.startShutdown();
+    this.finalResolutionDialogue.start({
+      onEntryStart: (entry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(entry);
+      },
+      onEntryEnd: () => this.ui.hideDialogue(),
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+        this.endgameResolutionActive = false;
+      },
+    });
+  }
+
+  playFinalFiveDialogue() {
+    const entry = finalFiveDialogue[0];
+    this.finalFiveDialoguePlayed = true;
+    this.finalFiveDialogueQueued = false;
+    this.voiceover.play(entry, {
+      onStart: (dialogueEntry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(dialogueEntry);
+      },
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+        this.finalFiveDialogueFinished = true;
+      },
+    });
+  }
+
+  startFinalEscapeDialogue() {
+    this.finalEscapeDialogueStarted = true;
+    this.finalEscapeDialogueActive = true;
+    this.finalEscapeDialogue.start({
+      onEntryStart: (entry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(entry);
+      },
+      onEntryEnd: () => this.ui.hideDialogue(),
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+        this.finalEscapeDialogueActive = false;
+        this.activateExtractionTarget();
+      },
+    });
+  }
+
+  activateExtractionTarget() {
+    this.extractionTarget = this.computeExtractionTarget();
+    this.extractionMarker.position.copy(this.extractionTarget);
+    this.extractionMarker.visible = true;
+    this.extractionActive = true;
+  }
+
+  computeExtractionTarget() {
+    const edge = this.worldData.worldSize * 0.48;
+    const playerPosition = this.player.mesh.position;
+    if (Math.abs(playerPosition.x) >= Math.abs(playerPosition.z)) {
+      return new THREE.Vector3(
+        Math.sign(playerPosition.x || 1) * edge,
+        Math.max(18, playerPosition.y),
+        THREE.MathUtils.clamp(playerPosition.z, -edge * 0.85, edge * 0.85),
+      );
+    }
+
+    return new THREE.Vector3(
+      THREE.MathUtils.clamp(playerPosition.x, -edge * 0.85, edge * 0.85),
+      Math.max(18, playerPosition.y),
+      Math.sign(playerPosition.z || 1) * edge,
+    );
+  }
+
+  updateExtractionMarker(delta) {
+    if (!this.extractionActive) return;
+    this.extractionMarker.rotation.y += delta * 0.9;
+    this.extractionMarker.children[1].position.y = 8 + Math.sin(performance.now() * 0.004) * 1.2;
+    this.extractionMarker.children[2].rotation.z += delta * 0.85;
+    if (this.player.mesh.position.distanceTo(this.extractionTarget) < 22) {
+      this.triggerWin();
+    }
+  }
+
+  triggerWin() {
+    if (this.won) return;
+    this.won = true;
+    this.music.setPaused(true);
+    this.ui.clearPersistentAlert();
+    this.ui.showWinScreen();
+    this.extractionMarker.visible = false;
+    this.extractionActive = false;
+    this.scene.visible = false;
+    this.renderer.domElement.style.visibility = 'hidden';
+    this.runtimeDialogueUnlocked = false;
   }
 
   playEscalationAnnouncement() {
@@ -303,12 +534,18 @@ export class GameApp {
     requestAnimationFrame(this.animate);
     const delta = Math.min(this.clock.getDelta(), 0.033);
 
+    if (this.won) return;
+
     if (this.input.consumePress('pause')) {
       this.paused = !this.paused;
       this.music.setPaused(this.paused);
       this.introDialogue.setPaused(this.paused);
       this.postIntroDialogue.setPaused(this.paused);
       this.fakePassengerIntroDialogue.setPaused(this.paused);
+      this.finalDialogue.setPaused(this.paused);
+      this.finalSurvivalDialogue.setPaused(this.paused);
+      this.finalEscapeDialogue.setPaused(this.paused);
+      this.finalResolutionDialogue.setPaused(this.paused);
       this.voiceover.setPaused(this.paused);
     }
 
@@ -316,6 +553,13 @@ export class GameApp {
       this.music.update(delta);
       this.rivalDialogueCooldown = Math.max(0, this.rivalDialogueCooldown - delta);
       this.crashDialogueCooldown = Math.max(0, this.crashDialogueCooldown - delta);
+      if (this.survivalModeActive) {
+        this.survivalTimer = Math.max(0, this.survivalTimer - delta);
+        if (this.survivalTimer === 0 && !this.survivalDialogueActive) {
+          this.endSurvivalMode();
+          this.startEndgameShutdown();
+        }
+      }
       if (this.pendingPostIntroDelay != null) {
         this.pendingPostIntroDelay = Math.max(0, this.pendingPostIntroDelay - delta);
         if (this.pendingPostIntroDelay === 0) {
@@ -325,6 +569,7 @@ export class GameApp {
       }
       this.city.update(delta, this.player.mesh.position);
       this.player.update(delta, this.energy.getDriveState());
+      this.updateExtractionMarker(delta);
       this.traffic.update(delta);
       this.energy.update(delta, this.player);
       this.latestEnergyState = this.energy.getState();
@@ -393,6 +638,23 @@ export class GameApp {
     }
 
     const nextMissionState = this.missions.getState();
+    const rivalsState = this.rivals.getState();
+
+    if (nextMissionState.endgameUnlocked && !this.survivalModeActive && !this.survivalDialogueActive && !this.endgameShutdownStarted && rivalsState.activeRivals >= 50) {
+      this.startSurvivalMode();
+    }
+
+    if (rivalsState.shutdownActive && !this.finalFiveDialoguePlayed && rivalsState.activeRivals <= 5) {
+      this.finalFiveDialogueQueued = true;
+    }
+
+    if (this.finalFiveDialogueQueued && !this.isGameplayDialogueBusy()) {
+      this.playFinalFiveDialogue();
+    }
+
+    if (rivalsState.shutdownActive && !this.finalEscapeDialogueStarted && this.finalFiveDialogueFinished && rivalsState.activeRivals === 0 && !this.isGameplayDialogueBusy()) {
+      this.startFinalEscapeDialogue();
+    }
 
     this.ui.render({
       player: this.player,
@@ -400,9 +662,18 @@ export class GameApp {
       energy: this.latestEnergyState ?? this.energy.getState(),
       district: this.worldData.getDistrictName(this.player.mesh.position),
       music: this.music.getState(),
-      rivals: this.rivals.getState(),
+      rivals: rivalsState,
       emp: this.emp.getState(),
       superBoost: this.superBoost.getState(),
+      endgame: {
+        extractionTarget: this.extractionActive
+          ? {
+              name: 'Destination',
+              x: this.extractionTarget.x,
+              z: this.extractionTarget.z,
+            }
+          : null,
+      },
       paused: this.paused,
     });
 
@@ -442,6 +713,10 @@ export class GameApp {
     this.introDialogue.destroy();
     this.postIntroDialogue.destroy();
     this.fakePassengerIntroDialogue.destroy();
+    this.finalDialogue.destroy();
+    this.finalSurvivalDialogue.destroy();
+    this.finalEscapeDialogue.destroy();
+    this.finalResolutionDialogue.destroy();
     this.voiceover.destroy();
     this.perfOverlay?.destroy();
     this.composer.dispose();

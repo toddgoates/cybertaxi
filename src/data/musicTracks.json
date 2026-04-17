@@ -17,6 +17,36 @@
   {
     "id": 4,
     "audio": "/audio/music_4.mp3",
+    "title": "Cyber Siege Protocol"
+  },
+  {
+    "id": 5,
+    "audio": "/audio/music_5.mp3",
+    "title": "Retrofit"
+  },
+  {
+    "id": 6,
+    "audio": "/audio/music_6.mp3",
+    "title": "Rain and Betrayal"
+  },
+  {
+    "id": 7,
+    "audio": "/audio/music_7.mp3",
+    "title": "Into the Slipstream"
+  },
+  {
+    "id": 8,
+    "audio": "/audio/music_8.mp3",
+    "title": "Harmonic Overdrive"
+  },
+  {
+    "id": 9,
+    "audio": "/audio/music_9.mp3",
+    "title": "Divine Blade of Thunder"
+  },
+  {
+    "id": 10,
+    "audio": "/audio/music_10.mp3",
     "title": "Maniacal"
   }
 ]

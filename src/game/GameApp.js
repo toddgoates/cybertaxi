@@ -53,6 +53,9 @@ function createExtractionMarker() {
       transparent: true,
       opacity: 0.34,
       side: THREE.DoubleSide,
+      fog: false,
+      depthWrite: false,
+      toneMapped: false,
     }),
   );
   ring.position.y = 0.8;
@@ -60,18 +63,39 @@ function createExtractionMarker() {
 
   const core = new THREE.Mesh(
     new THREE.CylinderGeometry(4.5, 5.8, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false, depthWrite: false, toneMapped: false }),
   );
   core.position.y = 8;
   group.add(core);
 
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.3, 2.6, 120, 16, 1, true),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.18,
+      fog: false,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    }),
+  );
+  beam.position.y = 60;
+  group.add(beam);
+
   const halo = new THREE.Mesh(
     new THREE.TorusGeometry(10.5, 0.5, 10, 32),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.78, toneMapped: false }),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.78, fog: false, depthWrite: false, toneMapped: false }),
   );
   halo.rotation.x = Math.PI / 2;
   halo.position.y = 5.4;
   group.add(halo);
+
+  group.traverse((child) => {
+    if (child.isMesh) {
+      child.renderOrder = 10;
+    }
+  });
 
   group.visible = false;
   return group;
@@ -480,20 +504,22 @@ export class GameApp {
   }
 
   computeExtractionTarget() {
-    const edge = this.worldData.worldSize * 0.48;
+    const innerCityOffset = GAME_CONFIG.districtSpacing * 0.42;
+    const crossAxisLimit = GAME_CONFIG.districtSpacing * 0.3;
+    const targetHeight = 0;
     const playerPosition = this.player.mesh.position;
     if (Math.abs(playerPosition.x) >= Math.abs(playerPosition.z)) {
       return new THREE.Vector3(
-        Math.sign(playerPosition.x || 1) * edge,
-        Math.max(18, playerPosition.y),
-        THREE.MathUtils.clamp(playerPosition.z, -edge * 0.85, edge * 0.85),
+        Math.sign(playerPosition.x || 1) * innerCityOffset,
+        targetHeight,
+        THREE.MathUtils.clamp(playerPosition.z, -crossAxisLimit, crossAxisLimit),
       );
     }
 
     return new THREE.Vector3(
-      THREE.MathUtils.clamp(playerPosition.x, -edge * 0.85, edge * 0.85),
-      Math.max(18, playerPosition.y),
-      Math.sign(playerPosition.z || 1) * edge,
+      THREE.MathUtils.clamp(playerPosition.x, -crossAxisLimit, crossAxisLimit),
+      targetHeight,
+      Math.sign(playerPosition.z || 1) * innerCityOffset,
     );
   }
 
@@ -501,8 +527,10 @@ export class GameApp {
     if (!this.extractionActive) return;
     this.extractionMarker.rotation.y += delta * 0.9;
     this.extractionMarker.children[1].position.y = 8 + Math.sin(performance.now() * 0.004) * 1.2;
-    this.extractionMarker.children[2].rotation.z += delta * 0.85;
-    if (this.player.mesh.position.distanceTo(this.extractionTarget) < 22) {
+    this.extractionMarker.children[3].rotation.z += delta * 0.85;
+    const dx = this.player.mesh.position.x - this.extractionTarget.x;
+    const dz = this.player.mesh.position.z - this.extractionTarget.z;
+    if (Math.hypot(dx, dz) < 22) {
       this.triggerWin();
     }
   }

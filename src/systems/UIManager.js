@@ -280,11 +280,11 @@ export class UIManager {
       targets.push({ ...state.superBoost.pickupTarget, role: 'super-boost', active: false });
     }
 
+    state.energy.stations.forEach((station) => targets.push({ ...station, role: 'energy', active: false }));
+
     if (state.endgame?.extractionTarget) {
       targets.push({ ...state.endgame.extractionTarget, role: 'escape', active: true });
     }
-
-    state.energy.stations.forEach((station) => targets.push({ ...station, role: 'energy', active: false }));
 
     targets.forEach((target, index) => {
       const marker = this.getNavigatorMarker(index);

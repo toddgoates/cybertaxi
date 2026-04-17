@@ -164,7 +164,7 @@ export class GameApp {
   applyDebugFlags() {
     if (!import.meta.env.DEV || !this.options.debug) return;
 
-    const { startingCredits, startingHeat, startingRivals, startingEnergy, startingEmpCharges, startingSuperBoost, showWinner } = this.options.debug;
+    const { startingCredits, startingHeat, startingRivals, startingEnergy, startingEmpCharges, startingSuperBoost, showFinal, showWinner } = this.options.debug;
     const applied = [];
 
     if (startingCredits != null) {
@@ -197,6 +197,11 @@ export class GameApp {
     if (startingSuperBoost) {
       this.superBoost.setStartingCharges(1);
       applied.push('super-boost=1');
+    }
+
+    if (showFinal) {
+      this.triggerFinalDebugState();
+      applied.push('final=1');
     }
 
     if (showWinner) {
@@ -435,6 +440,36 @@ export class GameApp {
         this.activateExtractionTarget();
       },
     });
+  }
+
+  triggerFinalDebugState() {
+    this.missions.totalCredits = Math.max(this.missions.totalCredits, GAME_CONFIG.mission.finalCreditsThreshold);
+    this.missions.endgameTriggered = true;
+    this.missions.endgameUnlocked = true;
+    this.missions.phase = 'endgame';
+    this.missions.pickupOffers = [];
+    this.missions.pickupDistrict = null;
+    this.missions.dropoffDistrict = null;
+    this.missions.currentFare = 0;
+    this.missions.originalFare = 0;
+    this.missions.pendingPenaltyText = '';
+    this.missions.objective = 'Reach the destination';
+    this.missions.routeLabel = 'Extraction point marked on navigator';
+    this.missions.pickupZones.forEach((zone) => {
+      zone.visible = false;
+      zone.userData.labelSprite.visible = false;
+      this.missions.setZoneColor(zone, zone.userData.baseColor);
+    });
+    this.missions.dropoffZone.visible = false;
+    this.emp.disable();
+    this.superBoost.disable();
+    this.rivals.startShutdown();
+    this.endgameShutdownStarted = true;
+    this.finalFiveDialoguePlayed = true;
+    this.finalFiveDialogueFinished = true;
+    this.finalEscapeDialogueStarted = true;
+    this.activateExtractionTarget();
+    this.runtimeDialogueUnlocked = true;
   }
 
   activateExtractionTarget() {

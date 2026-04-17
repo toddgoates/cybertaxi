@@ -40,6 +40,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - Super Boost pickups spawn on the map, can be stored, and provide a one-minute unlimited boost window when triggered.
 - The city includes animated rain, moving rooftop searchlights, and large collidable neon blimps.
 - The opening now includes JSON-driven narration with portrait/transcript UI, a title card reveal, and a post-intro dialogue beat.
+- Reaching `10000` credits triggers a multi-stage endgame flow instead of generating more fares.
 
 ## What Has Been Built So Far
 
@@ -59,6 +60,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - Super Boost pickup system with inventory and one-minute unlimited boost activation
 - Pause state with overlay and audio pause support
 - Fake passenger robbery flow with first-time and repeat dialogue responses
+- Endgame flow with finale dialogue, survival phase, rival shutdown, extraction marker, and win screen
 
 ### HUD and presentation
 
@@ -67,9 +69,11 @@ The project is still a lightweight, code-driven game with no backend and no save
 - Lower-right navigator panel
 - Upper-left dialogue card that shows portrait and transcript during intro and runtime voice lines
 - Centered intro title card: `Todd Goates Presents` / `Cybertaxi`
+- Centered win screen overlay with `You won!` and `winner.png`
 - Simplified HUD layout after removing the older dispatch and objective widgets
 - Navigator shows the active mission target relative to the player
 - Navigator also shows yellow energy station dots, green EMP pickup markers, blue-star special fare markers, and orange Super Boost markers
+- Navigator also shows a white extraction marker during the endgame escape phase
 - Fake passenger pickup beacons use a subtle yellow flicker while still looking mostly like normal passenger markers
 - Energy meter and charging progress ring for rooftop refueling
 - Boost meter changes to an orange highlighted state while Super Boost is active
@@ -85,12 +89,14 @@ The project is still a lightweight, code-driven game with no backend and no save
 - Crash sound plays on collision and EMP uses its own zap sound
 - Item, rival spawn, crash, and low-energy chatter all route through `VoiceoverManager`
 - Fake passenger robbery dialogue also routes through the dialogue widget and music ducking path
+- Endgame dialogue is split across `finalDialogue`, `finalSurvivalDialogue`, `finalResolutionDialogue`, `finalFiveDialogue`, and `finalEscapeDialogue`
 - Item dialogue is shared for EMP and Super Boost spawn announcements
 - Rival spawn dialogue has a `60` second cooldown
 - Crash dialogue has a `15` second cooldown
 - Low-energy dialogue has no cooldown and is threshold-driven
 - `skip-intro=1` can bypass the intro sequence in dev or regular local use
 - Gameplay voice lines are suppressed until the intro and post-intro sequences are finished
+- During finale/survival/resolution phases, normal gameplay dialogue and notifications are selectively suppressed to avoid interrupting scripted sequences
 
 ### Vehicle and feedback changes
 
@@ -124,6 +130,18 @@ The project is still a lightweight, code-driven game with no backend and no save
 - Special fare unlock threshold was lowered from `500` to `350`
 - EMP spawn interval was reduced to `90` seconds
 
+### Endgame flow changes
+
+- At `10000` credits, current fare values are cleared and no new fares appear
+- The player enters a scripted finale dialogue sequence before Heat 10 can unlock
+- Heat 10 only begins after the finale dialogue completes
+- Once 50 rivals are active, a survival phase begins with a hidden timer and survival dialogue
+- After survival, rivals enter a shutdown phase and are removed one by one
+- When only five rivals remain, an additional Axiom line plays
+- Once the rivals are gone, a final extraction dialogue plays
+- A white extraction marker appears at the edge of the map and on the navigator
+- Reaching the extraction marker triggers the `You won!` screen and suspends gameplay
+
 ### Performance and stability changes
 
 - Added a lightweight dev performance overlay enabled via `?perf=1`
@@ -151,6 +169,16 @@ The project is still a lightweight, code-driven game with no backend and no save
   - Repeat fake-passenger robbery dialogue pool
 - `src/data/itemDialogue.json`
   - Shared item voiceover metadata for EMP and Super Boost spawns
+- `src/data/finalDialogue.json`
+  - Initial finale dialogue at `10000` credits
+- `src/data/finalSurvivalDialogue.json`
+  - Survival-phase dialogue while the 50-rival swarm is active
+- `src/data/finalResolutionDialogue.json`
+  - Shutdown dialogue when rivals begin dropping out
+- `src/data/finalFiveDialogue.json`
+  - Single line that plays when only five rivals remain
+- `src/data/finalEscapeDialogue.json`
+  - Final post-shutdown extraction dialogue sequence
 - `src/data/escalationDialogue.json`
   - Rival spawn voiceover metadata
 - `src/data/crashDialogue.json`
@@ -176,7 +204,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - `src/systems/rivals/SteeringBehaviors.js`
   - Shared steering helpers used by rival agents
 - `src/systems/MissionSystem.js`
-  - Mission selection, live pickup zones, special fare logic, fake passengers, distance-scaled fare logic, and payout handling
+  - Mission selection, live pickup zones, special fare logic, fake passengers, finale trigger, distance-scaled fare logic, and payout handling
 - `src/systems/EnergySystem.js`
   - Energy drain, rooftop station placement/interaction, depletion penalties, and low-energy threshold announcements
 - `src/systems/EmpSystem.js`
@@ -188,7 +216,7 @@ The project is still a lightweight, code-driven game with no backend and no save
 - `src/systems/EffectsHooks.js`
   - Pooled collision spark particles and crash sound support
 - `src/systems/UIManager.js`
-  - HUD structure and rendering, including dialogue card, title card, navigator logic, systems card, and pause overlay
+  - HUD structure and rendering, including dialogue card, title card, win overlay, navigator logic, systems card, and pause overlay
 - `src/systems/IntroDialogueManager.js`
   - JSON-driven intro narration sequencing with pause-aware playback
 - `src/systems/VoiceoverManager.js`
@@ -214,6 +242,7 @@ At the time of writing:
 - Special fare unlock threshold is `350` credits
 - Special fare payout range is `300-500` credits
 - Fake passengers begin appearing at `4500` credits
+- Finale begins at `10000` credits
 - Energy stations require `5` seconds parked in-zone to refill
 - EMP pickups spawn every `90` seconds
 - EMP can remove up to `10` nearby rival taxis per use
@@ -232,6 +261,8 @@ When running locally, the game currently supports:
 - `emp=<number>`
 - `super-boost=1`
 - `skip-intro=1`
+- `winner=1`
+- `final=1`
 - `perf=1`
 
 Example:
@@ -262,6 +293,8 @@ Current runtime asset locations:
   - `public/audio/fake_passenger_intro_1.mp3` through `public/audio/fake_passenger_intro_3.mp3`
 - Fake-passenger repeat dialogue:
   - `public/audio/fake_passenger_1.mp3` through `public/audio/fake_passenger_10.mp3`
+- Finale dialogue:
+  - `public/audio/final_1.mp3` through `public/audio/final_24.mp3`
 - Sound effects:
   - `public/audio/crash.mp3`
   - `public/audio/zap.mp3`
@@ -279,6 +312,7 @@ Current runtime asset locations:
 - Searchlights are chosen from tall rooftops that are not already used as energy stations.
 - EMP pickups are represented both in-world and in UI state as navigator targets.
 - Super Boost pickups are represented both in-world and in UI state as orange navigator targets.
+- The endgame extraction target is represented both in-world and in UI state as a white navigator target.
 - Passenger pickup candidates are clearance-checked against building colliders before use.
 - Rival taxis are pooled and updated centrally to stay browser-friendly.
 - City richness is driven mostly by emissive materials, procedural textures, and lightweight post-processing rather than runtime lights.
@@ -320,8 +354,9 @@ If continuing this project in another session, mention:
 - Intro narration is data-driven from `src/data/introDialogue.json`
 - Additional gameplay voiceover data lives in `itemDialogue.json`, `escalationDialogue.json`, `crashDialogue.json`, and `lowFuelDialogue.json`
 - Fake passenger dialogue data lives in `fakePassengerIntroDialogue.json` and `fakePassengerDialogue.json`
+- Endgame dialogue data lives in `finalDialogue.json`, `finalSurvivalDialogue.json`, `finalResolutionDialogue.json`, `finalFiveDialogue.json`, and `finalEscapeDialogue.json`
 - Music now plays from a playlist with `[` and `]` track switching and `M` mute
-- Dev URL flags include `credits`, `heat`, `rivals`, `energy`, `emp`, `super-boost`, `skip-intro`, and `perf`
+- Dev URL flags include `credits`, `heat`, `rivals`, `energy`, `emp`, `super-boost`, `skip-intro`, `winner`, `final`, and `perf`
 - The main gameplay wiring lives in `GameApp`, `MissionSystem`, `PlayerController`, `CityGenerator`, `EnergySystem`, `EmpSystem`, `SuperBoostSystem`, `RivalTaxiManager`, `UIManager`, `MusicManager`, `VoiceoverManager`, `IntroDialogueManager`, and `PerformanceOverlay`
 
 This should give the next session enough context to continue without re-discovering the current state from scratch.

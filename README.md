@@ -13,6 +13,7 @@ You pilot a futuristic cab through a neon city, choose fares, deliver passengers
 - Five-choice pickup and drop-off mission loop
 - Milestone-based special fares with blue star pickup markers and high-value payouts
 - Fake passenger ambushes after high-credit runs
+- Full endgame sequence with survival phase, extraction marker, and win screen
 - Fare timer, distance-scaled pricing, and collision penalties
 - Boost system with recharge
 - Collidable NPC traffic and heavier ambient city air traffic
@@ -23,6 +24,7 @@ You pilot a futuristic cab through a neon city, choose fares, deliver passengers
 - Crash sparks and crash sound effects on impacts
 - Procedural weather, moving rooftop searchlights, and high-altitude neon blimps
 - Intro narration, post-intro dialogue, item callouts, rival escalation callouts, crash chatter, fake passenger chatter, and low-energy dialogue with portrait/transcript widgets
+- Multi-stage finale dialogue with survival chatter, shutdown chatter, extraction dialogue, and ending win screen
 - Playlist music support with mute toggle and keyboard track switching
 - Pause overlay and streamlined HUD with fare/credits, navigator, and lower-left systems card
 - Optional dev performance overlay for long-session monitoring
@@ -89,6 +91,7 @@ Item and alert dialogue files:
 - `public/audio/lowfuel_1.mp3` through `public/audio/lowfuel_10.mp3`
 - `public/audio/fake_passenger_intro_1.mp3` through `public/audio/fake_passenger_intro_3.mp3`
 - `public/audio/fake_passenger_1.mp3` through `public/audio/fake_passenger_10.mp3`
+- `public/audio/final_1.mp3` through `public/audio/final_24.mp3`
 
 Other sound effects currently used:
 
@@ -129,11 +132,13 @@ When running `npm run dev`, you can seed debug state through URL params:
 - `?emp=3`
 - `?super-boost=1`
 - `?skip-intro=1`
+- `?winner=1`
+- `?final=1`
 - `?perf=1`
 
 These can be combined, for example:
 
-`http://localhost:5173/?credits=1000&heat=5&rivals=8&energy=20&emp=4&super-boost=1&skip-intro=1&perf=1`
+`http://localhost:5173/?credits=1000&heat=5&rivals=8&energy=20&emp=4&super-boost=1&skip-intro=1&final=1&perf=1`
 
 ## Gameplay
 
@@ -146,6 +151,7 @@ These can be combined, for example:
 7. Collect orange Super Boost pickups when they appear to bank a one-minute unlimited boost item.
 8. Watch for blue-star special fares that unlock every `350` credits earned.
 9. After `4500` credits, watch out for fake passengers mixed into the normal pickup set.
+10. Once you reach `10000` credits, fares stop and the endgame sequence begins.
 
 Important rules:
 
@@ -171,13 +177,16 @@ Important rules:
 - The city includes moving rooftop searchlights, heavier rain, and large collidable neon blimps in the sky.
 - Spoken dialogue ducks the music automatically while audio lines are playing.
 - Gameplay voice lines are suppressed until the intro and post-intro sequences are fully finished.
+- After `10000` credits, no new fares spawn, Heat 10 is gated behind finale dialogue, and the game transitions into a survival/endgame extraction sequence.
+- During the survival phase, a hidden timer runs while 50 rivals pursue the player.
+- After shutdown, a white extraction marker appears at the edge of the map; reaching it triggers the `You won!` screen.
 
 ## Project Structure
 
 - `src/main.js`
   - App entry point
 - `src/game/GameApp.js`
-  - Main game bootstrap, audio/dialogue coordination, runtime dialogue gating, and frame loop
+  - Main game bootstrap, runtime dialogue coordination, endgame flow, extraction, win state, and frame loop
 - `src/game/config.js`
   - Tunable gameplay and world settings
 - `src/systems/CityGenerator.js`
@@ -197,7 +206,7 @@ Important rules:
 - `src/systems/rivals/SteeringBehaviors.js`
   - Lightweight seek, pursue, separation, and avoidance helpers
 - `src/systems/MissionSystem.js`
-  - Fare generation, five-choice pickup logic, special fare milestones, fake passengers, drop-off flow, and payout handling
+  - Fare generation, five-choice pickup logic, special fare milestones, fake passengers, finale trigger, drop-off flow, and payout handling
 - `src/systems/EnergySystem.js`
   - Energy drain, rooftop recharge stations, depletion penalties, and refuel state exposure
 - `src/systems/EmpSystem.js`
@@ -207,7 +216,7 @@ Important rules:
 - `src/systems/CollisionSystem.js`
   - Building, traffic, rival, and blimp collision handling
 - `src/systems/UIManager.js`
-  - HUD layout, intro dialogue widget, title card, pause overlay, and navigator updates
+  - HUD layout, dialogue widget, title card, win overlay, pause overlay, and navigator updates
 - `src/systems/IntroDialogueManager.js`
   - JSON-driven intro narration sequencing and pause-aware playback
 - `src/systems/VoiceoverManager.js`
@@ -232,6 +241,16 @@ Important rules:
   - First fake-passenger event dialogue sequence
 - `src/data/fakePassengerDialogue.json`
   - Repeat fake-passenger dialogue pool
+- `src/data/finalDialogue.json`
+  - Initial `10000` credit finale dialogue sequence
+- `src/data/finalSurvivalDialogue.json`
+  - Survival-phase chase dialogue sequence
+- `src/data/finalResolutionDialogue.json`
+  - Rival shutdown dialogue sequence
+- `src/data/finalFiveDialogue.json`
+  - Final Axiom line when only five rivals remain
+- `src/data/finalEscapeDialogue.json`
+  - Post-shutdown extraction dialogue sequence
 - `src/styles.css`
   - HUD and UI styling
 

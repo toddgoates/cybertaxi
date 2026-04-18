@@ -23,6 +23,8 @@ export class PlayerController {
     this.boostCharge = this.config.boostDuration;
     this.boostCooldownTimer = 0;
     this.superBoostTimer = 0;
+    this.disruptionTimer = 0;
+    this.disruptionStrength = 0;
   }
 
   createTaxiMesh() {
@@ -242,17 +244,27 @@ export class PlayerController {
   }
 
   update(delta, driveState = { canBoost: true, movementScale: 1 }) {
+    if (this.disruptionTimer > 0) {
+      this.disruptionTimer = Math.max(0, this.disruptionTimer - delta);
+    }
     this.updateSuperBoostState(delta);
-    this.updateBoostState(delta, driveState.canBoost);
+    this.updateBoostState(delta, driveState.canBoost && this.disruptionTimer === 0);
 
     const forwardInput = (this.input.isDown('forward') ? 1 : 0) - (this.input.isDown('brake') ? 1 : 0);
     const turnInput = this.input.getAxis('left', 'right');
     const verticalInput = this.input.getAxis('descend', 'ascend');
     const strafeInput = this.input.getAxis('strafeLeft', 'strafeRight');
     const activeBoost = this.isBoosting || this.isSuperBoosting;
+    const disruption = this.disruptionTimer > 0 ? this.disruptionStrength : 0;
+    const steeringScale = driveState.steeringScale ?? 1;
+    const verticalScale = driveState.verticalScale ?? 1;
+    const disruptionWobble = disruption > 0 ? Math.sin(this.hoverTime * 28) * disruption * 0.18 : 0;
+    const effectiveTurnInput = turnInput * (1 - disruption * 0.55) * steeringScale + disruptionWobble;
+    const effectiveVerticalInput = verticalInput * (1 - disruption * 0.6) * verticalScale;
+    const effectiveMovementScale = driveState.movementScale * (1 - disruption * 0.25);
     const boostMultiplier = activeBoost ? this.config.boostSpeedMultiplier : 1;
-    const accelerationMultiplier = (activeBoost ? this.config.boostAccelerationMultiplier : 1) * driveState.movementScale;
-    const maxForwardSpeed = this.config.maxForwardSpeed * boostMultiplier * driveState.movementScale;
+    const accelerationMultiplier = (activeBoost ? this.config.boostAccelerationMultiplier : 1) * effectiveMovementScale;
+    const maxForwardSpeed = this.config.maxForwardSpeed * boostMultiplier * effectiveMovementScale;
 
     if (forwardInput > 0) {
       this.forwardSpeed = Math.min(
@@ -260,25 +272,25 @@ export class PlayerController {
         maxForwardSpeed,
       );
     } else if (forwardInput < 0) {
-      this.forwardSpeed = Math.max(this.forwardSpeed - this.config.braking * delta, -this.config.maxReverseSpeed * driveState.movementScale);
+      this.forwardSpeed = Math.max(this.forwardSpeed - this.config.braking * delta, -this.config.maxReverseSpeed * effectiveMovementScale);
     } else {
       this.forwardSpeed = damp(this.forwardSpeed, 0, this.config.drag, delta);
     }
 
     this.verticalVelocity = damp(
       this.verticalVelocity,
-      verticalInput * this.config.verticalSpeed * driveState.movementScale,
+      effectiveVerticalInput * this.config.verticalSpeed * effectiveMovementScale,
       this.config.verticalAcceleration / this.config.verticalSpeed,
       delta,
     );
     this.strafeVelocity = damp(
       this.strafeVelocity,
-      strafeInput * this.config.strafeSpeed * driveState.movementScale,
+      strafeInput * this.config.strafeSpeed * effectiveMovementScale,
       this.config.strafeAcceleration / this.config.strafeSpeed,
       delta,
     );
 
-    this.mesh.rotation.y -= turnInput * this.config.turnSpeed * delta * Math.max(0.4, Math.abs(this.forwardSpeed) / this.config.maxForwardSpeed + 0.35);
+    this.mesh.rotation.y -= effectiveTurnInput * this.config.turnSpeed * delta * Math.max(0.4, Math.abs(this.forwardSpeed) / this.config.maxForwardSpeed + 0.35);
 
     _playerForward.set(0, 0, -1).applyQuaternion(this.mesh.quaternion);
     _playerRight.set(1, 0, 0).applyQuaternion(this.mesh.quaternion);
@@ -298,7 +310,7 @@ export class PlayerController {
     this.mesh.position.y += Math.sin(this.hoverTime * 7) * 0.024;
     this.visualMesh.rotation.z = THREE.MathUtils.damp(
       this.visualMesh.rotation.z,
-      -turnInput * 0.14 - this.strafeVelocity * 0.006,
+      -effectiveTurnInput * 0.14 - this.strafeVelocity * 0.006,
       7,
       delta,
     );
@@ -419,6 +431,11 @@ export class PlayerController {
     this.boostCooldownTimer = 0;
     this.boostCharge = this.config.boostDuration;
     return true;
+  }
+
+  applyControlDisruption(duration, strength) {
+    this.disruptionTimer = Math.max(this.disruptionTimer, duration);
+    this.disruptionStrength = Math.max(this.disruptionStrength, strength);
   }
 
   bounce(normal, strength = 0.35) {

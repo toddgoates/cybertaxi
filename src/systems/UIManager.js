@@ -13,6 +13,7 @@ export class UIManager {
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud__impact" data-field="impactFlash"></div>
+      <div class="hud__glitch" data-field="glitchOverlay"></div>
       <div class="hud__alert" data-field="alertBanner"></div>
       <div class="hud__dialogue" data-field="dialogueCard">
         <div class="hud__dialogue-portrait-wrap">
@@ -34,12 +35,13 @@ export class UIManager {
           <div class="eyebrow">Current Fare</div>
           <div class="value" data-field="fare">0</div>
           <div class="subvalue" data-field="penalty">No active penalties</div>
-          <div class="panel__divider"></div>
-          <div class="eyebrow">Credits</div>
-          <div class="value" data-field="credits">0</div>
-          <div class="subvalue" data-field="district"></div>
-        </div>
-      </div>
+           <div class="panel__divider"></div>
+           <div class="eyebrow">Credits</div>
+           <div class="value" data-field="credits">0</div>
+           <div class="subvalue" data-field="district"></div>
+           <div class="subvalue hud__storm-status" data-field="stormStatus">Storm clear | Low strike risk</div>
+         </div>
+       </div>
       <div class="hud__corner">
         <div class="panel panel--nav">
           <div class="eyebrow">Navigator</div>
@@ -130,6 +132,7 @@ export class UIManager {
       winOverlay: this.root.querySelector('[data-field="winOverlay"]'),
       musicToggle: this.root.querySelector('[data-field="musicToggle"]'),
       impactFlash: this.root.querySelector('[data-field="impactFlash"]'),
+      glitchOverlay: this.root.querySelector('[data-field="glitchOverlay"]'),
       alertBanner: this.root.querySelector('[data-field="alertBanner"]'),
       dialogueCard: this.root.querySelector('[data-field="dialogueCard"]'),
       dialoguePortrait: this.root.querySelector('[data-field="dialoguePortrait"]'),
@@ -137,6 +140,7 @@ export class UIManager {
       introCard: this.root.querySelector('[data-field="introCard"]'),
       introPresenter: this.root.querySelector('[data-field="introPresenter"]'),
       introTitle: this.root.querySelector('[data-field="introTitle"]'),
+      stormStatus: this.root.querySelector('[data-field="stormStatus"]'),
     };
   }
 
@@ -155,6 +159,8 @@ export class UIManager {
     this.root.classList.toggle('hud--fast', state.player.getSpeedRatio() > 0.72);
     this.root.classList.toggle('hud--objective-pulse', Boolean(state.mission.specialFareActive));
     this.root.classList.toggle('hud--low-energy', state.energy.ratio < 0.22);
+    this.root.classList.toggle('hud--storming', Boolean(state.storm?.active));
+    this.root.classList.toggle('hud--storm-risk', (state.storm?.altitudeRisk ?? 0) > 0.58);
     this.displayedCredits = this.animateNumber(this.displayedCredits, state.mission.totalCredits, 0.14);
     this.fields.fare.textContent = `${Math.ceil(state.mission.currentFare)} cr`;
     this.fields.penalty.textContent = state.mission.pendingPenaltyText || 'Timer drains fare every second';
@@ -180,6 +186,7 @@ export class UIManager {
     this.fields.musicInlineStatus.textContent = state.music.muted
       ? `Track ${state.music.currentTrackId} - muted`
       : `Track ${state.music.currentTrackId}`;
+    this.fields.stormStatus.textContent = this.getStormStatusText(state.storm);
     this.pulseField(this.fields.credits, state.mission.totalCredits !== this.lastCredits);
     if (state.mission.pendingPenaltyText && state.mission.pendingPenaltyText !== this.lastPenaltyText) {
       this.flashImpact();
@@ -203,9 +210,33 @@ export class UIManager {
   }
 
   flashImpact() {
-    this.fields.impactFlash.classList.remove('hud__impact--active');
+    this.fields.impactFlash.classList.remove('hud__impact--active', 'hud__impact--lightning');
     void this.fields.impactFlash.offsetWidth;
     this.fields.impactFlash.classList.add('hud__impact--active');
+  }
+
+  flashLightning() {
+    this.fields.impactFlash.classList.remove('hud__impact--active', 'hud__impact--lightning');
+    void this.fields.impactFlash.offsetWidth;
+    this.fields.impactFlash.classList.add('hud__impact--active', 'hud__impact--lightning');
+  }
+
+  triggerSignalGlitch(intensity = 1) {
+    this.fields.glitchOverlay.style.setProperty('--glitch-intensity', intensity.toFixed(2));
+    this.fields.glitchOverlay.classList.remove('hud__glitch--active');
+    void this.fields.glitchOverlay.offsetWidth;
+    this.fields.glitchOverlay.classList.add('hud__glitch--active');
+  }
+
+  getStormStatusText(stormState) {
+    if (!stormState?.unlocked) {
+      return 'Storm clear | Low strike risk';
+    }
+
+    const altitudeRisk = stormState.altitudeRisk ?? 0;
+    const riskLabel = altitudeRisk > 0.66 ? 'High strike risk' : altitudeRisk > 0.36 ? 'Medium strike risk' : 'Low strike risk';
+    const nearbyLabel = stormState.nearbyStrike ? ' | Nearby strike' : '';
+    return `${stormState.status} | ${riskLabel}${nearbyLabel}`;
   }
 
   showIntroCard(presenter, title) {

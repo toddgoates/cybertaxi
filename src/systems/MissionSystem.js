@@ -452,6 +452,15 @@ export class MissionSystem {
     this.ui.pushFeed(this.pendingPenaltyText, 'bad');
   }
 
+  applyDirectCreditPenalty(amount, source) {
+    const rounded = Math.max(0, Math.round(amount));
+    if (rounded === 0) return;
+    this.totalCredits = Math.max(0, this.totalCredits - rounded);
+    this.pendingPenaltyText = `-${rounded} credits from ${source}`;
+    this.currentRunHadIncident = true;
+    this.ui.pushFeed(this.pendingPenaltyText, 'bad');
+  }
+
   onEnergyDepleted(playerPosition, penalty) {
     if (this.phase !== 'dropoff') return;
 

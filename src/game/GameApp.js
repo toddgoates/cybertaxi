@@ -20,6 +20,7 @@ import { SuperBoostSystem } from '../systems/SuperBoostSystem.js';
 import { IntroDialogueManager } from '../systems/IntroDialogueManager.js';
 import { VoiceoverManager } from '../systems/VoiceoverManager.js';
 import { PerformanceOverlay } from '../systems/PerformanceOverlay.js';
+import { StormSystem } from '../systems/StormSystem.js';
 import introDialogue from '../data/introDialogue.json';
 import itemDialogue from '../data/itemDialogue.json';
 import crashDialogue from '../data/crashDialogue.json';
@@ -39,7 +40,7 @@ const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
 const POST_INTRO_DELAY_AFTER_TITLE_SECONDS = 2.5;
 const RIVAL_DIALOGUE_COOLDOWN_SECONDS = 60;
 const CRASH_DIALOGUE_COOLDOWN_SECONDS = 15;
-const ENDGAME_SURVIVAL_SECONDS = 60;
+const ENDGAME_SURVIVAL_SECONDS = 55;
 
 function createExtractionMarker() {
   const group = new THREE.Group();
@@ -175,6 +176,12 @@ export class GameApp {
     this.emp = new EmpSystem(this.scene, this.input, this.worldData, GAME_CONFIG, this.ui);
     this.superBoost = new SuperBoostSystem(this.scene, this.input, this.worldData, GAME_CONFIG, this.ui, this.player);
     this.cameraController = new CameraController(this.camera, this.player.mesh, GAME_CONFIG);
+    this.storm = new StormSystem(this.scene, this.camera, this.renderer, GAME_CONFIG, this.ui, this.missions, this.player, {
+      background: this.scene.background,
+      fog: this.scene.fog,
+      hemi: this.hemiLight,
+      ambient: this.ambientLight,
+    });
     this.paused = false;
 
     this.applyDebugFlags();
@@ -239,11 +246,11 @@ export class GameApp {
   }
 
   setupLights() {
-    const hemi = new THREE.HemisphereLight(0x7fd7ff, 0x1b1022, 1.45);
-    this.scene.add(hemi);
+    this.hemiLight = new THREE.HemisphereLight(0x7fd7ff, 0x1b1022, 1.45);
+    this.scene.add(this.hemiLight);
 
-    const ambient = new THREE.AmbientLight(0x8e6cff, 0.58);
-    this.scene.add(ambient);
+    this.ambientLight = new THREE.AmbientLight(0x8e6cff, 0.58);
+    this.scene.add(this.ambientLight);
   }
 
   setupPostProcessing() {
@@ -610,6 +617,7 @@ export class GameApp {
       this.finalEscapeDialogue.setPaused(this.paused);
       this.finalResolutionDialogue.setPaused(this.paused);
       this.voiceover.setPaused(this.paused);
+      this.storm.setPaused(this.paused);
     }
 
     if (!this.paused) {
@@ -697,6 +705,10 @@ export class GameApp {
       }
 
       this.missions.update(delta, this.player, this.traffic.getVehicles());
+      this.storm.update(delta, {
+        missionState: this.missions.getState(),
+        rivalsState: this.rivals.getState(),
+      });
       this.cameraController.update(delta, this.player.velocity);
     }
 
@@ -728,6 +740,7 @@ export class GameApp {
       rivals: rivalsState,
       emp: this.emp.getState(),
       superBoost: this.superBoost.getState(),
+      storm: this.storm.getState(),
       endgame: {
         extractionTarget: this.extractionActive
           ? {
@@ -749,7 +762,7 @@ export class GameApp {
         triangles: this.renderer.info.render.triangles,
         traffic: this.traffic.getVehicles().length,
         rivals: this.rivals.getState().activeRivals,
-        effects: this.effects.getActiveCount(),
+        effects: this.effects.getActiveCount() + this.storm.getActiveCount(),
         voiceActive: this.voiceover.isActive(),
       });
     }
@@ -781,6 +794,7 @@ export class GameApp {
     this.finalEscapeDialogue.destroy();
     this.finalResolutionDialogue.destroy();
     this.voiceover.destroy();
+    this.storm.destroy();
     this.perfOverlay?.destroy();
     this.composer.dispose();
     this.renderer.dispose();

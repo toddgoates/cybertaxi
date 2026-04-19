@@ -344,7 +344,7 @@ export class UIManager {
       const priorityLabel = state.mission.pickupTargets.some((target) => target.special) ? ' | Priority fare live' : '';
       const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
       const superBoostLabel = state.superBoost.pickupTarget ? ` | SB ${Math.round(Math.hypot(state.superBoost.pickupTarget.x - playerPosition.x, state.superBoost.pickupTarget.z - playerPosition.z))}m` : '';
-      this.fields.navStatus.textContent = `${state.mission.pickupTargets.length} fares live${priorityLabel} | Nearest ${distanceLabel} | ${fareLabel}${empLabel}${superBoostLabel} | ${state.energy.status}`;
+      this.fields.navStatus.textContent = `${state.mission.pickupTargets.length} fares live${priorityLabel} | Nearest ${distanceLabel} | ${fareLabel}${empLabel}${superBoostLabel}`;
       return;
     }
 
@@ -354,7 +354,7 @@ export class UIManager {
       );
       const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
       const superBoostLabel = state.superBoost.pickupTarget ? ` | SB ${Math.round(Math.hypot(state.superBoost.pickupTarget.x - playerPosition.x, state.superBoost.pickupTarget.z - playerPosition.z))}m` : '';
-      this.fields.navStatus.textContent = `Drop-off beacon ${distance}m out${empLabel}${superBoostLabel} | ${state.energy.status}`;
+      this.fields.navStatus.textContent = `Drop-off beacon ${distance}m out${empLabel}${superBoostLabel}`;
       return;
     }
 
@@ -362,7 +362,7 @@ export class UIManager {
       const distance = Math.round(
         Math.hypot(state.endgame.extractionTarget.x - playerPosition.x, state.endgame.extractionTarget.z - playerPosition.z),
       );
-      this.fields.navStatus.textContent = `Destination ${distance}m out | ${state.energy.status}`;
+      this.fields.navStatus.textContent = `Destination ${distance}m out`;
       return;
     }
 
@@ -371,7 +371,7 @@ export class UIManager {
         Math.hypot(state.superBoost.pickupTarget.x - playerPosition.x, state.superBoost.pickupTarget.z - playerPosition.z),
       );
       const empLabel = state.emp.pickupTarget ? ` | EMP ${Math.round(Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z))}m` : '';
-      this.fields.navStatus.textContent = `Super Boost ${distance}m out${empLabel} | ${state.energy.status}`;
+      this.fields.navStatus.textContent = `Super Boost ${distance}m out${empLabel}`;
       return;
     }
 
@@ -379,11 +379,11 @@ export class UIManager {
       const empDistance = Math.round(
         Math.hypot(state.emp.pickupTarget.x - playerPosition.x, state.emp.pickupTarget.z - playerPosition.z),
       );
-      this.fields.navStatus.textContent = `EMP charge ${empDistance}m out | ${state.energy.status}`;
+      this.fields.navStatus.textContent = `EMP charge ${empDistance}m out`;
       return;
     }
 
-    this.fields.navStatus.textContent = state.energy.status;
+    this.fields.navStatus.textContent = '';
   }
 
   getNavigatorMarker(index) {

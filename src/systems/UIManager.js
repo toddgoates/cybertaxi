@@ -3,6 +3,8 @@ export class UIManager {
     this.mount = mount;
     this.feed = [];
     this.lastPenaltyText = '';
+    this.lastCollisionPenaltyCount = 0;
+    this.lastCreditLossCount = 0;
     this.lastCredits = 0;
     this.lastFare = 0;
     this.displayedCredits = 0;
@@ -151,6 +153,9 @@ export class UIManager {
   }
 
   render(state) {
+    const collisionPenaltyTriggered = state.mission.phase === 'dropoff'
+      && state.mission.collisionPenaltyCount > this.lastCollisionPenaltyCount;
+    const creditLossTriggered = state.mission.creditLossCount > this.lastCreditLossCount;
     this.fields.pauseOverlay.classList.toggle('hud__pause--visible', Boolean(state.paused));
     this.root.classList.toggle('hud--fast', state.player.getSpeedRatio() > 0.72);
     this.root.classList.toggle('hud--objective-pulse', Boolean(state.mission.specialFareActive));
@@ -180,12 +185,16 @@ export class UIManager {
     this.fields.musicInlineStatus.textContent = state.music.muted
       ? `Track ${state.music.currentTrackId} - muted`
       : `Track ${state.music.currentTrackId}`;
-    this.pulseField(this.fields.credits, state.mission.totalCredits !== this.lastCredits);
+    this.flashFareLoss(collisionPenaltyTriggered);
+    this.flashFieldLoss(this.fields.credits, creditLossTriggered);
+    this.pulseField(this.fields.credits, state.mission.totalCredits > this.lastCredits);
     if (state.mission.pendingPenaltyText && state.mission.pendingPenaltyText !== this.lastPenaltyText) {
       this.flashImpact();
     }
     this.lastFare = state.mission.currentFare;
     this.lastCredits = state.mission.totalCredits;
+    this.lastCollisionPenaltyCount = state.mission.collisionPenaltyCount || 0;
+    this.lastCreditLossCount = state.mission.creditLossCount || 0;
     this.lastPenaltyText = state.mission.pendingPenaltyText;
     this.renderNavigator(state);
   }
@@ -200,6 +209,18 @@ export class UIManager {
     field.classList.remove('value--pulse');
     void field.offsetWidth;
     field.classList.add('value--pulse');
+  }
+
+  flashFareLoss(shouldFlash) {
+    if (!shouldFlash) return;
+    this.flashFieldLoss(this.fields.fare, true);
+  }
+
+  flashFieldLoss(field, shouldFlash) {
+    if (!shouldFlash) return;
+    field.classList.remove('value--loss');
+    void field.offsetWidth;
+    field.classList.add('value--loss');
   }
 
   flashImpact() {

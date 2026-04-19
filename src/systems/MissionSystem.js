@@ -83,6 +83,8 @@ export class MissionSystem {
     this.pickupDistrict = null;
     this.dropoffDistrict = null;
     this.pendingPenaltyText = '';
+    this.collisionPenaltyCount = 0;
+    this.creditLossCount = 0;
     this.objective = '';
     this.routeLabel = '';
     this.fakePassengerHandler = null;
@@ -337,6 +339,7 @@ export class MissionSystem {
   handleFakePassenger(offer) {
     const robberyAmount = offer.robberyAmount || randomInt(this.config.fakePassengerMinRobberyCredits, this.config.fakePassengerMaxRobberyCredits);
     this.totalCredits = Math.max(0, this.totalCredits - robberyAmount);
+    this.creditLossCount += 1;
     this.pendingPenaltyText = `-${robberyAmount} credits from fake passenger`;
     this.ui.pushFeed('You were robbed by a fake passenger!', 'bad');
     this.ui.pushFeed(`Lost ${robberyAmount} credits`, 'bad');
@@ -363,6 +366,7 @@ export class MissionSystem {
       if (this.currentFare === 0) {
         const compensation = Math.round(this.originalFare * 0.5);
         this.totalCredits -= compensation;
+        this.creditLossCount += 1;
         this.pendingPenaltyText = `Passenger refund -${compensation} credits`;
         const cancelMessage = this.currentRunHadIncident
           ? 'The passenger cancelled the ride! Too bumpy!'
@@ -443,6 +447,7 @@ export class MissionSystem {
     if (this.phase !== 'dropoff') return;
 
     this.currentFare = Math.max(0, this.currentFare - amount);
+    this.collisionPenaltyCount += 1;
     if (this.activeSpecialFare) {
       this.activeSpecialFare.penaltyLoss += amount;
     }
@@ -456,6 +461,7 @@ export class MissionSystem {
     if (this.phase !== 'dropoff') return;
 
     this.totalCredits -= penalty;
+    this.creditLossCount += 1;
     this.currentRunHadIncident = true;
     this.pendingPenaltyText = `Passenger refund -${penalty} credits`;
     this.ui.pushFeed(`Passenger stranded. Emergency tow fee ${penalty} credits`, 'bad');
@@ -474,6 +480,8 @@ export class MissionSystem {
       specialFareActive: Boolean(this.activeSpecialFare),
       endgameTriggered: this.endgameTriggered,
       endgameUnlocked: this.endgameUnlocked,
+      collisionPenaltyCount: this.collisionPenaltyCount,
+      creditLossCount: this.creditLossCount,
       pendingPenaltyText: this.pendingPenaltyText,
       pickupTargets: this.pickupOffers.map((offer) => ({
         name: offer.pickupDistrict.name,

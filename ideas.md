@@ -18,4 +18,7 @@
 - [x] Add music player
 - [] Bank to deposit credits (ie save game) - write to local storage, if credits greater than 0 resume game with that number of credits no intro dialog
 - [x] Cut scene when you hit 10,000 credits. 100 taxis spawn and are chasing after you. After 30 seconds, they disappear partner says she used your program to hack all of them and reboot them, giving you time to escape
+- [] Top left - intercepted message change to "x credits lost from collision"
+- [] navigator: remove energy stable
+- [x] Have current fare text got red when there are collisions or penalties
 - [] Improve the look of the player taxi

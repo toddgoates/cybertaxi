@@ -468,6 +468,20 @@ export class MissionSystem {
     this.startNextFare(playerPosition);
   }
 
+  cancelRideForDanger(playerPosition, penalty, message) {
+    if (this.phase !== 'dropoff') return false;
+
+    this.totalCredits = Math.max(0, this.totalCredits - penalty);
+    this.creditLossCount += 1;
+    this.currentRunHadIncident = true;
+    this.pendingPenaltyText = `Lightning penalty -${penalty} credits`;
+    this.ui.showAlert(message);
+    this.ui.pushFeed(message, 'bad');
+    this.ui.pushFeed(`Lost ${penalty} credits`, 'bad');
+    this.startNextFare(playerPosition);
+    return true;
+  }
+
   getState() {
     return {
       currentFare: Math.round(this.currentFare),

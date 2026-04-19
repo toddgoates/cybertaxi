@@ -58,6 +58,16 @@ canvas {
   animation: hud-impact 0.45s ease-out;
 }
 
+.hud__impact--lightning {
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.18) 36%, rgba(255, 255, 255, 0) 72%),
+    linear-gradient(180deg, rgba(234, 244, 255, 0.78), rgba(205, 229, 255, 0.08));
+}
+
+.hud__impact--lightning.hud__impact--active {
+  animation: hud-lightning-impact 0.62s ease-out;
+}
+
 .hud__alert {
   position: absolute;
   left: 50%;
@@ -806,6 +816,13 @@ canvas {
 @keyframes hud-impact {
   0% { opacity: 0; }
   12% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes hud-lightning-impact {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  32% { opacity: 0.7; }
   100% { opacity: 0; }
 }
 

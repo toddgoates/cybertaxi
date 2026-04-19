@@ -224,6 +224,18 @@ export class UIManager {
   }
 
   flashImpact() {
+    this.flashOverlay('impact');
+  }
+
+  flashLightning() {
+    this.flashOverlay('lightning');
+  }
+
+  flashOverlay(mode = 'impact') {
+    this.fields.impactFlash.classList.remove('hud__impact--active', 'hud__impact--lightning');
+    if (mode === 'lightning') {
+      this.fields.impactFlash.classList.add('hud__impact--lightning');
+    }
     this.fields.impactFlash.classList.remove('hud__impact--active');
     void this.fields.impactFlash.offsetWidth;
     this.fields.impactFlash.classList.add('hud__impact--active');

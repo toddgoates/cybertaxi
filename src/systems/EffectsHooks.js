@@ -64,14 +64,52 @@ export class EffectsHooks {
   onCollision(position, normal = new THREE.Vector3(0, 1, 0)) {
     this.playCollisionSound();
 
+    this.emitSparkBurst(position, normal, {
+      offset: 1.8,
+      duration: 0.45,
+      opacity: 0.95,
+      speedMin: 10,
+      speedMax: 22,
+      jitterHorizontal: 8,
+      jitterVerticalMin: 5,
+      jitterVerticalMax: 13,
+    });
+  }
+
+  emitVehicleSparks(position) {
+    this.emitSparkBurst(position, _sparkUp, {
+      offset: 0.7,
+      duration: 0.85,
+      opacity: 0.92,
+      speedMin: 7,
+      speedMax: 16,
+      jitterHorizontal: 5,
+      jitterVerticalMin: 3,
+      jitterVerticalMax: 8,
+    });
+  }
+
+  emitSparkBurst(position, normal = new THREE.Vector3(0, 1, 0), options = {}) {
+    const {
+      offset = 1.8,
+      duration = 0.45,
+      opacity = 0.95,
+      speedMin = 10,
+      speedMax = 22,
+      jitterHorizontal = 8,
+      jitterVerticalMin = 5,
+      jitterVerticalMax = 13,
+    } = options;
+
     const burst = this.sparkBursts[this.nextSparkBurstIndex];
     this.nextSparkBurstIndex = (this.nextSparkBurstIndex + 1) % this.sparkBursts.length;
     burst.active = true;
-    burst.life = burst.duration;
+    burst.duration = duration;
+    burst.life = duration;
     burst.points.visible = true;
-    burst.points.material.opacity = 0.95;
+    burst.points.material.opacity = opacity;
 
-    _sparkBasePosition.copy(position).addScaledVector(normal, 1.8);
+    _sparkBasePosition.copy(position).addScaledVector(normal, offset);
     _sparkOutward.copy(normal).setY(Math.max(normal.y, 0));
     if (_sparkOutward.lengthSq() === 0) {
       _sparkOutward.set(0, 1, 0);
@@ -91,11 +129,11 @@ export class EffectsHooks {
       burst.colors[index + 2] = color[2];
 
       const velocity = burst.velocities[i];
-      velocity.copy(_sparkOutward).multiplyScalar(10 + Math.random() * 12);
+      velocity.copy(_sparkOutward).multiplyScalar(speedMin + Math.random() * (speedMax - speedMin));
       velocity.add(_sparkJitter.set(
-        (Math.random() - 0.5) * 8,
-        5 + Math.random() * 8,
-        (Math.random() - 0.5) * 8,
+        (Math.random() - 0.5) * jitterHorizontal,
+        jitterVerticalMin + Math.random() * (jitterVerticalMax - jitterVerticalMin),
+        (Math.random() - 0.5) * jitterHorizontal,
       ));
       if (velocity.lengthSq() === 0) {
         velocity.copy(_sparkUp).multiplyScalar(10);

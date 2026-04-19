@@ -41,6 +41,19 @@ const RIVAL_DIALOGUE_COOLDOWN_SECONDS = 60;
 const CRASH_DIALOGUE_COOLDOWN_SECONDS = 15;
 const ENDGAME_SURVIVAL_SECONDS = 60;
 
+function randRange(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function createAudioPool(path, count, volume) {
+  return Array.from({ length: count }, () => {
+    const audio = new Audio(path);
+    audio.preload = 'auto';
+    audio.volume = volume;
+    return audio;
+  });
+}
+
 function createExtractionMarker() {
   const group = new THREE.Group();
 
@@ -117,6 +130,7 @@ export class GameApp {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
+    this.baseToneMappingExposure = this.renderer.toneMappingExposure;
 
     this.mount.appendChild(this.renderer.domElement);
     this.setupPostProcessing();
@@ -154,6 +168,15 @@ export class GameApp {
     this.extractionActive = false;
     this.extractionTarget = null;
     this.won = false;
+    this.lightningConfig = GAME_CONFIG.lightning;
+    this.lightningCooldown = this.randomLightningCooldown();
+    this.lightningWarningTimer = 0;
+    this.lightningSparkTimer = 0;
+    this.lightningFlashTimer = 0;
+    this.lightningAudioIndex = 0;
+    this.thunderAudioIndex = 0;
+    this.lightningWarningSounds = createAudioPool('/audio/sparks.mp3', 3, 0.6);
+    this.thunderSounds = createAudioPool('/audio/thunder.mp3', 3, 0.72);
     this.perfOverlay = this.options.debug?.showPerfOverlay ? new PerformanceOverlay(this.mount) : null;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
 
@@ -163,6 +186,8 @@ export class GameApp {
     this.worldData = this.city.build();
     this.extractionMarker = createExtractionMarker();
     this.scene.add(this.extractionMarker);
+    this.lightningFlash = new THREE.PointLight(0xf4fbff, 0, 320, 1.15);
+    this.scene.add(this.lightningFlash);
 
     this.player = new PlayerController(this.scene, this.input, GAME_CONFIG, this.worldData.spawnPoint);
     this.traffic = new TrafficManager(this.scene, GAME_CONFIG, this.worldData.flightPaths);
@@ -535,6 +560,128 @@ export class GameApp {
     }
   }
 
+  randomLightningCooldown() {
+    return randRange(this.lightningConfig.cooldownMinSeconds, this.lightningConfig.cooldownMaxSeconds);
+  }
+
+  playPooledAudio(pool, indexProperty) {
+    const audio = pool[this[indexProperty]];
+    this[indexProperty] = (this[indexProperty] + 1) % pool.length;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
+
+  isLightningChallengeActive(totalCredits) {
+    return totalCredits >= this.lightningConfig.resumeCredits
+      || (totalCredits >= this.lightningConfig.startCredits && totalCredits < this.lightningConfig.pauseCredits);
+  }
+
+  getLightningExposure() {
+    const { minHeight, openSkyHeight, nearbyBuildingRadius, roofClearance } = this.lightningConfig;
+    const playerPosition = this.player.mesh.position;
+    if (playerPosition.y < minHeight) return 0;
+
+    let nearbyRoofHeight = 0;
+    const radiusSquared = nearbyBuildingRadius * nearbyBuildingRadius;
+
+    for (let i = 0; i < this.worldData.colliders.length; i += 1) {
+      const collider = this.worldData.colliders[i];
+      if (collider.type !== 'building') continue;
+
+      const x = THREE.MathUtils.clamp(playerPosition.x, collider.min.x, collider.max.x);
+      const z = THREE.MathUtils.clamp(playerPosition.z, collider.min.z, collider.max.z);
+      const dx = playerPosition.x - x;
+      const dz = playerPosition.z - z;
+      if (dx * dx + dz * dz > radiusSquared) continue;
+      nearbyRoofHeight = Math.max(nearbyRoofHeight, collider.max.y);
+    }
+
+    let exposure = 0;
+    if (nearbyRoofHeight > 0 && playerPosition.y >= nearbyRoofHeight - roofClearance) {
+      exposure = Math.max(exposure, THREE.MathUtils.clamp(0.5 + (playerPosition.y - (nearbyRoofHeight - roofClearance)) / 28, 0.5, 1));
+    }
+
+    if (playerPosition.y >= openSkyHeight) {
+      exposure = Math.max(exposure, THREE.MathUtils.clamp(0.36 + (playerPosition.y - openSkyHeight) / 70, 0.36, 1));
+    }
+
+    return exposure;
+  }
+
+  startLightningWarning() {
+    this.lightningWarningTimer = this.lightningConfig.warningSeconds;
+    this.lightningSparkTimer = 0;
+    this.playPooledAudio(this.lightningWarningSounds, 'lightningAudioIndex');
+    this.effects.emitVehicleSparks(this.player.mesh.position);
+  }
+
+  cancelLightningWarning() {
+    this.lightningWarningTimer = 0;
+    this.lightningSparkTimer = 0;
+  }
+
+  triggerLightningStrike() {
+    this.cancelLightningWarning();
+    this.lightningCooldown = this.randomLightningCooldown();
+    this.lightningFlashTimer = this.lightningConfig.flashSeconds;
+    this.lightningFlash.position.copy(this.player.mesh.position).add(new THREE.Vector3(0, 54, 0));
+    this.lightningFlash.intensity = this.lightningConfig.flashIntensity;
+    this.renderer.toneMappingExposure = this.baseToneMappingExposure + 0.85;
+    this.playPooledAudio(this.thunderSounds, 'thunderAudioIndex');
+    this.effects.emitVehicleSparks(this.player.mesh.position);
+    this.ui.flashLightning();
+    this.missions.cancelRideForDanger(
+      this.player.mesh.position,
+      this.lightningConfig.passengerPenalty,
+      'The passenger cancelled the ride! Too dangerous!',
+    );
+  }
+
+  updateLightning(delta, missionState) {
+    const challengeActive = this.isLightningChallengeActive(missionState.totalCredits);
+    if (!challengeActive) {
+      this.cancelLightningWarning();
+      this.lightningCooldown = this.randomLightningCooldown();
+      return;
+    }
+
+    if (this.lightningWarningTimer > 0) {
+      this.lightningWarningTimer = Math.max(0, this.lightningWarningTimer - delta);
+      this.lightningSparkTimer = Math.max(0, this.lightningSparkTimer - delta);
+      if (this.lightningSparkTimer === 0) {
+        this.lightningSparkTimer = this.lightningConfig.warningSparkIntervalSeconds;
+        this.effects.emitVehicleSparks(this.player.mesh.position);
+      }
+      if (this.lightningWarningTimer === 0) {
+        this.triggerLightningStrike();
+      }
+      return;
+    }
+
+    const exposure = this.getLightningExposure();
+    if (exposure === 0) return;
+
+    this.lightningCooldown = Math.max(0, this.lightningCooldown - delta * THREE.MathUtils.lerp(0.65, 1.4, exposure));
+    if (this.lightningCooldown === 0) {
+      this.startLightningWarning();
+    }
+  }
+
+  updateLightningFlash(delta) {
+    if (this.lightningFlashTimer > 0) {
+      this.lightningFlashTimer = Math.max(0, this.lightningFlashTimer - delta);
+      const ratio = this.lightningFlashTimer / this.lightningConfig.flashSeconds;
+      this.lightningFlash.intensity = this.lightningConfig.flashIntensity * ratio;
+      this.renderer.toneMappingExposure = this.baseToneMappingExposure + 0.85 * ratio;
+      this.bloomPass.strength = 0.65 + 0.95 * ratio;
+      return;
+    }
+
+    this.lightningFlash.intensity = 0;
+    this.renderer.toneMappingExposure = this.baseToneMappingExposure;
+    this.bloomPass.strength = 0.65;
+  }
+
   triggerWin() {
     if (this.won) return;
     this.won = true;
@@ -647,6 +794,7 @@ export class GameApp {
         }
       }
       const missionState = this.missions.getState();
+      this.updateLightning(delta, missionState);
       this.rivals.update(delta, this.player, missionState, this.latestEnergyState);
       this.emp.update(delta, this.player, this.rivals);
       this.superBoost.update(delta, this.player);
@@ -698,6 +846,7 @@ export class GameApp {
 
       this.missions.update(delta, this.player, this.traffic.getVehicles());
       this.cameraController.update(delta, this.player.velocity);
+      this.updateLightningFlash(delta);
     }
 
     const nextMissionState = this.missions.getState();
@@ -781,6 +930,14 @@ export class GameApp {
     this.finalEscapeDialogue.destroy();
     this.finalResolutionDialogue.destroy();
     this.voiceover.destroy();
+    this.lightningWarningSounds.forEach((audio) => {
+      audio.pause();
+      audio.src = '';
+    });
+    this.thunderSounds.forEach((audio) => {
+      audio.pause();
+      audio.src = '';
+    });
     this.perfOverlay?.destroy();
     this.composer.dispose();
     this.renderer.dispose();

@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/lightning_1.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Ah-! That hit hard!"
+  },
+  {
+    "id": 2,
+    "audio": "/audio/lightning_2.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Okay-definitely staying out of that."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/lightning_3.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You just got struck! Pull it together!"
+  },
+  {
+    "id": 4,
+    "audio": "/audio/lightning_4.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "I warned you the storm was getting bad!"
+  },
+  {
+    "id": 5,
+    "audio": "/audio/lightning_5.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Systems are fried-give me a second!"
+  },
+  {
+    "id": 6,
+    "audio": "/audio/lightning_6.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Yeah... not doing that again."
+  },
+  {
+    "id": 7,
+    "audio": "/audio/lightning_7.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Stay below those clouds!"
+  },
+  {
+    "id": 8,
+    "audio": "/audio/lightning_8.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "That'll cost me..."
+  },
+  {
+    "id": 9,
+    "audio": "/audio/lightning_9.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "You can't tank hits like that-be careful!"
+  },
+  {
+    "id": 10,
+    "audio": "/audio/lightning_10.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Have you learned your lesson yet?"
+  }
+]

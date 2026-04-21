@@ -31,6 +31,7 @@ import finalEscapeDialogue from '../data/finalEscapeDialogue.json';
 import finalResolutionDialogue from '../data/finalResolutionDialogue.json';
 import finalSurvivalDialogue from '../data/finalSurvivalDialogue.json';
 import lowFuelDialogue from '../data/lowFuelDialogue.json';
+import lightningDialogue from '../data/lightningDialogue.json';
 import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
 import stormStartDialogue from '../data/stormStartDialogue.json';
@@ -676,6 +677,9 @@ export class GameApp {
       this.lightningConfig.passengerPenalty,
       'The passenger cancelled the ride! Too dangerous!',
     );
+    if (this.runtimeDialogueUnlocked && !this.isGameplayDialogueBusy()) {
+      this.playLightningDialogue();
+    }
   }
 
   updateLightning(delta, missionState) {
@@ -770,6 +774,20 @@ export class GameApp {
 
   playLowFuelDialogue() {
     const entry = lowFuelDialogue[Math.floor(Math.random() * lowFuelDialogue.length)];
+    this.voiceover.play(entry, {
+      onStart: (dialogueEntry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(dialogueEntry);
+      },
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+      },
+    });
+  }
+
+  playLightningDialogue() {
+    const entry = lightningDialogue[Math.floor(Math.random() * lightningDialogue.length)];
     this.voiceover.play(entry, {
       onStart: (dialogueEntry) => {
         this.music.setVolumeScale(0.22);

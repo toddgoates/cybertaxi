@@ -22,4 +22,4 @@
 - [x] navigator: remove energy stable
 - [x] Have current fare text got red when there are collisions or penalties
 - [] Improve the look of the player taxi
-- [] When you reach the edge of the city, it should turn you around
+- [x] When you reach the edge of the city, it should turn you around

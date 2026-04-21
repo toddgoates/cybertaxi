@@ -177,6 +177,8 @@ export class GameApp {
     this.lightningSparkTimer = 0;
     this.lightningFlashTimer = 0;
     this.lightningChallengeActive = false;
+    this.cityLimitWarningActive = false;
+    this.cityLimitTurnActive = false;
     this.lightningAudioIndex = 0;
     this.thunderAudioIndex = 0;
     this.lightningWarningSounds = createAudioPool('/audio/sparks.mp3', 3, 0.6);
@@ -590,6 +592,28 @@ export class GameApp {
     );
   }
 
+  enforceCityLimits() {
+    const position = this.player.mesh.position;
+    const cityHalfSpan = this.worldData.cityHalfSpan ?? (GAME_CONFIG.districtSpacing + GAME_CONFIG.districtSize * 0.5);
+    const turnAroundLimit = cityHalfSpan + GAME_CONFIG.cityLimits.turnAroundBuffer;
+    const farthestAxis = Math.max(Math.abs(position.x), Math.abs(position.z));
+    if (farthestAxis <= turnAroundLimit) {
+      this.cityLimitWarningActive = false;
+      this.cityLimitTurnActive = false;
+      return;
+    }
+
+    if (!this.cityLimitWarningActive) {
+      this.ui.showAlert("Turn around! You're leaving the city limits.");
+      this.cityLimitWarningActive = true;
+    }
+
+    if (!this.cityLimitTurnActive) {
+      this.player.turnAround();
+      this.cityLimitTurnActive = true;
+    }
+  }
+
   updateExtractionMarker(delta) {
     if (!this.extractionActive) return;
     this.extractionMarker.rotation.y += delta * 0.9;
@@ -839,6 +863,7 @@ export class GameApp {
       }
       this.city.update(delta, this.player.mesh.position);
       this.player.update(delta, this.energy.getDriveState());
+      this.enforceCityLimits();
       this.updateExtractionMarker(delta);
       this.traffic.update(delta);
       this.energy.update(delta, this.player);

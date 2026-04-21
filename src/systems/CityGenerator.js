@@ -154,6 +154,7 @@ export class CityGenerator {
       flightPaths,
       energyStations,
       districtAnchors,
+      cityHalfSpan: this.config.districtSpacing + this.config.districtSize * 0.5,
       spawnPoint: new THREE.Vector3(-districtSpacing, 18, -districtSpacing + this.config.districtSize * 0.2),
       getDistrictName: (position) => this.getDistrictName(position),
     };

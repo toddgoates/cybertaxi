@@ -421,6 +421,12 @@ export class PlayerController {
     return true;
   }
 
+  turnAround() {
+    this.mesh.rotation.y += Math.PI;
+    this.forwardSpeed = Math.max(this.forwardSpeed, 0);
+    this.strafeVelocity *= 0.35;
+  }
+
   bounce(normal, strength = 0.35) {
     _playerLateral.set(this.velocity.x, 0, this.velocity.z);
     _playerLateral.reflect(normal).multiplyScalar(strength);

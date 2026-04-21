@@ -50,6 +50,10 @@ export const GAME_CONFIG = {
     boostAccelerationMultiplier: 1.6,
     boostCollisionPenaltyMultiplier: 2.4,
   },
+  cityLimits: {
+    turnAroundBuffer: 180,
+    returnInset: 64,
+  },
   camera: {
     followDistance: 18,
     height: 7,

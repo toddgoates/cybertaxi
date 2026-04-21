@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/storm_end_1.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Sky's calming down. Back to normal hazards."
+  },
+  {
+    "id": 2,
+    "audio": "/audio/storm_end_2.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Oh good. I made it through the storm."
+  }
+]

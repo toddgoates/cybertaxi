@@ -64,6 +64,7 @@ export const GAME_CONFIG = {
     poolSize: 52,
     despawnDistance: 900,
     endgameCreditsThreshold: 10000,
+    normalSpawnCooldownSeconds: 20,
     heat: {
       maxHeat: 10,
       timeGainPerSecond: 0.013,

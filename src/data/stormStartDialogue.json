@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/storm_start_1.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Storm's rolling in-watch your altitude."
+  },
+  {
+    "id": 2,
+    "audio": "/audio/storm_start_2.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "The sky's lighting up. That's not good."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/storm_start_3.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Yeah... I don't like the look of that lightning."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/storm_start_4.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Great. Now the sky's trying to kill me too."
+  }
+]

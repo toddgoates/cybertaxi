@@ -100,7 +100,7 @@ canvas {
 }
 
 .hud__alert--visible {
-  animation: hud-alert 2.2s ease-out forwards;
+  animation: hud-alert 3.5s ease-out forwards;
 }
 
 .hud__alert--persistent {

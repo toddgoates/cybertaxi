@@ -33,6 +33,8 @@ import finalSurvivalDialogue from '../data/finalSurvivalDialogue.json';
 import lowFuelDialogue from '../data/lowFuelDialogue.json';
 import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
+import stormStartDialogue from '../data/stormStartDialogue.json';
+import stormEndDialogue from '../data/stormEndDialogue.json';
 import musicTracks from '../data/musicTracks.json';
 
 const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
@@ -173,6 +175,7 @@ export class GameApp {
     this.lightningWarningTimer = 0;
     this.lightningSparkTimer = 0;
     this.lightningFlashTimer = 0;
+    this.lightningChallengeActive = false;
     this.lightningAudioIndex = 0;
     this.thunderAudioIndex = 0;
     this.lightningWarningSounds = createAudioPool('/audio/sparks.mp3', 3, 0.6);
@@ -203,6 +206,7 @@ export class GameApp {
     this.paused = false;
 
     this.applyDebugFlags();
+    this.lightningChallengeActive = this.isLightningChallengeActive(this.missions.totalCredits);
 
     this.resizeHandler = () => this.onResize();
     window.addEventListener('resize', this.resizeHandler);
@@ -377,8 +381,45 @@ export class GameApp {
     }
   }
 
+  isBlockingGameplayDialogueActive() {
+    return this.fakePassengerIntroActive || this.finalDialogueActive || this.survivalDialogueActive || this.endgameResolutionActive || this.finalEscapeDialogueActive;
+  }
+
   isGameplayDialogueBusy() {
-    return this.fakePassengerIntroActive || this.finalDialogueActive || this.survivalDialogueActive || this.endgameResolutionActive || this.finalEscapeDialogueActive || this.voiceover.isActive();
+    return this.isBlockingGameplayDialogueActive() || this.voiceover.isActive();
+  }
+
+  playStormAnnouncement(dialogueEntries, alertText) {
+    this.ui.showAlert(alertText);
+
+    if (!this.runtimeDialogueUnlocked || this.isBlockingGameplayDialogueActive() || dialogueEntries.length === 0) {
+      return;
+    }
+
+    const entry = dialogueEntries[Math.floor(Math.random() * dialogueEntries.length)];
+    this.voiceover.stop();
+    this.voiceover.play(entry, {
+      onStart: (dialogueEntry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(dialogueEntry);
+      },
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+      },
+    });
+  }
+
+  handleLightningChallengeStateChange(challengeActive) {
+    if (challengeActive === this.lightningChallengeActive) return;
+
+    this.lightningChallengeActive = challengeActive;
+    if (challengeActive) {
+      this.playStormAnnouncement(stormStartDialogue, 'A thunderstorm has started!');
+      return;
+    }
+
+    this.playStormAnnouncement(stormEndDialogue, 'The thunderstorm has cleared up!');
   }
 
   onFinaleTriggered() {
@@ -639,6 +680,7 @@ export class GameApp {
 
   updateLightning(delta, missionState) {
     const challengeActive = this.isLightningChallengeActive(missionState.totalCredits);
+    this.handleLightningChallengeStateChange(challengeActive);
     if (!challengeActive) {
       this.cancelLightningWarning();
       this.lightningCooldown = this.randomLightningCooldown();

@@ -43,6 +43,12 @@ export class UIManager {
         </div>
       </div>
       <div class="hud__corner">
+        <div class="panel panel--storm" data-field="stormWarning" hidden>
+          <div class="hud__storm-row">
+            <span class="hud__storm-icon" aria-hidden="true">⚡</span>
+            <span class="hud__storm-text">Danger: Storm in progress</span>
+          </div>
+        </div>
         <div class="panel panel--nav">
           <div class="eyebrow">Navigator</div>
           <div class="navigator">
@@ -122,6 +128,7 @@ export class UIManager {
       chargeLabel: this.root.querySelector('[data-field="chargeLabel"]'),
       navTargets: this.root.querySelector('[data-field="navTargets"]'),
       navStatus: this.root.querySelector('[data-field="navStatus"]'),
+      stormWarning: this.root.querySelector('[data-field="stormWarning"]'),
       empInventory: this.root.querySelector('[data-field="empInventory"]'),
       empCount: this.root.querySelector('[data-field="empCount"]'),
       superBoostInventory: this.root.querySelector('[data-field="superBoostInventory"]'),
@@ -185,6 +192,7 @@ export class UIManager {
     this.fields.musicInlineStatus.textContent = state.music.muted
       ? `Track ${state.music.currentTrackId} - muted`
       : `Track ${state.music.currentTrackId}`;
+    this.fields.stormWarning.hidden = !state.weather?.thunderstormActive;
     this.flashFareLoss(collisionPenaltyTriggered);
     this.flashFieldLoss(this.fields.credits, creditLossTriggered);
     this.pulseField(this.fields.credits, state.mission.totalCredits > this.lastCredits);

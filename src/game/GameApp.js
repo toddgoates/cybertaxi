@@ -962,6 +962,9 @@ export class GameApp {
       rivals: rivalsState,
       emp: this.emp.getState(),
       superBoost: this.superBoost.getState(),
+      weather: {
+        thunderstormActive: this.lightningChallengeActive,
+      },
       endgame: {
         extractionTarget: this.extractionActive
           ? {

@@ -61,7 +61,7 @@ export class UIManager {
               <div class="navigator__cab"></div>
             </div>
           </div>
-          <div class="subvalue" data-field="navStatus"></div>
+          <div class="subvalue hud__nav-status" data-field="navStatus"></div>
         </div>
       </div>
       <div class="hud__bottom">

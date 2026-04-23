@@ -136,7 +136,7 @@ var we=Object.defineProperty;var ve=(h,t,e)=>t in h?we(h,t,{enumerable:!0,config
         <div class="panel panel--storm" data-field="stormWarning" hidden>
           <div class="hud__storm-row">
             <span class="hud__storm-icon" aria-hidden="true">⚡</span>
-            <span class="hud__storm-text">Danger: thunderstorm in progress</span>
+            <span class="hud__storm-text">Danger: Storm in progress</span>
           </div>
         </div>
         <div class="panel panel--nav">
@@ -151,7 +151,7 @@ var we=Object.defineProperty;var ve=(h,t,e)=>t in h?we(h,t,{enumerable:!0,config
               <div class="navigator__cab"></div>
             </div>
           </div>
-          <div class="subvalue" data-field="navStatus"></div>
+          <div class="subvalue hud__nav-status" data-field="navStatus"></div>
         </div>
       </div>
       <div class="hud__bottom">

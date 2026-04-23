@@ -561,6 +561,11 @@ canvas {
   letter-spacing: 0.02em;
 }
 
+.hud__nav-status {
+  min-height: calc(1.35em * 2);
+  line-height: 1.35;
+}
+
 .value--pulse {
   animation: value-pulse 0.35s ease-out;
 }

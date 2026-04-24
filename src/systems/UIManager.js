@@ -16,6 +16,17 @@ export class UIManager {
     this.root.innerHTML = `
       <div class="hud__impact" data-field="impactFlash"></div>
       <div class="hud__alert" data-field="alertBanner"></div>
+      <div class="hud__title-screen" data-field="titleScreen">
+        <div class="hud__title-card">
+          <div class="hud__title-presenter">Todd Goates presents</div>
+          <div class="hud__title-name">Cybertaxi</div>
+          <div class="hud__title-goal">Goal: earn 10,000 credits by sunrise... with a stole robo taxi</div>
+          <img class="hud__title-image" src="/images/screenshot.png" alt="Cybertaxi screenshot" />
+          <div class="hud__title-controls-label">Controls</div>
+          <div class="hud__title-controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | P Super Boost | Esc pause | M toggle music | [ / ] change track</div>
+          <button class="hud__button hud__button--start" type="button" data-field="startButton">Start game</button>
+        </div>
+      </div>
       <div class="hud__dialogue" data-field="dialogueCard">
         <div class="hud__dialogue-portrait-wrap">
           <img class="hud__dialogue-portrait" data-field="dialoguePortrait" alt="Speaker portrait" />
@@ -108,7 +119,7 @@ export class UIManager {
         <div class="hud__win-title">You won!</div>
         <img class="hud__win-image" src="/images/winner.png" alt="Winner artwork" />
       </div>
-      <div class="controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | P Super Boost | Esc pause | M toggle music | [ / ] change track</div>
+      <div class="controls" data-field="gameControls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | P Super Boost | Esc pause | M toggle music | [ / ] change track</div>
     `;
     mount.appendChild(this.root);
 
@@ -146,11 +157,30 @@ export class UIManager {
       introCard: this.root.querySelector('[data-field="introCard"]'),
       introPresenter: this.root.querySelector('[data-field="introPresenter"]'),
       introTitle: this.root.querySelector('[data-field="introTitle"]'),
+      titleScreen: this.root.querySelector('[data-field="titleScreen"]'),
+      startButton: this.root.querySelector('[data-field="startButton"]'),
+      gameControls: this.root.querySelector('[data-field="gameControls"]'),
     };
+
+    this.showTitleScreen();
   }
 
   setMusicToggleHandler(handler) {
     this.fields.musicToggle.addEventListener('click', handler);
+  }
+
+  setStartHandler(handler) {
+    this.fields.startButton.addEventListener('click', handler, { once: true });
+  }
+
+  showTitleScreen() {
+    this.root.classList.add('hud--title-active');
+    this.fields.titleScreen.hidden = false;
+  }
+
+  hideTitleScreen() {
+    this.root.classList.remove('hud--title-active');
+    this.fields.titleScreen.hidden = true;
   }
 
   pushFeed(message, tone = 'info') {

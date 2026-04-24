@@ -61,43 +61,29 @@ function createExtractionMarker() {
   const group = new THREE.Group();
 
   const ring = new THREE.Mesh(
-    new THREE.CylinderGeometry(18, 18, 1.6, 32, 1, true),
+    new THREE.CylinderGeometry(18, 18, 1.4, 24, 1, true),
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xffffff,
-      emissiveIntensity: 0.92,
+      emissiveIntensity: 0.8,
       transparent: true,
-      opacity: 0.34,
+      opacity: 0.35,
       side: THREE.DoubleSide,
-      fog: false,
-      depthWrite: false,
-      toneMapped: false,
     }),
   );
-  ring.position.y = 0.8;
+  ring.position.y = 0.7;
   group.add(ring);
 
-  const core = new THREE.Mesh(
-    new THREE.CylinderGeometry(4.5, 5.8, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false, depthWrite: false, toneMapped: false }),
-  );
-  core.position.y = 8;
-  group.add(core);
-
-  const beam = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.3, 2.6, 120, 16, 1, true),
-    new THREE.MeshBasicMaterial({
+  const beacon = new THREE.Mesh(
+    new THREE.CylinderGeometry(4, 5.4, 8, 16),
+    new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      transparent: true,
-      opacity: 0.18,
-      fog: false,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      toneMapped: false,
+      emissive: 0xffffff,
+      emissiveIntensity: 1.25,
     }),
   );
-  beam.position.y = 60;
-  group.add(beam);
+  beacon.position.y = 4;
+  group.add(beacon);
 
   const halo = new THREE.Mesh(
     new THREE.TorusGeometry(10.5, 0.5, 10, 32),
@@ -106,6 +92,8 @@ function createExtractionMarker() {
   halo.rotation.x = Math.PI / 2;
   halo.position.y = 5.4;
   group.add(halo);
+
+  group.userData = { ring, beacon, halo };
 
   group.traverse((child) => {
     if (child.isMesh) {
@@ -623,8 +611,8 @@ export class GameApp {
   updateExtractionMarker(delta) {
     if (!this.extractionActive) return;
     this.extractionMarker.rotation.y += delta * 0.9;
-    this.extractionMarker.children[1].position.y = 8 + Math.sin(performance.now() * 0.004) * 1.2;
-    this.extractionMarker.children[3].rotation.z += delta * 0.85;
+    this.extractionMarker.userData.beacon.position.y = 4 + Math.sin(performance.now() * 0.004) * 0.8;
+    this.extractionMarker.userData.halo.rotation.z += delta * 0.85;
     const dx = this.player.mesh.position.x - this.extractionTarget.x;
     const dz = this.player.mesh.position.z - this.extractionTarget.z;
     if (Math.hypot(dx, dz) < 22) {

@@ -20,7 +20,7 @@ export class UIManager {
         <div class="hud__title-card">
           <div class="hud__title-presenter">Todd Goates presents</div>
           <div class="hud__title-name">Cybertaxi</div>
-          <div class="hud__title-goal">Goal: earn 10,000 credits by sunrise... with a stole robo taxi</div>
+          <div class="hud__title-goal">10,000 credits. One night. One stolen robo-taxi.</div>
           <img class="hud__title-image" src="/images/screenshot.png" alt="Cybertaxi screenshot" />
           <div class="hud__title-controls-label">Controls</div>
           <div class="hud__title-controls">W/S accelerate-brake | A/D steer | Q/E strafe | J rise | K descend | Space boost | L EMP | P Super Boost | Esc pause | M toggle music | [ / ] change track</div>

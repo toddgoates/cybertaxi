@@ -185,6 +185,7 @@ export class GameApp {
     this.thunderSounds = createAudioPool('/audio/thunder.mp3', 3, 0.72);
     this.perfOverlay = this.options.debug?.showPerfOverlay ? new PerformanceOverlay(this.mount) : null;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
+    this.ui.setStartHandler(() => this.beginGame());
 
     this.setupLights();
 
@@ -207,6 +208,7 @@ export class GameApp {
     this.superBoost = new SuperBoostSystem(this.scene, this.input, this.worldData, GAME_CONFIG, this.ui, this.player);
     this.cameraController = new CameraController(this.camera, this.player.mesh, GAME_CONFIG);
     this.paused = false;
+    this.started = false;
 
     this.applyDebugFlags();
     this.lightningChallengeActive = this.isLightningChallengeActive(this.missions.totalCredits);
@@ -292,27 +294,31 @@ export class GameApp {
   }
 
   start() {
-    if (this.won) {
-      this.animate();
-      return;
-    }
+    this.animate();
+  }
+
+  beginGame() {
+    if (this.started || this.won) return;
+
+    this.started = true;
+    this.input.clearState();
+    this.ui.hideTitleScreen();
 
     if (this.options.debug?.skipIntro) {
       this.music.start();
       this.runtimeDialogueUnlocked = true;
-    } else {
-      this.music.start(0.3);
-      this.introDialogue.start({
-        onEntryStart: (entry) => this.ui.showDialogue(entry),
-        onEntryEnd: () => this.ui.hideDialogue(),
-        onComplete: () => {
-          this.music.setVolumeScale(1);
-          this.ui.showIntroCard('Todd Goates Presents', 'Cybertaxi');
-          this.pendingPostIntroDelay = INTRO_TITLE_CARD_DURATION_SECONDS + POST_INTRO_DELAY_AFTER_TITLE_SECONDS;
-        },
-      });
+      return;
     }
-    this.animate();
+
+    this.music.start(0.3);
+    this.introDialogue.start({
+      onEntryStart: (entry) => this.ui.showDialogue(entry),
+      onEntryEnd: () => this.ui.hideDialogue(),
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.pendingPostIntroDelay = POST_INTRO_DELAY_AFTER_TITLE_SECONDS;
+      },
+    });
   }
 
   startPostIntroDialogue() {
@@ -829,6 +835,28 @@ export class GameApp {
     const delta = Math.min(this.clock.getDelta(), 0.033);
 
     if (this.won) return;
+
+    if (!this.started) {
+      this.ui.render({
+        player: this.player,
+        mission: this.missions.getState(),
+        energy: this.latestEnergyState ?? this.energy.getState(),
+        district: this.worldData.getDistrictName(this.player.mesh.position),
+        music: this.music.getState(),
+        rivals: this.rivals.getState(),
+        emp: this.emp.getState(),
+        superBoost: this.superBoost.getState(),
+        weather: {
+          thunderstormActive: false,
+        },
+        endgame: {
+          extractionTarget: null,
+        },
+        paused: false,
+      });
+      this.composer.render();
+      return;
+    }
 
     if (this.input.consumePress('pause')) {
       this.paused = !this.paused;

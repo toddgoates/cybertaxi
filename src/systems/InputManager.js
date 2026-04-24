@@ -51,6 +51,11 @@ export class InputManager {
     return true;
   }
 
+  clearState() {
+    this.keys.clear();
+    this.pressed.clear();
+  }
+
   destroy() {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);

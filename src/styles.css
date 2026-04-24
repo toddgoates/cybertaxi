@@ -16,7 +16,7 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: radial-gradient(circle at top, #10192f 0%, #050811 60%, #03050a 100%);
+  background: #000000;
 }
 
 canvas {
@@ -43,6 +43,22 @@ canvas {
     radial-gradient(circle at top right, rgba(88, 166, 255, 0.08), transparent 28%),
     radial-gradient(circle at bottom left, rgba(255, 79, 216, 0.06), transparent 24%);
   pointer-events: none;
+}
+
+.hud--title-active .hud__top,
+.hud--title-active .hud__bottom,
+.hud--title-active .hud__corner,
+.hud--title-active .controls,
+.hud--title-active .hud__dialogue,
+.hud--title-active .hud__intro-card,
+.hud--title-active .hud__alert,
+.hud--title-active .hud__pause,
+.hud--title-active .hud__win {
+  opacity: 0;
+}
+
+.hud--title-active .hud__actions {
+  z-index: 2;
 }
 
 .hud__impact {
@@ -139,6 +155,98 @@ canvas {
   transform: translateY(-6px);
   transition: opacity 180ms ease, transform 180ms ease;
   pointer-events: none;
+}
+
+.hud__title-screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  pointer-events: auto;
+  z-index: 3;
+}
+
+.hud__title-screen[hidden] {
+  display: none;
+}
+
+.hud__title-card {
+  width: min(920px, calc(100vw - 48px));
+  display: grid;
+  gap: 18px;
+  padding: 40px 44px 34px;
+  border-radius: 24px;
+  border: 1px solid rgba(123, 229, 255, 0.26);
+  background:
+    linear-gradient(180deg, rgba(8, 13, 26, 0.9), rgba(5, 9, 18, 0.72)),
+    radial-gradient(circle at top, rgba(88, 166, 255, 0.14), transparent 45%);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 0 34px rgba(72, 217, 255, 0.08), 0 0 42px rgba(255, 79, 216, 0.12);
+  text-align: center;
+}
+
+.hud__title-presenter {
+  color: #b8dfff;
+  font-size: 14px;
+  font-family: 'Orbitron', Inter, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.hud__title-name {
+  color: transparent;
+  font-size: clamp(40px, 8vw, 92px);
+  font-weight: 800;
+  font-family: 'Orbitron', Inter, ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #f7fbff 0%, #86d8ff 42%, #58a6ff 68%, #d36eff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 0 28px rgba(123, 229, 255, 0.28), 0 0 44px rgba(255, 79, 216, 0.16);
+}
+
+.hud__title-goal {
+  color: #fff1a9;
+  font-size: clamp(16px, 2.2vw, 20px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.hud__title-image {
+  width: min(100%, 720px);
+  max-height: min(34vh, 320px);
+  justify-self: center;
+  display: block;
+  object-fit: contain;
+}
+
+.hud__title-controls-label {
+  margin-top: 18px;
+  color: #7be5ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.hud__title-controls {
+  color: #c7e5f3;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.hud__button--start {
+  justify-self: center;
+  min-width: 180px;
+  margin-top: 10px;
+  padding: 14px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
 }
 
 .hud__dialogue--visible {
@@ -927,6 +1035,19 @@ canvas {
 }
 
 @media (max-width: 900px) {
+  .hud__title-screen {
+    padding: 16px;
+  }
+
+  .hud__title-card {
+    width: min(100%, 640px);
+    padding: 28px 20px 24px;
+  }
+
+  .hud__title-image {
+    max-height: min(24vh, 220px);
+  }
+
   .hud__top,
   .hud__bottom {
     grid-template-columns: 1fr;

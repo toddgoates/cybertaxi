@@ -118,7 +118,8 @@ export const GAME_CONFIG = {
   lightning: {
     startCredits: 2000,
     pauseCredits: 4000,
-    resumeCredits: 6000,
+    navigatorOfflineCredits: 6000,
+    resumeCredits: 7000,
     minHeight: 108,
     openSkyHeight: 142,
     nearbyBuildingRadius: 56,

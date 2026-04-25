@@ -234,8 +234,10 @@ export class GameApp {
     this.cityLimitTurnActive = false;
     this.lightningAudioIndex = 0;
     this.thunderAudioIndex = 0;
+    this.ringBlipAudioIndex = 0;
     this.lightningWarningSounds = createAudioPool('/audio/sparks.mp3', 3, 0.6);
     this.thunderSounds = createAudioPool('/audio/thunder.mp3', 3, 0.72);
+    this.ringBlipSounds = createAudioPool('/audio/blip.mp3', 3, 0.7);
     this.perfOverlay = this.options.debug?.showPerfOverlay ? new PerformanceOverlay(this.mount) : null;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
     this.ui.setStartHandler(() => this.beginGame());
@@ -727,10 +729,12 @@ export class GameApp {
 
     if (!this.navigatorOfflineActive) {
       this.updateNavigatorOfflineRings(delta, false);
+      this.missions.setNavigatorOffline(false);
       return;
     }
 
     this.updateNavigatorOfflineRings(delta, true);
+    this.missions.setNavigatorOffline(true);
 
     const playerPosition = this.player.mesh.position;
     let enteredRing = null;
@@ -755,12 +759,14 @@ export class GameApp {
     enteredRing.userData.cleared = true;
     enteredRing.visible = false;
     this.navigatorOfflineSequenceIndex += 1;
+    this.playPooledAudio(this.ringBlipSounds, 'ringBlipAudioIndex');
 
     if (this.navigatorOfflineSequenceIndex === this.navigatorOfflineRings.children.length) {
       this.navigatorOfflineActive = false;
       this.navigatorOfflineCompleted = true;
       this.updateNavigatorOfflineRings(delta, false);
-      this.ui.showAlert('Navigator restored.');
+      this.missions.setNavigatorOffline(false);
+      this.ui.showAlert('Navigator restored!');
     }
   }
 
@@ -1195,6 +1201,10 @@ export class GameApp {
       audio.src = '';
     });
     this.thunderSounds.forEach((audio) => {
+      audio.pause();
+      audio.src = '';
+    });
+    this.ringBlipSounds.forEach((audio) => {
       audio.pause();
       audio.src = '';
     });

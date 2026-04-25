@@ -91,6 +91,7 @@ export class MissionSystem {
     this.finaleHandler = null;
     this.endgameTriggered = false;
     this.endgameUnlocked = false;
+    this.navigatorOffline = false;
     this.startNextFare();
   }
 
@@ -104,6 +105,12 @@ export class MissionSystem {
 
   unlockEndgame() {
     this.endgameUnlocked = true;
+  }
+
+  setNavigatorOffline(active) {
+    if (this.navigatorOffline === active) return;
+    this.navigatorOffline = active;
+    this.refreshZoneVisibility();
   }
 
   createPickupSpots() {
@@ -186,6 +193,33 @@ export class MissionSystem {
     zone.userData.beacon.material.emissive.setHex(color);
   }
 
+  refreshZoneVisibility() {
+    if (this.endgameTriggered) {
+      this.pickupZones.forEach((zone) => {
+        zone.visible = false;
+        zone.userData.labelSprite.visible = false;
+      });
+      this.dropoffZone.visible = false;
+      return;
+    }
+
+    if (this.phase === 'pickup') {
+      this.pickupZones.forEach((zone, index) => {
+        const offer = this.pickupOffers[index];
+        zone.visible = Boolean(offer) && !this.navigatorOffline;
+        zone.userData.labelSprite.visible = Boolean(offer) && !this.navigatorOffline;
+      });
+      this.dropoffZone.visible = false;
+      return;
+    }
+
+    this.pickupZones.forEach((zone) => {
+      zone.visible = false;
+      zone.userData.labelSprite.visible = false;
+    });
+    this.dropoffZone.visible = this.phase === 'dropoff';
+  }
+
   buildOffer(pickup, districts, special = false) {
     let dropoff = districts[Math.floor(Math.random() * districts.length)];
 
@@ -234,13 +268,11 @@ export class MissionSystem {
   startNextFare(playerPosition = null) {
     if (this.endgameTriggered) {
       this.pickupOffers = [];
+      this.phase = 'endgame';
       this.pickupZones.forEach((zone) => {
-        zone.visible = false;
-        zone.userData.labelSprite.visible = false;
         this.setZoneColor(zone, zone.userData.baseColor);
       });
-      this.dropoffZone.visible = false;
-      this.phase = 'endgame';
+      this.refreshZoneVisibility();
       this.objective = 'Survive the Axiom response';
       this.routeLabel = 'No new fares available';
       return;
@@ -285,17 +317,13 @@ export class MissionSystem {
     this.pendingPenaltyText = 'Choose a passenger to lock in a fare';
     this.pickupZones.forEach((zone, index) => {
       const offer = this.pickupOffers[index];
-      zone.visible = Boolean(offer);
       if (offer) {
         zone.position.copy(offer.pickupPosition);
         this.setZoneColor(zone, offer.special ? 0x58a6ff : zone.userData.baseColor);
         updateFareLabelSprite(zone.userData.labelSprite, `${offer.quotedFare} cr`);
-        zone.userData.labelSprite.visible = true;
-      } else {
-        zone.userData.labelSprite.visible = false;
       }
     });
-    this.dropoffZone.visible = false;
+    this.refreshZoneVisibility();
     this.objective = 'Find a passenger';
     this.routeLabel = `${this.pickupOffers.length} fares available`;
     this.ui.pushFeed(`${this.pickupOffers.length} fares available across the city`, 'good');
@@ -319,12 +347,10 @@ export class MissionSystem {
     this.pendingPenaltyText = '';
     this.currentRunHadIncident = false;
     this.pickupZones.forEach((zone) => {
-      zone.visible = false;
-      zone.userData.labelSprite.visible = false;
       this.setZoneColor(zone, zone.userData.baseColor);
     });
-    this.dropoffZone.visible = true;
     this.dropoffZone.position.copy(offer.dropoffDistrict.position);
+    this.refreshZoneVisibility();
     this.objective = offer.special ? `Priority fare to ${this.dropoffDistrict.name}` : `Deliver passenger to ${this.dropoffDistrict.name}`;
     this.routeLabel = formatDistrictTrip(this.pickupDistrict.name, this.dropoffDistrict.name);
     this.ui.pushFeed(
@@ -418,11 +444,9 @@ export class MissionSystem {
     this.objective = 'Survive the Axiom response';
     this.routeLabel = 'No new fares available';
     this.pickupZones.forEach((zone) => {
-      zone.visible = false;
-      zone.userData.labelSprite.visible = false;
       this.setZoneColor(zone, zone.userData.baseColor);
     });
-    this.dropoffZone.visible = false;
+    this.refreshZoneVisibility();
     this.finaleHandler?.();
   }
 

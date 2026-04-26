@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/jam_relay_11.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "I just decoded their transmission. It says blue... orange... green... red."
+  },
+  {
+    "id": 3,
+    "audio": "/audio/jam_relay_12.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "A sequence."
+  }
+]

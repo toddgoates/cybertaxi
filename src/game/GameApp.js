@@ -36,6 +36,10 @@ import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
 import stormStartDialogue from '../data/stormStartDialogue.json';
 import stormEndDialogue from '../data/stormEndDialogue.json';
+import jamRelayStartDialogue from '../data/jamRelayStartDialogue.json';
+import jamRelayHintOneDialogue from '../data/jamRelayHintOneDialogue.json';
+import jamRelayHintTwoDialogue from '../data/jamRelayHintTwoDialogue.json';
+import jamRelayRestoreDialogue from '../data/jamRelayRestoreDialogue.json';
 import musicTracks from '../data/musicTracks.json';
 
 const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
@@ -43,6 +47,7 @@ const POST_INTRO_DELAY_AFTER_TITLE_SECONDS = 2.5;
 const RIVAL_DIALOGUE_COOLDOWN_SECONDS = 60;
 const CRASH_DIALOGUE_COOLDOWN_SECONDS = 15;
 const ENDGAME_SURVIVAL_SECONDS = 60;
+const NAVIGATOR_OFFLINE_HINT_DELAY_SECONDS = 15;
 
 function randRange(min, max) {
   return min + Math.random() * (max - min);
@@ -199,6 +204,10 @@ export class GameApp {
     this.finalSurvivalDialogue = new IntroDialogueManager(finalSurvivalDialogue, 1400);
     this.finalEscapeDialogue = new IntroDialogueManager(finalEscapeDialogue, 250);
     this.finalResolutionDialogue = new IntroDialogueManager(finalResolutionDialogue, 250);
+    this.jamRelayStartDialogue = new IntroDialogueManager(jamRelayStartDialogue, 250);
+    this.jamRelayHintOneDialogue = new IntroDialogueManager(jamRelayHintOneDialogue, 250);
+    this.jamRelayHintTwoDialogue = new IntroDialogueManager(jamRelayHintTwoDialogue, 250);
+    this.jamRelayRestoreDialogue = new IntroDialogueManager(jamRelayRestoreDialogue, 250);
     this.voiceover = new VoiceoverManager();
     this.pendingPostIntroDelay = null;
     this.rivalDialogueCooldown = 0;
@@ -223,6 +232,11 @@ export class GameApp {
     this.navigatorOfflineActive = false;
     this.navigatorOfflineCompleted = false;
     this.navigatorOfflineSequenceIndex = 0;
+    this.navigatorOfflineDialogueActive = false;
+    this.navigatorOfflineRestoreDialogueQueued = false;
+    this.navigatorOfflineRestoreDialoguePlayed = false;
+    this.navigatorOfflineHintStage = 0;
+    this.navigatorOfflineHintTimer = null;
     this.won = false;
     this.lightningConfig = GAME_CONFIG.lightning;
     this.lightningCooldown = this.randomLightningCooldown();
@@ -448,7 +462,12 @@ export class GameApp {
   }
 
   isBlockingGameplayDialogueActive() {
-    return this.fakePassengerIntroActive || this.finalDialogueActive || this.survivalDialogueActive || this.endgameResolutionActive || this.finalEscapeDialogueActive;
+    return this.fakePassengerIntroActive
+      || this.finalDialogueActive
+      || this.survivalDialogueActive
+      || this.endgameResolutionActive
+      || this.finalEscapeDialogueActive
+      || this.navigatorOfflineDialogueActive;
   }
 
   isGameplayDialogueBusy() {
@@ -474,6 +493,78 @@ export class GameApp {
         this.ui.hideDialogue();
       },
     });
+  }
+
+  startBlockingDialogueSequence(manager, onComplete) {
+    this.navigatorOfflineDialogueActive = true;
+    this.voiceover.stop();
+    manager.start({
+      onEntryStart: (entry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(entry);
+      },
+      onEntryEnd: () => this.ui.hideDialogue(),
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+        this.navigatorOfflineDialogueActive = false;
+        onComplete?.();
+        if (this.navigatorOfflineRestoreDialogueQueued) {
+          this.navigatorOfflineRestoreDialogueQueued = false;
+          this.playNavigatorOfflineRestoreDialogue();
+        }
+      },
+    });
+  }
+
+  startNavigatorOfflineHintTimer() {
+    if (!this.navigatorOfflineActive || this.navigatorOfflineCompleted || this.navigatorOfflineHintStage >= 2) {
+      this.navigatorOfflineHintTimer = null;
+      return;
+    }
+
+    this.navigatorOfflineHintTimer = NAVIGATOR_OFFLINE_HINT_DELAY_SECONDS;
+  }
+
+  playNavigatorOfflineStartDialogue() {
+    this.startBlockingDialogueSequence(this.jamRelayStartDialogue, () => {
+      this.startNavigatorOfflineHintTimer();
+    });
+  }
+
+  playNavigatorOfflineHintDialogue() {
+    if (this.navigatorOfflineCompleted || !this.navigatorOfflineActive) return;
+
+    const manager = this.navigatorOfflineHintStage === 0
+      ? this.jamRelayHintOneDialogue
+      : this.jamRelayHintTwoDialogue;
+
+    this.navigatorOfflineHintStage += 1;
+    this.startBlockingDialogueSequence(manager, () => {
+      this.startNavigatorOfflineHintTimer();
+    });
+  }
+
+  playNavigatorOfflineRestoreDialogue() {
+    if (this.navigatorOfflineRestoreDialoguePlayed) return;
+    if (this.navigatorOfflineDialogueActive) {
+      this.navigatorOfflineRestoreDialogueQueued = true;
+      return;
+    }
+
+    this.navigatorOfflineRestoreDialoguePlayed = true;
+    this.navigatorOfflineHintTimer = null;
+    this.startBlockingDialogueSequence(this.jamRelayRestoreDialogue);
+  }
+
+  updateNavigatorOfflineDialogue(delta) {
+    if (this.paused || this.navigatorOfflineHintTimer == null || this.navigatorOfflineDialogueActive) return;
+
+    this.navigatorOfflineHintTimer = Math.max(0, this.navigatorOfflineHintTimer - delta);
+    if (this.navigatorOfflineHintTimer > 0) return;
+
+    this.navigatorOfflineHintTimer = null;
+    this.playNavigatorOfflineHintDialogue();
   }
 
   handleLightningChallengeStateChange(challengeActive) {
@@ -723,8 +814,13 @@ export class GameApp {
 
     if (!this.navigatorOfflineCompleted && shouldStart && !this.navigatorOfflineActive) {
       this.navigatorOfflineActive = true;
+      this.navigatorOfflineRestoreDialogueQueued = false;
+      this.navigatorOfflineRestoreDialoguePlayed = false;
+      this.navigatorOfflineHintStage = 0;
+      this.navigatorOfflineHintTimer = null;
       this.resetNavigatorOfflineRings();
       this.ui.showAlert('Navigator offline. Blue. Orange. Green. Red.');
+      this.playNavigatorOfflineStartDialogue();
     }
 
     if (!this.navigatorOfflineActive) {
@@ -764,9 +860,11 @@ export class GameApp {
     if (this.navigatorOfflineSequenceIndex === this.navigatorOfflineRings.children.length) {
       this.navigatorOfflineActive = false;
       this.navigatorOfflineCompleted = true;
+      this.navigatorOfflineHintTimer = null;
       this.updateNavigatorOfflineRings(delta, false);
       this.missions.setNavigatorOffline(false);
       this.ui.showAlert('Navigator restored!');
+      this.playNavigatorOfflineRestoreDialogue();
     }
   }
 
@@ -1014,6 +1112,10 @@ export class GameApp {
       this.finalSurvivalDialogue.setPaused(this.paused);
       this.finalEscapeDialogue.setPaused(this.paused);
       this.finalResolutionDialogue.setPaused(this.paused);
+      this.jamRelayStartDialogue.setPaused(this.paused);
+      this.jamRelayHintOneDialogue.setPaused(this.paused);
+      this.jamRelayHintTwoDialogue.setPaused(this.paused);
+      this.jamRelayRestoreDialogue.setPaused(this.paused);
       this.voiceover.setPaused(this.paused);
     }
 
@@ -1111,6 +1213,7 @@ export class GameApp {
     const nextMissionState = this.missions.getState();
     const rivalsState = this.rivals.getState();
     this.updateNavigatorOfflineChallenge(delta, nextMissionState.totalCredits);
+    this.updateNavigatorOfflineDialogue(delta);
 
     if (nextMissionState.endgameUnlocked && !this.survivalModeActive && !this.survivalDialogueActive && !this.endgameShutdownStarted && rivalsState.activeRivals >= 50) {
       this.startSurvivalMode();
@@ -1195,6 +1298,10 @@ export class GameApp {
     this.finalSurvivalDialogue.destroy();
     this.finalEscapeDialogue.destroy();
     this.finalResolutionDialogue.destroy();
+    this.jamRelayStartDialogue.destroy();
+    this.jamRelayHintOneDialogue.destroy();
+    this.jamRelayHintTwoDialogue.destroy();
+    this.jamRelayRestoreDialogue.destroy();
     this.voiceover.destroy();
     this.lightningWarningSounds.forEach((audio) => {
       audio.pause();

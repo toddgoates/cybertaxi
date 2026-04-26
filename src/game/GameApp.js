@@ -238,6 +238,9 @@ export class GameApp {
     this.navigatorOfflineRestoreDialoguePlayed = false;
     this.navigatorOfflineHintStage = 0;
     this.navigatorOfflineHintTimer = null;
+    this.navigatorOfflineStaticAudio = new Audio('/audio/static.mp3');
+    this.navigatorOfflineStaticAudio.preload = 'auto';
+    this.navigatorOfflineStaticAudio.volume = 0.82;
     this.won = false;
     this.lightningConfig = GAME_CONFIG.lightning;
     this.lightningCooldown = this.randomLightningCooldown();
@@ -528,9 +531,25 @@ export class GameApp {
   }
 
   playNavigatorOfflineStartDialogue() {
-    this.startBlockingDialogueSequence(this.jamRelayStartDialogue, () => {
-      this.startNavigatorOfflineHintTimer();
-    });
+    this.navigatorOfflineDialogueActive = true;
+    this.voiceover.stop();
+    this.navigatorOfflineStaticAudio.currentTime = 0;
+    this.navigatorOfflineStaticAudio.play()
+      .then(() => {
+        const handleEnded = () => {
+          this.navigatorOfflineStaticAudio.removeEventListener('ended', handleEnded);
+          this.startBlockingDialogueSequence(this.jamRelayStartDialogue, () => {
+            this.startNavigatorOfflineHintTimer();
+          });
+        };
+        this.navigatorOfflineStaticAudio.addEventListener('ended', handleEnded, { once: true });
+      })
+      .catch(() => {
+        this.navigatorOfflineDialogueActive = false;
+        this.startBlockingDialogueSequence(this.jamRelayStartDialogue, () => {
+          this.startNavigatorOfflineHintTimer();
+        });
+      });
   }
 
   playNavigatorOfflineHintDialogue() {
@@ -1117,6 +1136,11 @@ export class GameApp {
       this.jamRelayHintOneDialogue.setPaused(this.paused);
       this.jamRelayHintTwoDialogue.setPaused(this.paused);
       this.jamRelayRestoreDialogue.setPaused(this.paused);
+      if (this.paused) {
+        this.navigatorOfflineStaticAudio.pause();
+      } else if (this.navigatorOfflineDialogueActive && this.navigatorOfflineStaticAudio.src && this.navigatorOfflineStaticAudio.ended === false && this.jamRelayStartDialogue.started === false) {
+        this.navigatorOfflineStaticAudio.play().catch(() => {});
+      }
       this.voiceover.setPaused(this.paused);
     }
 
@@ -1316,6 +1340,8 @@ export class GameApp {
       audio.pause();
       audio.src = '';
     });
+    this.navigatorOfflineStaticAudio.pause();
+    this.navigatorOfflineStaticAudio.src = '';
     this.perfOverlay?.destroy();
     this.composer.dispose();
     this.renderer.dispose();

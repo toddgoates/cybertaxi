@@ -112,8 +112,8 @@ function createExtractionMarker() {
 
 function createNavigatorOfflineRings(blimpAnchors = []) {
   const group = new THREE.Group();
-  const ringGeometry = new THREE.TorusGeometry(18, 1.35, 18, 48);
-  const glowGeometry = new THREE.TorusGeometry(18, 2.8, 18, 48);
+  const ringGeometry = new THREE.TorusGeometry(18, 0.38, 14, 48);
+  const glowGeometry = new THREE.TorusGeometry(18, 0.82, 14, 48);
   const colors = [
     { value: 0x58a6ff, name: 'Blue' },
     { value: 0xff9d3d, name: 'Orange' },
@@ -140,6 +140,7 @@ function createNavigatorOfflineRings(blimpAnchors = []) {
       new THREE.MeshBasicMaterial({
         color: colors[index].value,
         transparent: true,
+        opacity: 0.36,
         fog: false,
         toneMapped: false,
       }),
@@ -152,7 +153,7 @@ function createNavigatorOfflineRings(blimpAnchors = []) {
       new THREE.MeshBasicMaterial({
         color: colors[index].value,
         transparent: true,
-        opacity: 0.22,
+        opacity: 0.035,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         fog: false,
@@ -819,7 +820,7 @@ export class GameApp {
       this.navigatorOfflineHintStage = 0;
       this.navigatorOfflineHintTimer = null;
       this.resetNavigatorOfflineRings();
-      this.ui.showAlert('Navigator offline. Blue. Orange. Green. Red.');
+      this.ui.showAlert('Navigator offline.');
       this.playNavigatorOfflineStartDialogue();
     }
 
@@ -884,8 +885,8 @@ export class GameApp {
       const isTarget = index === this.navigatorOfflineSequenceIndex;
       const pulse = 1 + Math.sin(time * 2.4 + phase) * (isTarget ? 0.09 : 0.04);
       ringGroup.scale.setScalar(pulse);
-      ring.material.opacity = isTarget ? 1 : 0.52;
-      glow.material.opacity = isTarget ? 0.36 : 0.16;
+      ring.material.opacity = isTarget ? 0.48 : 0.22;
+      glow.material.opacity = isTarget ? 0.08 : 0.025;
     });
   }
 

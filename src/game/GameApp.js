@@ -48,6 +48,9 @@ const RIVAL_DIALOGUE_COOLDOWN_SECONDS = 60;
 const CRASH_DIALOGUE_COOLDOWN_SECONDS = 15;
 const ENDGAME_SURVIVAL_SECONDS = 60;
 const NAVIGATOR_OFFLINE_HINT_DELAY_SECONDS = 15;
+const SCENE_FOG_COLOR = 0x2a3563;
+const SCENE_BACKGROUND_COLOR = 0x151126;
+const SCENE_FOG_DENSITY = 0.0024;
 
 function randRange(min, max) {
   return min + Math.random() * (max - min);
@@ -179,8 +182,8 @@ export class GameApp {
     this.options = options;
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x120f22);
-    this.scene.fog = new THREE.FogExp2(0x28194a, 0.0032);
+    this.scene.background = new THREE.Color(SCENE_BACKGROUND_COLOR);
+    this.scene.fog = new THREE.FogExp2(SCENE_FOG_COLOR, SCENE_FOG_DENSITY);
 
     this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });

@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/jam_relay_6.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Signal's coming from above."
+  },
+  {
+    "id": 2,
+    "audio": "/audio/jam_relay_7.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "Another taxi?"
+  },
+  {
+    "id": 3,
+    "audio": "/audio/jam_relay_8.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "No. Multiple sources."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/jam_relay_9.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "The relays... the blimps."
+  },
+  {
+    "id": 5,
+    "audio": "/audio/jam_relay_10.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "That's gotta be it. Fly up to one."
+  }
+]

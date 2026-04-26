@@ -63,7 +63,7 @@ export class UIManager {
         <div class="panel panel--nav">
           <div class="eyebrow">Navigator</div>
           <div class="navigator">
-            <div class="navigator__scope">
+            <div class="navigator__scope" data-field="navScope">
               <div class="navigator__ring navigator__ring--outer"></div>
               <div class="navigator__ring navigator__ring--inner"></div>
               <div class="navigator__crosshair navigator__crosshair--x"></div>
@@ -137,6 +137,7 @@ export class UIManager {
       energyText: this.root.querySelector('[data-field="energyText"]'),
       chargeRing: this.root.querySelector('[data-field="chargeRing"]'),
       chargeLabel: this.root.querySelector('[data-field="chargeLabel"]'),
+      navScope: this.root.querySelector('[data-field="navScope"]'),
       navTargets: this.root.querySelector('[data-field="navTargets"]'),
       navStatus: this.root.querySelector('[data-field="navStatus"]'),
       stormWarning: this.root.querySelector('[data-field="stormWarning"]'),
@@ -325,6 +326,7 @@ export class UIManager {
   }
 
   renderNavigator(state) {
+    const navigatorOffline = Boolean(state.challenges?.navigatorOffline);
     const playerPosition = state.player.mesh.position;
     const heading = state.player.mesh.rotation.y;
     const range = 220;
@@ -332,6 +334,16 @@ export class UIManager {
     const sin = Math.sin(heading);
     const cos = Math.cos(heading);
     const targets = [];
+
+    this.fields.navScope.classList.toggle('navigator__scope--offline', navigatorOffline);
+
+    if (navigatorOffline) {
+      for (let i = 0; i < this.navigatorMarkers.length; i += 1) {
+        this.navigatorMarkers[i].hidden = true;
+      }
+      this.fields.navStatus.textContent = 'ERROR';
+      return;
+    }
 
     if (state.mission.phase === 'pickup') {
       state.mission.pickupTargets.forEach((target) => targets.push({

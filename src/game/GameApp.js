@@ -36,6 +36,10 @@ import escalationDialogue from '../data/escalationDialogue.json';
 import postIntroDialogue from '../data/postIntroDialogue.json';
 import stormStartDialogue from '../data/stormStartDialogue.json';
 import stormEndDialogue from '../data/stormEndDialogue.json';
+import jamRelayStartDialogue from '../data/jamRelayStartDialogue.json';
+import jamRelayHintOneDialogue from '../data/jamRelayHintOneDialogue.json';
+import jamRelayHintTwoDialogue from '../data/jamRelayHintTwoDialogue.json';
+import jamRelayRestoreDialogue from '../data/jamRelayRestoreDialogue.json';
 import musicTracks from '../data/musicTracks.json';
 
 const INTRO_TITLE_CARD_DURATION_SECONDS = 4.2;
@@ -43,6 +47,7 @@ const POST_INTRO_DELAY_AFTER_TITLE_SECONDS = 2.5;
 const RIVAL_DIALOGUE_COOLDOWN_SECONDS = 60;
 const CRASH_DIALOGUE_COOLDOWN_SECONDS = 15;
 const ENDGAME_SURVIVAL_SECONDS = 60;
+const NAVIGATOR_OFFLINE_HINT_DELAY_SECONDS = 15;
 
 function randRange(min, max) {
   return min + Math.random() * (max - min);
@@ -105,6 +110,68 @@ function createExtractionMarker() {
   return group;
 }
 
+function createNavigatorOfflineRings(blimpAnchors = []) {
+  const group = new THREE.Group();
+  const ringGeometry = new THREE.TorusGeometry(18, 1.35, 18, 48);
+  const glowGeometry = new THREE.TorusGeometry(18, 2.8, 18, 48);
+  const colors = [
+    { value: 0x58a6ff, name: 'Blue' },
+    { value: 0xff9d3d, name: 'Orange' },
+    { value: 0x63ff83, name: 'Green' },
+    { value: 0xff5e47, name: 'Red' },
+  ];
+
+  blimpAnchors.slice(0, colors.length).forEach((anchor, index) => {
+    const ringGroup = new THREE.Group();
+    ringGroup.position.copy(anchor.position);
+    ringGroup.userData = {
+      baseY: anchor.position.y,
+      colorName: colors[index].name,
+      cleared: false,
+      index,
+      phase: index * 0.85,
+      proximityRadius: 10,
+      spinSpeed: 0.28 + index * 0.05,
+      wasInside: false,
+    };
+
+    const ring = new THREE.Mesh(
+      ringGeometry,
+      new THREE.MeshBasicMaterial({
+        color: colors[index].value,
+        transparent: true,
+        fog: false,
+        toneMapped: false,
+      }),
+    );
+    ring.renderOrder = 12;
+    ringGroup.add(ring);
+
+    const glow = new THREE.Mesh(
+      glowGeometry,
+      new THREE.MeshBasicMaterial({
+        color: colors[index].value,
+        transparent: true,
+        opacity: 0.22,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        fog: false,
+        toneMapped: false,
+      }),
+    );
+    glow.scale.set(1.04, 1.04, 1.04);
+    glow.renderOrder = 11;
+    ringGroup.add(glow);
+    ringGroup.userData.ring = ring;
+    ringGroup.userData.glow = glow;
+
+    group.add(ringGroup);
+  });
+
+  group.visible = false;
+  return group;
+}
+
 export class GameApp {
   constructor(mount, options = {}) {
     this.mount = mount;
@@ -137,6 +204,10 @@ export class GameApp {
     this.finalSurvivalDialogue = new IntroDialogueManager(finalSurvivalDialogue, 1400);
     this.finalEscapeDialogue = new IntroDialogueManager(finalEscapeDialogue, 250);
     this.finalResolutionDialogue = new IntroDialogueManager(finalResolutionDialogue, 250);
+    this.jamRelayStartDialogue = new IntroDialogueManager(jamRelayStartDialogue, 250);
+    this.jamRelayHintOneDialogue = new IntroDialogueManager(jamRelayHintOneDialogue, 250);
+    this.jamRelayHintTwoDialogue = new IntroDialogueManager(jamRelayHintTwoDialogue, 250);
+    this.jamRelayRestoreDialogue = new IntroDialogueManager(jamRelayRestoreDialogue, 250);
     this.voiceover = new VoiceoverManager();
     this.pendingPostIntroDelay = null;
     this.rivalDialogueCooldown = 0;
@@ -158,6 +229,14 @@ export class GameApp {
     this.finalEscapeDialogueStarted = false;
     this.extractionActive = false;
     this.extractionTarget = null;
+    this.navigatorOfflineActive = false;
+    this.navigatorOfflineCompleted = false;
+    this.navigatorOfflineSequenceIndex = 0;
+    this.navigatorOfflineDialogueActive = false;
+    this.navigatorOfflineRestoreDialogueQueued = false;
+    this.navigatorOfflineRestoreDialoguePlayed = false;
+    this.navigatorOfflineHintStage = 0;
+    this.navigatorOfflineHintTimer = null;
     this.won = false;
     this.lightningConfig = GAME_CONFIG.lightning;
     this.lightningCooldown = this.randomLightningCooldown();
@@ -169,8 +248,10 @@ export class GameApp {
     this.cityLimitTurnActive = false;
     this.lightningAudioIndex = 0;
     this.thunderAudioIndex = 0;
+    this.ringBlipAudioIndex = 0;
     this.lightningWarningSounds = createAudioPool('/audio/sparks.mp3', 3, 0.6);
     this.thunderSounds = createAudioPool('/audio/thunder.mp3', 3, 0.72);
+    this.ringBlipSounds = createAudioPool('/audio/blip.mp3', 3, 0.7);
     this.perfOverlay = this.options.debug?.showPerfOverlay ? new PerformanceOverlay(this.mount) : null;
     this.ui.setMusicToggleHandler(() => this.music.toggleMute());
     this.ui.setStartHandler(() => this.beginGame());
@@ -181,6 +262,8 @@ export class GameApp {
     this.worldData = this.city.build();
     this.extractionMarker = createExtractionMarker();
     this.scene.add(this.extractionMarker);
+    this.navigatorOfflineRings = createNavigatorOfflineRings(this.worldData.blimpAnchors);
+    this.scene.add(this.navigatorOfflineRings);
     this.lightningFlash = new THREE.PointLight(0xf4fbff, 0, 320, 1.15);
     this.scene.add(this.lightningFlash);
 
@@ -379,7 +462,12 @@ export class GameApp {
   }
 
   isBlockingGameplayDialogueActive() {
-    return this.fakePassengerIntroActive || this.finalDialogueActive || this.survivalDialogueActive || this.endgameResolutionActive || this.finalEscapeDialogueActive;
+    return this.fakePassengerIntroActive
+      || this.finalDialogueActive
+      || this.survivalDialogueActive
+      || this.endgameResolutionActive
+      || this.finalEscapeDialogueActive
+      || this.navigatorOfflineDialogueActive;
   }
 
   isGameplayDialogueBusy() {
@@ -405,6 +493,78 @@ export class GameApp {
         this.ui.hideDialogue();
       },
     });
+  }
+
+  startBlockingDialogueSequence(manager, onComplete) {
+    this.navigatorOfflineDialogueActive = true;
+    this.voiceover.stop();
+    manager.start({
+      onEntryStart: (entry) => {
+        this.music.setVolumeScale(0.22);
+        this.ui.showDialogue(entry);
+      },
+      onEntryEnd: () => this.ui.hideDialogue(),
+      onComplete: () => {
+        this.music.setVolumeScale(1);
+        this.ui.hideDialogue();
+        this.navigatorOfflineDialogueActive = false;
+        onComplete?.();
+        if (this.navigatorOfflineRestoreDialogueQueued) {
+          this.navigatorOfflineRestoreDialogueQueued = false;
+          this.playNavigatorOfflineRestoreDialogue();
+        }
+      },
+    });
+  }
+
+  startNavigatorOfflineHintTimer() {
+    if (!this.navigatorOfflineActive || this.navigatorOfflineCompleted || this.navigatorOfflineHintStage >= 2) {
+      this.navigatorOfflineHintTimer = null;
+      return;
+    }
+
+    this.navigatorOfflineHintTimer = NAVIGATOR_OFFLINE_HINT_DELAY_SECONDS;
+  }
+
+  playNavigatorOfflineStartDialogue() {
+    this.startBlockingDialogueSequence(this.jamRelayStartDialogue, () => {
+      this.startNavigatorOfflineHintTimer();
+    });
+  }
+
+  playNavigatorOfflineHintDialogue() {
+    if (this.navigatorOfflineCompleted || !this.navigatorOfflineActive) return;
+
+    const manager = this.navigatorOfflineHintStage === 0
+      ? this.jamRelayHintOneDialogue
+      : this.jamRelayHintTwoDialogue;
+
+    this.navigatorOfflineHintStage += 1;
+    this.startBlockingDialogueSequence(manager, () => {
+      this.startNavigatorOfflineHintTimer();
+    });
+  }
+
+  playNavigatorOfflineRestoreDialogue() {
+    if (this.navigatorOfflineRestoreDialoguePlayed) return;
+    if (this.navigatorOfflineDialogueActive) {
+      this.navigatorOfflineRestoreDialogueQueued = true;
+      return;
+    }
+
+    this.navigatorOfflineRestoreDialoguePlayed = true;
+    this.navigatorOfflineHintTimer = null;
+    this.startBlockingDialogueSequence(this.jamRelayRestoreDialogue);
+  }
+
+  updateNavigatorOfflineDialogue(delta) {
+    if (this.paused || this.navigatorOfflineHintTimer == null || this.navigatorOfflineDialogueActive) return;
+
+    this.navigatorOfflineHintTimer = Math.max(0, this.navigatorOfflineHintTimer - delta);
+    if (this.navigatorOfflineHintTimer > 0) return;
+
+    this.navigatorOfflineHintTimer = null;
+    this.playNavigatorOfflineHintDialogue();
   }
 
   handleLightningChallengeStateChange(challengeActive) {
@@ -636,6 +796,99 @@ export class GameApp {
       || (totalCredits >= this.lightningConfig.startCredits && totalCredits < this.lightningConfig.pauseCredits);
   }
 
+  shouldStartNavigatorOffline(totalCredits) {
+    return totalCredits >= this.lightningConfig.navigatorOfflineCredits;
+  }
+
+  resetNavigatorOfflineRings() {
+    this.navigatorOfflineSequenceIndex = 0;
+    this.navigatorOfflineRings.children.forEach((ringGroup) => {
+      ringGroup.userData.cleared = false;
+      ringGroup.userData.wasInside = false;
+      ringGroup.visible = true;
+    });
+  }
+
+  updateNavigatorOfflineChallenge(delta, totalCredits) {
+    const shouldStart = this.shouldStartNavigatorOffline(totalCredits);
+
+    if (!this.navigatorOfflineCompleted && shouldStart && !this.navigatorOfflineActive) {
+      this.navigatorOfflineActive = true;
+      this.navigatorOfflineRestoreDialogueQueued = false;
+      this.navigatorOfflineRestoreDialoguePlayed = false;
+      this.navigatorOfflineHintStage = 0;
+      this.navigatorOfflineHintTimer = null;
+      this.resetNavigatorOfflineRings();
+      this.ui.showAlert('Navigator offline. Blue. Orange. Green. Red.');
+      this.playNavigatorOfflineStartDialogue();
+    }
+
+    if (!this.navigatorOfflineActive) {
+      this.updateNavigatorOfflineRings(delta, false);
+      this.missions.setNavigatorOffline(false);
+      return;
+    }
+
+    this.updateNavigatorOfflineRings(delta, true);
+    this.missions.setNavigatorOffline(true);
+
+    const playerPosition = this.player.mesh.position;
+    let enteredRing = null;
+
+    this.navigatorOfflineRings.children.forEach((ringGroup) => {
+      const inside = playerPosition.distanceToSquared(ringGroup.position) <= ringGroup.userData.proximityRadius ** 2;
+      if (inside && !ringGroup.userData.wasInside && enteredRing == null) {
+        enteredRing = ringGroup;
+      }
+      ringGroup.userData.wasInside = inside;
+    });
+
+    if (!enteredRing) return;
+
+    if (enteredRing.userData.index !== this.navigatorOfflineSequenceIndex) {
+      this.resetNavigatorOfflineRings();
+      enteredRing.userData.wasInside = true;
+      this.ui.showAlert('Wrong ring. Sequence reset.');
+      return;
+    }
+
+    enteredRing.userData.cleared = true;
+    enteredRing.visible = false;
+    this.navigatorOfflineSequenceIndex += 1;
+    this.playPooledAudio(this.ringBlipSounds, 'ringBlipAudioIndex');
+
+    if (this.navigatorOfflineSequenceIndex === this.navigatorOfflineRings.children.length) {
+      this.navigatorOfflineActive = false;
+      this.navigatorOfflineCompleted = true;
+      this.navigatorOfflineHintTimer = null;
+      this.updateNavigatorOfflineRings(delta, false);
+      this.missions.setNavigatorOffline(false);
+      this.ui.showAlert('Navigator restored!');
+      this.playNavigatorOfflineRestoreDialogue();
+    }
+  }
+
+  updateNavigatorOfflineRings(delta, navigatorOffline) {
+    if (!this.navigatorOfflineRings) return;
+
+    this.navigatorOfflineRings.visible = navigatorOffline;
+    if (!navigatorOffline) return;
+
+    const time = performance.now() * 0.001;
+    this.navigatorOfflineRings.children.forEach((ringGroup) => {
+      const { baseY, glow, index, phase, ring, spinSpeed } = ringGroup.userData;
+      ringGroup.position.y = baseY + Math.sin(time * 1.2 + phase) * 1.8;
+      ringGroup.rotation.y += delta * spinSpeed;
+      ringGroup.visible = !ringGroup.userData.cleared;
+
+      const isTarget = index === this.navigatorOfflineSequenceIndex;
+      const pulse = 1 + Math.sin(time * 2.4 + phase) * (isTarget ? 0.09 : 0.04);
+      ringGroup.scale.setScalar(pulse);
+      ring.material.opacity = isTarget ? 1 : 0.52;
+      glow.material.opacity = isTarget ? 0.36 : 0.16;
+    });
+  }
+
   getLightningExposure() {
     const { minHeight, openSkyHeight, nearbyBuildingRadius, roofClearance } = this.lightningConfig;
     const playerPosition = this.player.mesh.position;
@@ -837,6 +1090,9 @@ export class GameApp {
         weather: {
           thunderstormActive: false,
         },
+        challenges: {
+          navigatorOffline: false,
+        },
         endgame: {
           extractionTarget: null,
         },
@@ -856,6 +1112,10 @@ export class GameApp {
       this.finalSurvivalDialogue.setPaused(this.paused);
       this.finalEscapeDialogue.setPaused(this.paused);
       this.finalResolutionDialogue.setPaused(this.paused);
+      this.jamRelayStartDialogue.setPaused(this.paused);
+      this.jamRelayHintOneDialogue.setPaused(this.paused);
+      this.jamRelayHintTwoDialogue.setPaused(this.paused);
+      this.jamRelayRestoreDialogue.setPaused(this.paused);
       this.voiceover.setPaused(this.paused);
     }
 
@@ -952,6 +1212,8 @@ export class GameApp {
 
     const nextMissionState = this.missions.getState();
     const rivalsState = this.rivals.getState();
+    this.updateNavigatorOfflineChallenge(delta, nextMissionState.totalCredits);
+    this.updateNavigatorOfflineDialogue(delta);
 
     if (nextMissionState.endgameUnlocked && !this.survivalModeActive && !this.survivalDialogueActive && !this.endgameShutdownStarted && rivalsState.activeRivals >= 50) {
       this.startSurvivalMode();
@@ -980,6 +1242,9 @@ export class GameApp {
       superBoost: this.superBoost.getState(),
       weather: {
         thunderstormActive: this.lightningChallengeActive,
+      },
+      challenges: {
+        navigatorOffline: this.navigatorOfflineActive,
       },
       endgame: {
         extractionTarget: this.extractionActive
@@ -1033,12 +1298,20 @@ export class GameApp {
     this.finalSurvivalDialogue.destroy();
     this.finalEscapeDialogue.destroy();
     this.finalResolutionDialogue.destroy();
+    this.jamRelayStartDialogue.destroy();
+    this.jamRelayHintOneDialogue.destroy();
+    this.jamRelayHintTwoDialogue.destroy();
+    this.jamRelayRestoreDialogue.destroy();
     this.voiceover.destroy();
     this.lightningWarningSounds.forEach((audio) => {
       audio.pause();
       audio.src = '';
     });
     this.thunderSounds.forEach((audio) => {
+      audio.pause();
+      audio.src = '';
+    });
+    this.ringBlipSounds.forEach((audio) => {
       audio.pause();
       audio.src = '';
     });

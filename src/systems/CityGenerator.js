@@ -125,6 +125,7 @@ export class CityGenerator {
 
   build() {
     const colliders = [];
+    const blimpAnchors = [];
     const districtAnchors = [];
     const flightPaths = [];
     const stationCandidates = [];
@@ -147,9 +148,10 @@ export class CityGenerator {
     }));
 
     this.addSkySearchlights(stationCandidates, energyStationCandidates);
-    this.addSkyBlimps(colliders);
+    this.addSkyBlimps(colliders, blimpAnchors);
 
     return {
+      blimpAnchors,
       colliders,
       flightPaths,
       energyStations,
@@ -613,7 +615,7 @@ export class CityGenerator {
     return [...anchors, ...fallbackAnchors.slice(anchors.length)].slice(0, 3);
   }
 
-  addSkyBlimps(colliders) {
+  addSkyBlimps(colliders, blimpAnchors = []) {
     const hullMaterial = new THREE.MeshStandardMaterial({
       color: 0x2a3140,
       emissive: 0x0b1324,
@@ -718,6 +720,10 @@ export class CityGenerator {
       group.add(noseLight);
 
       this.scene.add(group);
+
+      blimpAnchors.push({
+        position: new THREE.Vector3(position.x, position.y + hullHeight * 0.9 + 14, position.z),
+      });
 
       colliders.push({
         type: 'blimp',

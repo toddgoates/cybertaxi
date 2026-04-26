@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/jam_relay_1.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "The navigator's down."
+  },
+  {
+    "id": 2,
+    "audio": "/audio/jam_relay_2.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Oh come on!"
+  },
+  {
+    "id": 3,
+    "audio": "/audio/jam_relay_3.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "Navigation access revoked."
+  },
+  {
+    "id": 4,
+    "audio": "/audio/jam_relay_4.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "I'm blind here."
+  },
+  {
+    "id": 5,
+    "audio": "/audio/jam_relay_5.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "Let me see what I can find."
+  }
+]

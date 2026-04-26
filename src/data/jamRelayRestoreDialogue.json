@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "audio": "/audio/jam_relay_13.mp3",
+    "portrait": "/images/player.png",
+    "transcription": "The navigator's back!"
+  },
+  {
+    "id": 2,
+    "audio": "/audio/jam_relay_14.mp3",
+    "portrait": "/images/partner.png",
+    "transcription": "That's good news! Now go get some passengers!"
+  },
+  {
+    "id": 3,
+    "audio": "/audio/jam_relay_15.mp3",
+    "portrait": "/images/taxi.png",
+    "transcription": "You have once again illegally accessed the navigation grid. All outcomes now converge on your termination."
+  }
+]

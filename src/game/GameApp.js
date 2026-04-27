@@ -244,6 +244,15 @@ export class GameApp {
     this.navigatorOfflineStaticAudio = new Audio('/audio/static.mp3');
     this.navigatorOfflineStaticAudio.preload = 'auto';
     this.navigatorOfflineStaticAudio.volume = 0.82;
+    this.carOpenAudio = new Audio('/audio/car-open.mp3');
+    this.carOpenAudio.preload = 'auto';
+    this.carOpenAudio.volume = 0.78;
+    this.carCloseAudio = new Audio('/audio/car-close.mp3');
+    this.carCloseAudio.preload = 'auto';
+    this.carCloseAudio.volume = 0.78;
+    this.failAudio = new Audio('/audio/fail.mp3');
+    this.failAudio.preload = 'auto';
+    this.failAudio.volume = 0.82;
     this.won = false;
     this.lightningConfig = GAME_CONFIG.lightning;
     this.lightningCooldown = this.randomLightningCooldown();
@@ -279,6 +288,9 @@ export class GameApp {
     this.missions = new MissionSystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.effects);
     this.missions.setFakePassengerHandler(({ robberyAmount }) => this.onFakePassengerRobbed(robberyAmount));
     this.missions.setFinaleHandler(() => this.onFinaleTriggered());
+    this.missions.setFareStartHandler(() => this.playOneShotAudio(this.carOpenAudio));
+    this.missions.setFareCompleteHandler(() => this.playOneShotAudio(this.carCloseAudio));
+    this.missions.setFareCancelHandler(() => this.playOneShotAudio(this.failAudio));
     this.energy = new EnergySystem(this.scene, this.worldData, GAME_CONFIG, this.ui, this.missions);
     this.collisions = new CollisionSystem(this.worldData.colliders, GAME_CONFIG, this.ui, this.effects);
     this.rivals = new RivalTaxiManager(this.scene, GAME_CONFIG, this.worldData, this.ui);
@@ -810,6 +822,11 @@ export class GameApp {
   playPooledAudio(pool, indexProperty) {
     const audio = pool[this[indexProperty]];
     this[indexProperty] = (this[indexProperty] + 1) % pool.length;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
+
+  playOneShotAudio(audio) {
     audio.currentTime = 0;
     audio.play().catch(() => {});
   }

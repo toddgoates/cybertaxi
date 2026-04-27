@@ -89,6 +89,9 @@ export class MissionSystem {
     this.routeLabel = '';
     this.fakePassengerHandler = null;
     this.finaleHandler = null;
+    this.fareStartHandler = null;
+    this.fareCompleteHandler = null;
+    this.fareCancelHandler = null;
     this.endgameTriggered = false;
     this.endgameUnlocked = false;
     this.navigatorOffline = false;
@@ -101,6 +104,18 @@ export class MissionSystem {
 
   setFinaleHandler(handler) {
     this.finaleHandler = handler;
+  }
+
+  setFareStartHandler(handler) {
+    this.fareStartHandler = handler;
+  }
+
+  setFareCompleteHandler(handler) {
+    this.fareCompleteHandler = handler;
+  }
+
+  setFareCancelHandler(handler) {
+    this.fareCancelHandler = handler;
   }
 
   unlockEndgame() {
@@ -360,6 +375,7 @@ export class MissionSystem {
       'info',
     );
     this.effects.onPickup();
+    this.fareStartHandler?.(offer);
   }
 
   handleFakePassenger(offer) {
@@ -403,6 +419,7 @@ export class MissionSystem {
           'bad',
         );
         this.ui.pushFeed(`Fare failed. Passenger charged you ${compensation} credits`, 'bad');
+        this.fareCancelHandler?.({ reason: 'timeout', penalty: compensation });
         this.startNextFare(player.mesh.position);
         return;
       }
@@ -422,6 +439,7 @@ export class MissionSystem {
             'good',
           );
           this.effects.onDropoff();
+          this.fareCompleteHandler?.({ payout, special: Boolean(this.activeSpecialFare) });
           if (!this.endgameTriggered && this.totalCredits >= this.config.finalCreditsThreshold) {
             this.triggerEndgame();
             return;
@@ -489,6 +507,7 @@ export class MissionSystem {
     this.currentRunHadIncident = true;
     this.pendingPenaltyText = `Passenger refund -${penalty} credits`;
     this.ui.pushFeed(`Passenger stranded. Emergency tow fee ${penalty} credits`, 'bad');
+    this.fareCancelHandler?.({ reason: 'energy', penalty });
     this.startNextFare(playerPosition);
   }
 
@@ -502,6 +521,7 @@ export class MissionSystem {
     this.ui.showAlert(message);
     this.ui.pushFeed(message, 'bad');
     this.ui.pushFeed(`Lost ${penalty} credits`, 'bad');
+    this.fareCancelHandler?.({ reason: 'danger', penalty, message });
     this.startNextFare(playerPosition);
     return true;
   }

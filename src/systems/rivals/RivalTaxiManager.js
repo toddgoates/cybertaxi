@@ -272,7 +272,7 @@ export class RivalTaxiManager {
 
     const rapidEndgameSpawns = this.currentDisplayTier >= 10;
     this.spawnCooldown = rapidEndgameSpawns
-      ? profile.spawnInterval * THREE.MathUtils.lerp(0.8, 1.15, Math.random())
+      ? profile.spawnInterval * this.config.endgameSpawnCooldownMultiplier * THREE.MathUtils.lerp(0.8, 1.15, Math.random())
       : this.config.normalSpawnCooldownSeconds;
   }
 

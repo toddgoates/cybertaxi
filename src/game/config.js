@@ -69,6 +69,7 @@ export const GAME_CONFIG = {
     despawnDistance: 900,
     endgameCreditsThreshold: 10000,
     normalSpawnCooldownSeconds: 20,
+    endgameSpawnCooldownMultiplier: 0.4,
     heat: {
       maxHeat: 10,
       timeGainPerSecond: 0.013,

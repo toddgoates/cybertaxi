@@ -1,7 +1,13 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 function damp(current, target, lambda, dt) {
   return THREE.MathUtils.damp(current, target, lambda, dt);
+}
+
+function createRoundedMesh(width, height, depth, radius, segments, material) {
+  const safeRadius = Math.min(radius, Math.min(width, height, depth) * 0.5 - 0.001);
+  return new THREE.Mesh(new RoundedBoxGeometry(width, height, depth, segments, safeRadius), material);
 }
 
 export class PlayerController {
@@ -77,35 +83,36 @@ export class PlayerController {
       toneMapped: false,
     });
 
-    const chassis = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.92, 7.4), bodyMaterial);
+    const roundedSegments = 2;
+    const chassis = createRoundedMesh(4.2, 0.92, 7.4, 0.09, roundedSegments, bodyMaterial);
     chassis.position.y = 0.08;
     visual.add(chassis);
 
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(3.34, 0.62, 2.3), bodyMaterial);
+    const nose = createRoundedMesh(3.34, 0.62, 2.3, 0.08, roundedSegments, bodyMaterial);
     nose.position.set(0, 0.5, -2.78);
     nose.rotation.x = -0.26;
     visual.add(nose);
 
-    const hood = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.54, 2), bodyMaterial);
+    const hood = createRoundedMesh(3.5, 0.54, 2, 0.07, roundedSegments, bodyMaterial);
     hood.position.set(0, 0.76, -1.72);
     hood.rotation.x = -0.08;
     visual.add(hood);
 
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.9, 1.02, 3.1), bodyMaterial);
+    const cabin = createRoundedMesh(2.9, 1.02, 3.1, 0.1, roundedSegments, bodyMaterial);
     cabin.position.set(0, 1.06, -0.08);
     visual.add(cabin);
 
-    const cockpit = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.78, 2.35), glassMaterial);
+    const cockpit = createRoundedMesh(2.55, 0.78, 2.35, 0.08, roundedSegments, glassMaterial);
     cockpit.position.set(0, 1.34, -0.12);
     cockpit.rotation.x = -0.06;
     visual.add(cockpit);
 
-    const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.5, 0.9), glassMaterial);
+    const windshield = createRoundedMesh(2.28, 0.5, 0.9, 0.06, roundedSegments, glassMaterial);
     windshield.position.set(0, 1.46, -1.05);
     windshield.rotation.x = -0.48;
     visual.add(windshield);
 
-    const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.44, 0.84), glassMaterial);
+    const rearGlass = createRoundedMesh(2.28, 0.44, 0.84, 0.05, roundedSegments, glassMaterial);
     rearGlass.position.set(0, 1.36, 1.04);
     rearGlass.rotation.x = 0.38;
     visual.add(rearGlass);
@@ -114,15 +121,15 @@ export class PlayerController {
     dorsalFin.position.set(0, 1.58, 1.48);
     visual.add(dorsalFin);
 
-    const bumperFront = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.42, 0.42), trimMaterial);
+    const bumperFront = createRoundedMesh(3.8, 0.42, 0.42, 0.04, roundedSegments, trimMaterial);
     bumperFront.position.set(0, 0.06, -3.96);
     visual.add(bumperFront);
 
-    const bumperRear = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.42, 0.42), trimMaterial);
+    const bumperRear = createRoundedMesh(3.7, 0.42, 0.42, 0.04, roundedSegments, trimMaterial);
     bumperRear.position.set(0, 0.06, 3.68);
     visual.add(bumperRear);
 
-    const sideSkirtGeometry = new THREE.BoxGeometry(0.24, 0.42, 6.2);
+    const sideSkirtGeometry = new RoundedBoxGeometry(0.24, 0.42, 6.2, roundedSegments, 0.04);
     [-2.05, 2.05].forEach((x) => {
       const skirt = new THREE.Mesh(sideSkirtGeometry, trimMaterial);
       skirt.position.set(x, -0.12, 0.18);
@@ -171,11 +178,11 @@ export class PlayerController {
       });
     });
 
-    const roofLightBase = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.18, 0.58), trimMaterial);
+    const roofLightBase = createRoundedMesh(0.9, 0.18, 0.58, 0.03, roundedSegments, trimMaterial);
     roofLightBase.position.set(0, 1.86, -0.05);
     visual.add(roofLightBase);
 
-    const roofLight = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.26, 0.42), lightMaterial);
+    const roofLight = createRoundedMesh(0.72, 0.26, 0.42, 0.03, roundedSegments, lightMaterial);
     roofLight.position.set(0, 2.04, -0.05);
     visual.add(roofLight);
 
